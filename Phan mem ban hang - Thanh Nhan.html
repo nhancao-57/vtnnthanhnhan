@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý bán hàng - VTNN Thành Nhân (v2)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style type="text/tailwindcss">
+        @layer components {
+            /* 1. Định nghĩa style cơ bản cho các nút */
+            .btn-base {
+                @apply py-3 px-5 rounded-md cursor-pointer text-base font-medium transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-lg mr-2 mb-2 inline-block text-white disabled:opacity-50 disabled:cursor-not-allowed;
+            }
+            
+            /* 2. Định nghĩa các biến thể màu của nút */
+            .btn-primary { @apply btn-base bg-indigo-600 hover:bg-indigo-700; }
+            .btn-secondary { @apply btn-base bg-slate-500 hover:bg-slate-600; }
+            .btn-success { @apply btn-base bg-emerald-600 hover:bg-emerald-700; }
+            .btn-danger { @apply btn-base bg-red-600 hover:bg-red-700; }
+
+            /* 3. Định nghĩa style cơ bản cho input */
+            .input-base {
+                @apply w-full p-3 mb-4 border border-slate-300 rounded-md box-border transition duration-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none;
+            }
+              
+            /* 4. Style cho các class được JS tự động thêm vào */
+            .search-item {
+                @apply p-3 cursor-pointer hover:bg-indigo-50;
+            }
+            .search-item small {
+                @apply text-slate-500 ml-2;
+            }
+            .status-message {
+                @apply p-4 mb-5 rounded-lg font-medium;
+            }
+            .status-success {
+                @apply bg-emerald-100 text-emerald-800;
+            }
+            .status-error {
+                @apply bg-red-100 text-red-800;
+            }
+              
+            /* 5. Style cho bảng */
+            #cart-table th, #cart-table td {
+                @apply border border-slate-200 p-3 text-left;
+            }
+            #cart-table th {
+                @apply bg-slate-100 font-semibold text-slate-700;
+            }
+            #cart-body .btn-secondary {
+                @apply py-2 px-3 text-sm;
+            }
+
+            /* 6. Style cho thanh trạng thái phiên (MỚI) */
+            .status-session-active {
+                @apply bg-emerald-600 text-white transition-all duration-300;
+            }
+            .status-session-inactive {
+                @apply bg-amber-500 text-white transition-all duration-300;
+            }
+
+            /* 7. Style cho fieldset khi bị vô hiệu hóa (MỚI) */
+            fieldset:disabled {
+                @apply opacity-60 pointer-events-none;
+            }
+            fieldset:disabled .bg-white {
+                @apply bg-slate-50; /* Làm mờ nền của các card */
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-900 leading-relaxed">
+
+    <header class="bg-indigo-700 text-white p-5 shadow-lg flex items-center justify-between">
+        <h1 class="text-2xl md:text-3xl font-medium">Quản lý bán hàng - Cửa hàng VTNN Thành Nhân</h1>
+        
+        <div id="session-time-container" class="text-right hidden md:block">
+            <div class="text-lg font-medium" id="current-time-display">--:--:--</div>
+            <div class="text-sm opacity-80" id="current-date-display">----------</div>
+        </div>
+    </header>
+
+    <!-- Thanh trạng thái phiên (MỚI) -->
+    <div id="session-status-bar" class="text-center p-3 font-medium status-session-inactive" role="status">
+        Đang tải...
+    </div>
+
+    <div class="max-w-7xl mx-auto p-4 md:p-6">
+        <!-- Vùng chứa thông báo tạm thời -->
+        <div id="status-container"></div>
+        
+        <!-- Card Quản lý Phiên -->
+        <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-indigo-500 md:col-span-2 mb-6">
+            <h2 class="text-2xl font-semibold text-indigo-800 border-b border-slate-200 pb-3 mb-5 mt-0">Phiên Làm Việc</h2>
+            <p class="mb-4 text-slate-600">Bắt đầu bằng cách tải lên Cơ sở dữ liệu. Kết thúc phiên sẽ xuất tất cả báo cáo và xóa dữ liệu.</p>
+            
+            <input type="file" id="file-input" accept=".xlsx, .xls, .csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 mb-4 cursor-pointer">
+            
+            <button id="load-db-btn" class="btn-primary">Bắt đầu phiên (Tải Cơ sở dữ liệu)</button>
+            <button id="export-inventory-btn" class="btn-secondary" disabled>Xuất Tồn Kho (Để kiểm tra)</button>
+            <button id="end-session-btn" class="btn-danger" disabled>Kết thúc phiên làm việc</button>
+        </div>
+
+        <!-- Vùng ứng dụng chính (MỚI: bọc trong fieldset) -->
+        <fieldset id="main-app-controls" disabled>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 1. Tạo Đơn Hàng -->
+                <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-indigo-500">
+                    <h2 class="text-2xl font-semibold text-indigo-800 border-b border-slate-200 pb-3 mb-5 mt-0">1. Tạo Đơn Hàng</h2>
+                    <form id="add-product-form">
+                        <label class="font-medium text-slate-700 block mb-1">Tìm kiếm sản phẩm:</label>
+                        <input type="text" id="product-search" placeholder="Nhập tên sản phẩm..." class="input-base">
+                        
+                        <div id="product-search-results" class="max-h-52 overflow-y-auto border border-slate-300 rounded-md bg-white mb-4"></div>
+                        
+                        <label class="font-medium text-slate-700 block mb-1">Số lượng:</label>
+                        <input type="number" id="product-quantity" placeholder="Nhập số lượng" min="0" class="input-base">
+                        
+                        <button type="submit" class="btn-success w-full">Thêm vào giỏ hàng</button>
+                    </form>
+                </div>
+
+                <!-- 2. Thông Tin Khách Hàng -->
+                <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-indigo-500">
+                    <h2 class="text-2xl font-semibold text-indigo-800 border-b border-slate-200 pb-3 mb-5 mt-0">2. Thông Tin Khách Hàng</h2>
+                    <form id="customer-info-form">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5">
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">Tên khách hàng:</label>
+                                <input type="text" id="customer-name" required class="input-base">
+                            </div>
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">Người mua hàng:</label>
+                                <input type="text" id="customer-buyer-name" class="input-base">
+                            </div>
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">Địa chỉ:</label>
+                                <input type="text" id="customer-address" class="input-base">
+                            </div>
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">Mã số thuế:</label>
+                                <input type="text" id="customer-tin" class="input-base">
+                            </div>
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">Email:</label>
+                                <input type="email" id="customer-email" class="input-base">
+                            </div>
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">Hình thức thanh toán:</label>
+                                <input type="text" id="customer-payment-method" value="Chuyển khoản" class="input-base">
+                            </div>
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">MDVCQHVNS:</label>
+                                <input type="text" id="customer-mdvcqhns" class="input-base">
+                            </div>
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">Số CCCD:</label>
+                                <input type="text" id="customer-cccd" class="input-base">
+                            </div>
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">Số hộ chiếu:</label>
+                                <input type="text" id="customer-passport" class="input-base">
+                            </div>
+                            <div>
+                                <label class="font-medium text-slate-700 block mb-1">Ngày hóa đơn:</label>
+                                <input type="date" id="invoice-date" class="input-base">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. Giỏ Hàng Hiện Tại -->
+            <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-indigo-500 md:col-span-2 mt-6">
+                <h2 class="text-2xl font-semibold text-indigo-800 border-b border-slate-200 pb-3 mb-5 mt-0">3. Giỏ Hàng Hiện Tại</h2>
+                
+                <div class="overflow-x-auto">
+                    <table id="cart-table" class="w-full border-collapse mt-5 min-w-[768px]">
+                        <thead>
+                            <tr>
+                                <th>STT</th> 
+                                <th>Tên hàng hóa/dịch vụ</th> 
+                                <th>ĐVT</th> 
+                                <th>Số lượng</th>
+                                <th>Đơn giá (Chưa thuế)</th> 
+                                <th>Thuế suất (%)</th> 
+                                <th>Thành tiền (Chưa thuế)</th> 
+                                <th>Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-body"></tbody> 
+                    </table>
+                </div>
+                
+                <div id="cart-total-container" class="text-right mt-6 space-y-2">
+                    <div id="cart-total-pretax" class="text-lg text-slate-600">Tổng cộng (Chưa thuế): 0 VNĐ</div>
+                    <div id="cart-total-posttax" class="text-3xl font-bold text-red-600">Tổng cộng (Sau thuế): 0 VNĐ</div>
+                </div>
+                
+                <div class="mt-6 border-t border-slate-200 pt-6">
+                    <button id="export-invoice-btn" class="btn-primary">Xuất Hóa Đơn Này</button>
+                    <button id="clear-cart-btn" class="btn-secondary">Tạo Đơn Hàng Mới</button>
+                </div>
+            </div>
+        </fieldset> <!-- Hết fieldset -->
+    </div>
+    
+    <footer class="text-center p-6 mt-8 text-slate-500 border-t border-slate-300">
+        <p>Cửa hàng VTNN Thành Nhân &copy; 2025 - Phiên bản 1.2 (Thêm trạng thái phiên)</p>
+    </footer>
+
+<script>
+// --- BIẾN TOÀN CỤC ---
+let productDatabase = []; 
+let productDatabaseOriginal = [];
+let currentCart = []; 
+let dailyTransactions = []; 
+let selectedProduct = null; 
+
+// --- 1. KHỞI TẠO & SỰ KIỆN ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('invoice-date').valueAsDate = new Date();
+    loadStateFromStorage(); // Hàm này sẽ tự động gọi updateSessionStatus
+
+    // Gán sự kiện cho các nút
+    document.getElementById('load-db-btn').addEventListener('click', handleFileLoad);
+    document.getElementById('export-inventory-btn').addEventListener('click', exportInventory);
+    document.getElementById('end-session-btn').addEventListener('click', endSession); 
+    document.getElementById('add-product-form').addEventListener('submit', handleAddProduct);
+    document.getElementById('product-search').addEventListener('keyup', handleProductSearch);
+    document.getElementById('export-invoice-btn').addEventListener('click', exportInvoiceFile);
+    document.getElementById('clear-cart-btn').addEventListener('click', clearCart);
+});
+
+// --- CÁC HÀM TIỆN ÍCH (Hiển thị thông báo tạm thời) ---
+function showStatus(message, isError = false) {
+    const container = document.getElementById('status-container');
+    const statusDiv = document.createElement('div');
+    statusDiv.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
+    statusDiv.textContent = message;
+    container.innerHTML = ''; 
+    container.appendChild(statusDiv);
+    window.scrollTo(0, 0);
+    setTimeout(() => { if (container.contains(statusDiv)) container.removeChild(statusDiv); }, 6000);
+}
+
+const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+
+// --- (MỚI) QUẢN LÝ TRẠNG THÁI PHIÊN & GIAO DIỆN ---
+function updateSessionStatus() {
+    const statusBar = document.getElementById('session-status-bar');
+    const isSessionActive = productDatabase.length > 0;
+
+    if (isSessionActive) {
+        statusBar.textContent = `Phiên làm việc đang diễn ra. Cơ sở dữ liệu: ${productDatabase.length} sản phẩm. Giao dịch đã lưu: ${dailyTransactions.length}.`;
+        statusBar.className = 'text-center p-3 font-medium status-session-active';
+    } else {
+        statusBar.textContent = 'Chưa có phiên làm việc. Vui lòng tải Cơ sở dữ liệu để bắt đầu.';
+        statusBar.className = 'text-center p-3 font-medium status-session-inactive';
+    }
+    
+    toggleAppControls(isSessionActive);
+}
+
+function toggleAppControls(isSessionActive) {
+    // Bật/tắt các nút quản lý phiên
+    document.getElementById('export-inventory-btn').disabled = !isSessionActive;
+    document.getElementById('end-session-btn').disabled = !isSessionActive;
+
+    // Bật/tắt toàn bộ phần còn lại của ứng dụng
+    document.getElementById('main-app-controls').disabled = !isSessionActive;
+    
+    // Nút "Bắt đầu phiên" luôn được bật, nhưng đổi văn bản nếu phiên đang hoạt động
+    const loadDbBtn = document.getElementById('load-db-btn');
+    if (isSessionActive) {
+        loadDbBtn.textContent = 'Tải lại CSDL (Phiên mới)';
+        loadDbBtn.classList.remove('btn-primary');
+        loadDbBtn.classList.add('btn-danger'); // Đổi thành màu đỏ để cảnh báo
+    } else {
+        loadDbBtn.textContent = 'Bắt đầu phiên (Tải Cơ sở dữ liệu)';
+        loadDbBtn.classList.remove('btn-danger');
+        loadDbBtn.classList.add('btn-primary');
+    }
+}
+
+
+// --- 2. QUẢN LÝ DỮ LIỆU & STATE (LOCALSTORAGE) ---
+function saveStateToStorage() {
+    const state = {
+        current: productDatabase,
+        original: productDatabaseOriginal,
+        transactions: dailyTransactions 
+    };
+    localStorage.setItem('inventoryState', JSON.stringify(state));
+}
+
+function loadStateFromStorage() {
+    const savedState = localStorage.getItem('inventoryState');
+    if (savedState) {
+        try {
+            const state = JSON.parse(savedState);
+            if (state.current && state.original) {
+                productDatabase = state.current;
+                productDatabaseOriginal = state.original;
+                dailyTransactions = state.transactions || []; 
+                showStatus('Đã khôi phục dữ liệu từ phiên làm việc trước.', false);
+            }
+        } catch (e) {
+            console.error('Lỗi khôi phục trạng thái:', e);
+            localStorage.removeItem('inventoryState');
+        }
+    }
+    updateSessionStatus(); // Cập nhật giao diện sau khi tải
+}
+
+// --- 3. TẢI DATABASE & QUẢN LÝ PHIÊN ---
+function handleFileLoad() {
+    const fileInput = document.getElementById('file-input');
+    if (fileInput.files.length === 0) return showStatus('Vui lòng chọn Cơ sở dữ liệu!', true);
+
+    if (dailyTransactions.length > 0) {
+        if (!confirm('Bạn có chắc chắn muốn bắt đầu lại phiên làm việc?\n\nTẤT CẢ giao dịch đã lưu trong ngày sẽ bị XÓA.')) {
+            fileInput.value = ''; 
+            return; 
+        }
+    }
+    
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            // Reset tất cả dữ liệu khi tải file mới
+            productDatabase = [];
+            productDatabaseOriginal = [];
+            dailyTransactions = [];
+            currentCart = [];
+            
+            const COL = {TIN: 16, TEN: 17, DVT: 18, GIA: 19, THUE: 20};
+            let productsLoaded = 0;
+            for (let i = 3; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (row && row.length >= COL.THUE && row[COL.TEN]) {
+                    const productName = String(row[COL.TEN]).trim();
+                    if (productName.length > 0) {
+                        productDatabase.push({
+                            name: productName,
+                            unit: String(row[COL.DVT] || '').trim(),
+                            price: parseFloat(row[COL.GIA]) || 0,
+                            taxRate: parseFloat(row[COL.THUE]) || 0,
+                            stock: parseInt(row[COL.TIN]) || 0
+                        });
+                        productsLoaded++;
+                    }
+                }
+            }
+            
+            productDatabaseOriginal = JSON.parse(JSON.stringify(productDatabase));
+            saveStateToStorage();
+            renderCart();
+            showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} sản phẩm.`);
+            fileInput.value = '';
+            updateSessionStatus(); // (MỚI) Cập nhật giao diện
+
+        } catch (error) { 
+            showStatus(`Lỗi khi đọc tệp Excel: ${error.message}`, true); 
+            updateSessionStatus(); // (MỚI) Cập nhật giao diện
+        }
+    };
+    reader.onerror = () => showStatus('Không thể đọc tệp. Đã xảy ra lỗi.', true);
+    reader.readAsArrayBuffer(file);
+}
+
+function endSession() {
+    if (productDatabase.length === 0) {
+        return showStatus('Chưa có dữ liệu nào trong phiên. Vui lòng bắt đầu phiên trước.', true);
+    }
+
+    if (confirm('Bạn có chắc chắn muốn KẾT THÚC PHIÊN làm việc?\n\nThao tác này sẽ:\n1. Xuất báo cáo bán hàng tổng hợp.\n2. Xuất báo cáo tồn kho cuối ngày.\n3. XÓA TẤT CẢ dữ liệu để chuẩn bị cho ngày mới.')) {
+        // 1. Xuất báo cáo bán hàng tổng hợp
+        exportDailySalesReport();
+
+        // 2. Xuất báo cáo tồn kho
+        exportInventory();
+
+        // 3. Xóa dữ liệu và reset
+        productDatabase = [];
+        productDatabaseOriginal = [];
+        dailyTransactions = [];
+        currentCart = [];
+        localStorage.removeItem('inventoryState');
+        
+        renderCart();
+        document.getElementById('customer-info-form').reset();
+        document.getElementById('add-product-form').reset();
+        selectedProduct = null;
+
+        showStatus('Phiên làm việc đã kết thúc thành công! Dữ liệu đã được xóa sạch.');
+        updateSessionStatus(); // (MỚI) Cập nhật giao diện
+    }
+}
+
+
+// --- 4. TÌM KIẾM & THÊM SẢN PHẨM VÀO GIỎ ---
+function handleProductSearch() {
+    const query = document.getElementById('product-search').value.toLowerCase();
+    const resultsContainer = document.getElementById('product-search-results');
+    resultsContainer.innerHTML = '';
+    if (query.length < 2) {
+        selectedProduct = null; 
+        return;
+    }
+    // (Không cần kiểm tra productDatabase.length vì fieldset đã vô hiệu hóa input)
+    
+    const filteredProducts = productDatabase.filter(p => p.name.toLowerCase().includes(query)).slice(0, 50);
+    filteredProducts.forEach(product => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'search-item';
+        const postTaxPrice = product.price * (1 + product.taxRate);
+        itemDiv.innerHTML = `${product.name} <small>(Tồn: ${product.stock} ${product.unit} - Giá sau thuế: ${currencyFormatter.format(postTaxPrice)})</small>`;
+        itemDiv.onclick = () => selectProduct(product);
+        resultsContainer.appendChild(itemDiv);
+    });
+}
+
+function selectProduct(product) {
+    document.getElementById('product-search').value = product.name;
+    selectedProduct = product; 
+    document.getElementById('product-search-results').innerHTML = ''; 
+    document.getElementById('product-quantity').focus();
+}
+
+function handleAddProduct(e) {
+    e.preventDefault(); 
+    
+    if (!selectedProduct) {
+        return showStatus('Vui lòng chọn một sản phẩm từ danh sách!', true);
+    }
+    const name = selectedProduct.name;
+    const quantity = parseFloat(document.getElementById('product-quantity').value);
+    if (!quantity || quantity <= 0) return showStatus('Vui lòng nhập số lượng hợp lệ!', true);
+    
+    const product = selectedProduct; 
+    
+    if (!product) return showStatus('Lỗi: Không tìm thấy sản phẩm.', true); 
+    
+    if (quantity > product.stock) {
+        if (!confirm(`Sản phẩm "${name}" chỉ còn ${product.stock}. Bạn có muốn bán lố không?`)) {
+            document.getElementById('add-product-form').reset();
+            selectedProduct = null;
+            document.getElementById('product-search').focus();
+            return;
+        }
+    }
+    
+    const existingCartItem = currentCart.find(item => item.name === name);
+    if (existingCartItem) {
+        existingCartItem.quantity += quantity;
+    } else {
+        currentCart.push({ 
+            name: product.name, 
+            unit: product.unit, 
+            price: product.price, 
+            taxRate: product.taxRate, 
+            quantity: quantity 
+        });
+    }
+    
+    renderCart();
+    document.getElementById('add-product-form').reset();
+    selectedProduct = null; 
+    document.getElementById('product-search').focus();
+}
+
+function renderCart() {
+    const cartBody = document.getElementById('cart-body');
+    cartBody.innerHTML = '';
+    let totalPreTax = 0, totalPostTax = 0;
+    currentCart.forEach((item, index) => {
+        const thanhTienPreTax = item.price * item.quantity;
+        totalPreTax += thanhTienPreTax;
+        totalPostTax += thanhTienPreTax * (1 + item.taxRate);
+        const row = cartBody.insertRow();
+        row.innerHTML = `<td>${index + 1}</td><td>${item.name}</td><td>${item.unit}</td><td>${item.quantity}</td>
+                         <td>${currencyFormatter.format(item.price)}</td><td>${item.taxRate * 100}%</td>
+                         <td>${currencyFormatter.format(thanhTienPreTax)}</td>
+                         <td><button class="btn-secondary" onclick="removeCartItem(${index})">Xóa</button></td>`;
+    });
+    document.getElementById('cart-total-pretax').textContent = `Tổng cộng (Chưa thuế): ${currencyFormatter.format(totalPreTax)}`;
+    document.getElementById('cart-total-posttax').textContent = `Tổng cộng (Sau thuế): ${currencyFormatter.format(totalPostTax)}`;
+}
+
+function removeCartItem(index) { currentCart.splice(index, 1); renderCart(); }
+
+function clearCart(confirmNeeded = true) {
+    if (confirmNeeded && currentCart.length > 0 && !confirm('Bạn có chắc muốn xóa giỏ hàng và thông tin khách hàng hiện tại?')) return;
+    currentCart = [];
+    document.getElementById('customer-info-form').reset();
+    document.getElementById('invoice-date').valueAsDate = new Date();
+    renderCart();
+    if(confirmNeeded && currentCart.length > 0) showStatus('Đã xóa giỏ hàng, sẵn sàng cho đơn mới.', false);
+}
+
+// --- 5. XUẤT FILE EXCEL (HÓA ĐƠN & BÁO CÁO) ---
+function exportInvoiceFile() {
+    if (currentCart.length === 0) return showStatus('Giỏ hàng đang trống!', true);
+    const customerInfo = getCustomerInfo();
+    if (!customerInfo.name || !customerInfo.date) return showStatus('Vui lòng nhập Tên Khách Hàng và Ngày Hóa Đơn!', true);
+    
+    const transaction = {
+        customerInfo: customerInfo,
+        items: JSON.parse(JSON.stringify(currentCart)) // Deep copy
+    };
+    dailyTransactions.push(transaction);
+
+    const dataForExport = buildExcelData([transaction]); 
+    const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
+    const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    // Cập nhật tồn kho & lưu state
+    currentCart.forEach(item => updateInventory(item.name, item.quantity));
+    saveStateToStorage();
+
+    // Reset giỏ hàng
+    clearCart(false); 
+    showStatus(`Đã xuất hóa đơn "${fileName}" và cập nhật tồn kho. Giao dịch đã được lưu lại.`);
+    updateSessionStatus(); // (MỚI) Cập nhật giao diện (để cập nhật số lượng giao dịch)
+}
+
+function exportDailySalesReport() {
+    if (dailyTransactions.length === 0) {
+        showStatus('Không có giao dịch nào được ghi nhận trong ngày để xuất báo cáo.', true);
+        return;
+    }
+
+    const dataForExport = buildExcelData(dailyTransactions); 
+    const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'TongHopBanHang');
+    const fileName = `BaoCao_BanHang_TongHop_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    showStatus(`Đã xuất báo cáo bán hàng tổng hợp: "${fileName}"`);
+}
+
+
+function exportInventory() {
+    if (productDatabaseOriginal.length === 0) return showStatus('Chưa có dữ liệu tồn kho.', true);
+    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày']];
+    productDatabaseOriginal.forEach(originalProduct => {
+        const currentProduct = productDatabase.find(p => p.name === originalProduct.name);
+        const originalStock = originalProduct.stock;
+        const currentStock = currentProduct ? currentProduct.stock : originalStock;
+        inventoryData.push([
+            originalProduct.name, originalProduct.unit, originalStock,
+            originalStock - currentStock, currentStock
+        ]);
+    });
+    const worksheet = XLSX.utils.aoa_to_sheet(inventoryData);
+    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho');
+    const fileName = `BaoCao_TonKho_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    showStatus(`Đã xuất báo cáo tồn kho: "${fileName}"`);
+}
+
+// --- TÁI CẤU TRÚC: CÁC HÀM HELPER ---
+function getCustomerInfo() {
+    return {
+        name: document.getElementById('customer-name').value,
+        buyerName: document.getElementById('customer-buyer-name').value || document.getElementById('customer-name').value,
+        address: document.getElementById('customer-address').value,
+        tin: document.getElementById('customer-tin').value,
+        email: document.getElementById('customer-email').value,
+        paymentMethod: document.getElementById('customer-payment-method').value,
+        mdvcqhns: document.getElementById('customer-mdvcqhns').value,
+        cccd: document.getElementById('customer-cccd').value,
+        passport: document.getElementById('customer-passport').value,
+        date: document.getElementById('invoice-date').value
+    };
+}
+
+function updateInventory(productName, soldQuantity) {
+    const product = productDatabase.find(p => p.name === productName);
+    if (product) product.stock -= soldQuantity;
+}
+
+function buildExcelData(transactions) {
+    const data = [[
+        'Số thứ tự hóa đơn', 'Ngày hóa đơn', 'Tên khách hàng', 'Địa chỉ', 'Mã số thuế', 'Người mua hàng', 'Email', 
+        'Hình thức thanh toán', 'Thuế suất GTGT (%)', 'Tiền thuế GTGT', 'Tên hàng hóa/dịch vụ (*)', 'ĐVT', 
+        'Số lượng', 'Đơn giá', 'Thành tiền', 'MDVCQHVNS', 'Số CCCD', 'Số hộ chiếu'
+    ]];
+
+    let sttCounter = 0;
+    transactions.forEach(transaction => {
+        const { customerInfo, items } = transaction;
+        items.forEach((item, itemIndex) => {
+            sttCounter++;
+            const thueSuat = item.taxRate * 100;
+            const thanhTienPreTax = item.quantity * item.price;
+            const tienThueGTGT = thanhTienPreTax * item.taxRate;
+            
+            const isFirstItemOfTransaction = itemIndex === 0;
+
+            const row = [
+                sttCounter, // STT liên tục
+                isFirstItemOfTransaction ? customerInfo.date : '',
+                isFirstItemOfTransaction ? customerInfo.name : '',
+                isFirstItemOfTransaction ? customerInfo.address : '',
+                isFirstItemOfTransaction ? customerInfo.tin : '',
+                isFirstItemOfTransaction ? customerInfo.buyerName : '',
+                isFirstItemOfTransaction ? customerInfo.email : '',
+                isFirstItemOfTransaction ? customerInfo.paymentMethod : '',
+                thueSuat,
+                tienThueGTGT,
+                item.name, item.unit, item.quantity, item.price, thanhTienPreTax,
+                isFirstItemOfTransaction ? customerInfo.mdvcqhns : '',
+                isFirstItemOfTransaction ? customerInfo.cccd : '',
+                isFirstItemOfTransaction ? customerInfo.passport : ''
+            ];
+            data.push(row);
+        });
+    });
+    return data;
+}
+
+// --- Đồng hồ ---
+(function() {
+    const timeEl = document.getElementById('current-time-display');
+    const dateEl = document.getElementById('current-date-display');
+
+    if (!timeEl || !dateEl) return; 
+
+    const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('vi-VN', { hour12: false }); 
+        const dateString = now.toLocaleDateString('vi-VN', dateOptions);
+    
+        timeEl.textContent = timeString;
+        dateEl.textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+    }
+
+    updateClock(); 
+    setInterval(updateClock, 1000); 
+})(); 
+</script>
+</body>
+</html>
