@@ -143,108 +143,137 @@
 
 
         <!-- Vùng ứng dụng chính (MỚI: bọc trong fieldset) -->
-        <fieldset id="main-app-controls" disabled>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- 1. Tạo Đơn Hàng -->
-                <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-indigo-500">
-                    <h2 class="text-2xl font-semibold text-indigo-800 border-b border-slate-200 pb-3 mb-5 mt-0">1. Tạo Đơn Hàng</h2>
-                    <form id="add-product-form">
-                        <label class="font-medium text-slate-700 block mb-1">Tìm kiếm sản phẩm:</label>
-                        <input type="text" id="product-search" placeholder="Nhập tên sản phẩm..." class="input-base">
-                        
-                        <div id="product-search-results" class="max-h-52 overflow-y-auto border border-slate-300 rounded-md bg-white mb-4"></div>
-                        
-                        <label class="font-medium text-slate-700 block mb-1">Số lượng:</label>
-                        <input type="number" id="product-quantity" placeholder="Nhập số lượng" min="0" class="input-base">
-                        
-                        <button type="submit" class="btn-success w-full">Thêm vào giỏ hàng</button>
-                    </form>
-                </div>
+       <fieldset id="main-app-controls" disabled>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <!-- 2. Thông Tin Khách Hàng -->
-                <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-indigo-500">
-                    <h2 class="text-2xl font-semibold text-indigo-800 border-b border-slate-200 pb-3 mb-5 mt-0">2. Thông Tin Khách Hàng</h2>
-                    <form id="customer-info-form">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5">
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">Tên khách hàng:</label>
-                                <input type="text" id="customer-name" required class="input-base">
-                            </div>
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">Người mua hàng:</label>
-                                <input type="text" id="customer-buyer-name" class="input-base">
-                            </div>
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">Địa chỉ:</label>
-                                <input type="text" id="customer-address" class="input-base">
-                            </div>
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">Mã số thuế:</label>
-                                <input type="text" id="customer-tin" class="input-base">
-                            </div>
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">Email:</label>
-                                <input type="email" id="customer-email" class="input-base">
-                            </div>
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">Hình thức thanh toán:</label>
-                                <input type="text" id="customer-payment-method" value="Chuyển khoản" class="input-base">
-                            </div>
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">MDVCQHVNS:</label>
-                                <input type="text" id="customer-mdvcqhns" class="input-base">
-                            </div>
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">Số CCCD:</label>
-                                <input type="text" id="customer-cccd" class="input-base">
-                            </div>
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">Số hộ chiếu:</label>
-                                <input type="text" id="customer-passport" class="input-base">
-                            </div>
-                            <div>
-                                <label class="font-medium text-slate-700 block mb-1">Ngày hóa đơn:</label>
-                                <input type="date" id="invoice-date" class="input-base">
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+    <!-- 1. Tạo Đơn Hàng -->
+    <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200">
+      <h2 class="text-2xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
+        <span class="inline-block w-1.5 h-6 bg-indigo-500 rounded"></span>
+        1. Tạo Đơn Hàng
+      </h2>
 
-            <!-- 3. Giỏ Hàng Hiện Tại -->
-            <div class="bg-white rounded-lg shadow-lg p-6 border-t-4 border-indigo-500 md:col-span-2 mt-6">
-                <h2 class="text-2xl font-semibold text-indigo-800 border-b border-slate-200 pb-3 mb-5 mt-0">3. Giỏ Hàng Hiện Tại</h2>
-                
-                <div class="overflow-x-auto">
-                    <table id="cart-table" class="w-full border-collapse mt-5 min-w-[768px]">
-                        <thead>
-                            <tr>
-                                <th>STT</th> 
-                                <th>Tên hàng hóa/dịch vụ</th> 
-                                <th>ĐVT</th> 
-                                <th>Số lượng</th>
-                                <th>Đơn giá (Chưa thuế)</th> 
-                                <th>Thuế suất (%)</th> 
-                                <th>Thành tiền (Chưa thuế)</th> 
-                                <th>Xóa</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cart-body"></tbody> 
-                    </table>
-                </div>
-                
-                <div id="cart-total-container" class="text-right mt-6 space-y-2">
-                    <div id="cart-total-pretax" class="text-lg text-slate-600">Tổng cộng (Chưa thuế): 0 VNĐ</div>
-                    <div id="cart-total-posttax" class="text-3xl font-bold text-red-600">Tổng cộng (Sau thuế): 0 VNĐ</div>
-                </div>
-                
-                <div class="mt-6 border-t border-slate-200 pt-6">
-                    <button id="export-invoice-btn" class="btn-primary">Xuất Hóa Đơn Này</button>
-                    <button id="clear-cart-btn" class="btn-secondary">Tạo Đơn Hàng Mới</button>
-                </div>
-            </div>
-        </fieldset> <!-- Hết fieldset -->
+      <form id="add-product-form" class="space-y-4">
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Tìm kiếm sản phẩm:</label>
+          <input type="text" id="product-search" placeholder="Nhập tên sản phẩm..." class="input-base" />
+        </div>
+
+        <div id="product-search-results"
+             class="max-h-52 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-inner mb-2">
+        </div>
+
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Số lượng:</label>
+          <input type="number" id="product-quantity" placeholder="Nhập số lượng" min="0" class="input-base" />
+        </div>
+
+        <button type="submit"
+                class="w-full px-5 py-2.5 rounded-lg font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-400 transition-colors">
+          Thêm vào giỏ hàng
+        </button>
+      </form>
     </div>
+
+    <!-- 2. Thông Tin Khách Hàng -->
+    <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200">
+      <h2 class="text-2xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
+        <span class="inline-block w-1.5 h-6 bg-indigo-500 rounded"></span>
+        2. Thông Tin Khách Hàng
+      </h2>
+
+      <form id="customer-info-form" class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Tên khách hàng:</label>
+          <input type="text" id="customer-name" required class="input-base" />
+        </div>
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Người mua hàng:</label>
+          <input type="text" id="customer-buyer-name" class="input-base" />
+        </div>
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Địa chỉ:</label>
+          <input type="text" id="customer-address" class="input-base" />
+        </div>
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Mã số thuế:</label>
+          <input type="text" id="customer-tin" class="input-base" />
+        </div>
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Email:</label>
+          <input type="email" id="customer-email" class="input-base" />
+        </div>
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Hình thức thanh toán:</label>
+          <input type="text" id="customer-payment-method" value="Chuyển khoản" class="input-base" />
+        </div>
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">MDVCQHVNS:</label>
+          <input type="text" id="customer-mdvcqhns" class="input-base" />
+        </div>
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Số CCCD:</label>
+          <input type="text" id="customer-cccd" class="input-base" />
+        </div>
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Số hộ chiếu:</label>
+          <input type="text" id="customer-passport" class="input-base" />
+        </div>
+        <div>
+          <label class="font-medium text-gray-700 block mb-1">Ngày hóa đơn:</label>
+          <input type="date" id="invoice-date" class="input-base" />
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Giỏ Hàng Hiện Tại -->
+  <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200 md:col-span-2 mt-6">
+    <h2 class="text-2xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
+      <span class="inline-block w-1.5 h-6 bg-indigo-500 rounded"></span>
+      3. Giỏ Hàng Hiện Tại
+    </h2>
+
+    <div class="overflow-x-auto rounded-lg border border-gray-200">
+      <table id="cart-table" class="w-full border-collapse text-sm text-left min-w-[768px]">
+        <thead class="bg-gray-50 text-gray-700 uppercase text-xs tracking-wider">
+          <tr>
+            <th class="px-4 py-3">STT</th>
+            <th class="px-4 py-3">Tên hàng hóa/dịch vụ</th>
+            <th class="px-4 py-3">ĐVT</th>
+            <th class="px-4 py-3">Số lượng</th>
+            <th class="px-4 py-3">Đơn giá (Chưa thuế)</th>
+            <th class="px-4 py-3">Thuế suất (%)</th>
+            <th class="px-4 py-3">Thành tiền (Chưa thuế)</th>
+            <th class="px-4 py-3 text-center">Xóa</th>
+          </tr>
+        </thead>
+        <tbody id="cart-body" class="divide-y divide-gray-200"></tbody>
+      </table>
+    </div>
+
+    <div id="cart-total-container" class="text-right mt-6 space-y-2">
+      <div id="cart-total-pretax" class="text-lg text-gray-600">
+        Tổng cộng (Chưa thuế): 0 VNĐ
+      </div>
+      <div id="cart-total-posttax" class="text-3xl font-bold text-red-600">
+        Tổng cộng (Sau thuế): 0 VNĐ
+      </div>
+    </div>
+
+    <div class="mt-6 border-t border-gray-200 pt-6 flex flex-wrap gap-3 justify-end">
+      <button id="export-invoice-btn"
+              class="px-5 py-2.5 rounded-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-400 transition-colors">
+        Xuất Hóa Đơn Này
+      </button>
+      <button id="clear-cart-btn"
+              class="px-5 py-2.5 rounded-lg font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors">
+        Tạo Đơn Hàng Mới
+      </button>
+    </div>
+  </div>
+</fieldset>
+
     
 <footer class="bg-white border-t border-gray-200 py-6 px-4 text-center text-sm text-gray-500">
   <p>
