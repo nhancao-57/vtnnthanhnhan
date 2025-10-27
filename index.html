@@ -97,17 +97,14 @@
 </header>
 
 
-    <!-- Thanh trạng thái phiên (MỚI) -->
-            <div id="session-status-bar" class="text-center p-3 font-medium status-session-inactive" role="status">
+    <div id="session-status-bar" class="text-center p-3 font-medium status-session-inactive" role="status">
                 Đang tải...
             </div>
 
             <div class="max-w-7xl mx-auto p-4 md:p-6">
-                <!-- Vùng chứa thông báo tạm thời -->
                 <div id="status-container"></div>
                 
-                <!-- Card Quản lý Phiên -->
-        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200 md:col-span-2 mb-6">
+                <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200 md:col-span-2 mb-6">
         <h2 class="text-2xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
             <span class="inline-block w-1.5 h-6 bg-indigo-500 rounded"></span>
             Phiên Làm Việc
@@ -142,11 +139,9 @@
         </div>
 
 
-        <!-- Vùng ứng dụng chính (MỚI: bọc trong fieldset) -->
-       <fieldset id="main-app-controls" disabled>
+        <fieldset id="main-app-controls" disabled>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-    <!-- 1. Tạo Đơn Hàng -->
     <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200">
       <h2 class="text-2xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
         <span class="inline-block w-1.5 h-6 bg-indigo-500 rounded"></span>
@@ -175,7 +170,6 @@
       </form>
     </div>
 
-    <!-- 2. Thông Tin Khách Hàng -->
     <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200">
       <h2 class="text-2xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
         <span class="inline-block w-1.5 h-6 bg-indigo-500 rounded"></span>
@@ -227,7 +221,6 @@
     </div>
   </div>
 
-  <!-- 3. Giỏ Hàng Hiện Tại -->
   <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200 md:col-span-2 mt-6">
     <h2 class="text-2xl font-semibold text-gray-900 flex items-center gap-2 mb-4">
       <span class="inline-block w-1.5 h-6 bg-indigo-500 rounded"></span>
@@ -245,7 +238,7 @@
             <th class="px-4 py-3">Đơn giá (Chưa thuế)</th>
             <th class="px-4 py-3">Thuế suất (%)</th>
             <th class="px-4 py-3">Thành tiền (Chưa thuế)</th>
-            <th class="px-4 py-3 text-center">Xóa</th>
+            <th class="px-4 py-3">Tiền thuế</th> <th class="px-4 py-3">Thành tiền (Sau thuế)</th> <th class="px-4 py-3 text-center">Xóa</th>
           </tr>
         </thead>
         <tbody id="cart-body" class="divide-y divide-gray-200"></tbody>
@@ -551,23 +544,37 @@ function handleAddProduct(e) {
     document.getElementById('product-search').focus();
 }
 
+// ===== BẮT ĐẦU THAY ĐỔI JAVASCRIPT =====
 function renderCart() {
     const cartBody = document.getElementById('cart-body');
     cartBody.innerHTML = '';
     let totalPreTax = 0, totalPostTax = 0;
+    
     currentCart.forEach((item, index) => {
         const thanhTienPreTax = item.price * item.quantity;
+        const tienThue = thanhTienPreTax * item.taxRate; // TÍNH TIỀN THUẾ
+        const thanhTienPostTax = thanhTienPreTax + tienThue; // TÍNH THÀNH TIỀN SAU THUẾ
+
         totalPreTax += thanhTienPreTax;
-        totalPostTax += thanhTienPreTax * (1 + item.taxRate);
+        totalPostTax += thanhTienPostTax; // Cập nhật tổng sau thuế
+        
         const row = cartBody.insertRow();
-        row.innerHTML = `<td>${index + 1}</td><td>${item.name}</td><td>${item.unit}</td><td>${item.quantity}</td>
-                         <td>${currencyFormatter.format(item.price)}</td><td>${item.taxRate * 100}%</td>
+        
+        // Cập nhật row.innerHTML để thêm 2 cột mới
+        row.innerHTML = `<td>${index + 1}</td>
+                         <td>${item.name}</td>
+                         <td>${item.unit}</td>
+                         <td>${item.quantity}</td>
+                         <td>${currencyFormatter.format(item.price)}</td>
+                         <td>${item.taxRate * 100}%</td>
                          <td>${currencyFormatter.format(thanhTienPreTax)}</td>
-                         <td><button class="btn-secondary" onclick="removeCartItem(${index})">Xóa</button></td>`;
+                         <td>${currencyFormatter.format(tienThue)}</td> <td>${currencyFormatter.format(thanhTienPostTax)}</td> <td class="text-center"><button class="btn-secondary" onclick="removeCartItem(${index})">Xóa</button></td>`;
     });
+    
     document.getElementById('cart-total-pretax').textContent = `Tổng cộng (Chưa thuế): ${currencyFormatter.format(totalPreTax)}`;
     document.getElementById('cart-total-posttax').textContent = `Tổng cộng (Sau thuế): ${currencyFormatter.format(totalPostTax)}`;
 }
+// ===== KẾT THÚC THAY ĐỔI JAVASCRIPT =====
 
 function removeCartItem(index) { currentCart.splice(index, 1); renderCart(); }
 
