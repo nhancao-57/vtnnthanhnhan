@@ -501,12 +501,25 @@ function renderCart() {
 function removeCartItem(index) { currentCart.splice(index, 1); renderCart(); }
 
 function clearCart(confirmNeeded = true) {
-    if (confirmNeeded && currentCart.length > 0 && !confirm('Bạn có chắc muốn xóa giỏ hàng và thông tin khách hàng hiện tại?')) return;
+    // 1. (MỚI) Thêm kiểm tra này ở đầu
+    if (currentCart.length === 0) return; 
+
+    // 2. (MỚI) Lưu lại trạng thái *trước khi* xóa
+    const wasCartNotEmpty = currentCart.length > 0; 
+
+    if (confirmNeeded && !confirm('Bạn có chắc muốn xóa giỏ hàng và thông tin khách hàng hiện tại?')) {
+        return;
+    }
+
     currentCart = [];
     document.getElementById('customer-info-form').reset();
     document.getElementById('invoice-date').valueAsDate = new Date();
     renderCart();
-    if(confirmNeeded && currentCart.length > 0) showStatus('Đã xóa giỏ hàng, sẵn sàng cho đơn mới.', false);
+
+    // 3. (SỬA) Kiểm tra biến đã lưu, thay vì currentCart.length
+    if (confirmNeeded && wasCartNotEmpty) {
+        showStatus('Đã xóa giỏ hàng, sẵn sàng cho đơn mới.', false);
+    }
 }
 
 // --- 5. XUẤT FILE EXCEL (HÓA ĐƠN & BÁO CÁO) ---
