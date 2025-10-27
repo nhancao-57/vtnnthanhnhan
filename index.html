@@ -6,6 +6,9 @@
     <title>Phần mềm Quản lý bán hàng - VTNN Thành Nhân</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e1e1e">
+
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
     
     <style type="text/tailwindcss">
@@ -955,5 +958,14 @@ function exportEmptyInventory() {
 }
 
 </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('✅ Service Worker registered!'))
+        .catch(err => console.error('Service Worker registration failed:', err));
+    }
+  </script>
+  
 </body>
 </html>

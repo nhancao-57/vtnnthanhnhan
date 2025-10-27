@@ -1,0 +1,21 @@
+{
+  "name": "Phần mềm Bán hàng - VTNN Thành Nhân",
+  "short_name": "VTNN Thành Nhân",
+  "description": "Phần mềm quản lý bán hàng cho cửa hàng VTNN Thành Nhân.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e1e1e",
+  "icons": [
+    {
+      "src": "/images/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
