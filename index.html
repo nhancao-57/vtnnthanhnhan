@@ -20,6 +20,9 @@
             .btn-secondary { @apply btn-base bg-slate-500 hover:bg-slate-600; }
             .btn-success { @apply btn-base bg-emerald-600 hover:bg-emerald-700; }
             .btn-danger { @apply btn-base bg-red-600 hover:bg-red-700; }
+            /* (MỚI) Nút dành cho developer */
+            .btn-warning { @apply btn-base bg-amber-500 hover:bg-amber-600; }
+
 
             /* 3. Định nghĩa style cơ bản cho input */
             .input-base {
@@ -68,6 +71,20 @@
             }
             fieldset:disabled .bg-white {
                 @apply bg-slate-50; /* Làm mờ nền của các card */
+            }
+
+            /* (MỚI) 8. Style cho Modal Nâng cao */
+            .modal-overlay {
+                @apply fixed inset-0 bg-black bg-opacity-60 z-[99] flex items-center justify-center p-4 transition-opacity duration-200;
+            }
+            .modal-content {
+                @apply bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg transform scale-100 transition-transform duration-200;
+            }
+            .modal-overlay.hidden {
+                @apply opacity-0 pointer-events-none;
+            }
+            .modal-overlay.hidden .modal-content {
+                @apply scale-95;
             }
         }
     </style>
@@ -266,11 +283,65 @@
     </div>
   </div>
 </fieldset>
+</div> <!-- Đóng thẻ max-w-7xl -->
 
+<!-- (MỚI) Modal Chế độ Nâng cao -->
+<div id="advanced-modal" class="modal-overlay hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <!-- Nền overlay, khi click thì đóng modal -->
+  <div id="modal-overlay-bg" class="fixed inset-0"></div>
+
+  <div class="modal-content relative">
+    <!-- Tiêu đề và nút đóng -->
+    <div class="flex justify-between items-center mb-4">
+      <h3 id="modal-title" class="text-xl font-semibold text-gray-900">
+        Chế độ Nâng cao (Developer)
+      </h3>
+      <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Nội dung Modal -->
+    <div class="space-y-5">
+      <!-- Feature 1: Bypass CSDL -->
+      <div>
+        <h4 class="font-medium text-gray-800 mb-2">Kiểm thử Hóa đơn</h4>
+        <button id="dev-bypass-btn" class="btn-warning w-full text-left !py-2 !px-4">
+          Bypass Nhập CSDL: <span class="font-bold">[TẮT]</span>
+        </button>
+        <p class="text-sm text-gray-500 mt-1 px-1">
+          Cho phép nhập sản phẩm thủ công (tên, số lượng) vào giỏ hàng mà không cần tải CSDL.
+        </p>
+      </div>
+      
+      <!-- Feature 2: Xuất file trống -->
+      <div>
+        <h4 class="font-medium text-gray-800 mb-2">Xuất Template (Trống)</h4>
+        <div class="flex flex-wrap gap-2">
+            <button id="export-empty-invoice-btn" class="btn-secondary !py-2 !px-4 flex-1">Hóa Đơn</button>
+            <button id="export-empty-sales-btn" class="btn-secondary !py-2 !px-4 flex-1">Báo Cáo Bán Hàng</button>
+            <button id="export-empty-inventory-btn" class="btn-secondary !py-2 !px-4 flex-1">Báo Cáo Tồn Kho</button>
+        </div>
+        <p class="text-sm text-gray-500 mt-1 px-1">
+          Xuất các file mẫu (chỉ có tiêu đề) để kiểm tra định dạng.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
     
 <footer class="bg-white border-t border-gray-200 py-6 px-4 text-center text-sm text-gray-500">
   <p>
-    © 2025 <span class="font-medium text-gray-700">Cửa hàng VTNN Thành Nhân</span> — Phiên bản <span class="font-semibold">1.2</span>
+    © 2025 <span class="font-medium text-gray-700">Cửa hàng VTNN Thành Nhân</span> — Phiên bản <span class="font-semibold">1.3</span>
+  </p>
+  <!-- (MỚI) Nút mở Modal Nâng cao -->
+  <p class="mt-2">
+    <button id="advanced-mode-btn" class="text-xs text-gray-400 hover:text-indigo-500 transition-colors">
+      Chế độ nâng cao
+    </button>
   </p>
 </footer>
 
@@ -282,6 +353,7 @@ let productDatabaseOriginal = [];
 let currentCart = []; 
 let dailyTransactions = []; 
 let selectedProduct = null; 
+let devBypassMode = false; // (MỚI) Cờ cho chế độ developer
 
 // --- 1. KHỞI TẠO & SỰ KIỆN ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -296,6 +368,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('product-search').addEventListener('keyup', handleProductSearch);
     document.getElementById('export-invoice-btn').addEventListener('click', exportInvoiceFile);
     document.getElementById('clear-cart-btn').addEventListener('click', clearCart);
+
+    // (MỚI) Gán sự kiện cho các nút Nâng cao
+    document.getElementById('advanced-mode-btn').addEventListener('click', showAdvancedModal);
+    document.getElementById('modal-close-btn').addEventListener('click', hideAdvancedModal);
+    document.getElementById('modal-overlay-bg').addEventListener('click', hideAdvancedModal);
+    
+    document.getElementById('dev-bypass-btn').addEventListener('click', toggleBypassMode);
+    document.getElementById('export-empty-invoice-btn').addEventListener('click', exportEmptyInvoice);
+    document.getElementById('export-empty-sales-btn').addEventListener('click', exportEmptySalesReport);
+    document.getElementById('export-empty-inventory-btn').addEventListener('click', exportEmptyInventory);
 });
 
 // --- CÁC HÀM TIỆN ÍCH (Hiển thị thông báo tạm thời) ---
@@ -312,7 +394,7 @@ function showStatus(message, isError = false) {
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 
-// --- (MỚI) QUẢN LÝ TRẠNG THÁI PHIÊN & GIAO DIỆN ---
+// --- (SỬA) QUẢN LÝ TRẠNG THÁI PHIÊN & GIAO DIỆN ---
 function updateSessionStatus() {
     const statusBar = document.getElementById('session-status-bar');
     const isSessionActive = productDatabase.length > 0;
@@ -325,16 +407,19 @@ function updateSessionStatus() {
         statusBar.className = 'text-center p-3 font-medium status-session-inactive';
     }
     
-    toggleAppControls(isSessionActive);
+    // (SỬA) Truyền cờ devBypassMode vào
+    toggleAppControls(isSessionActive, devBypassMode);
 }
 
-function toggleAppControls(isSessionActive) {
+// (SỬA) Thêm tham số isBypassActive
+function toggleAppControls(isSessionActive, isBypassActive = false) {
     // Bật/tắt các nút quản lý phiên
     document.getElementById('export-inventory-btn').disabled = !isSessionActive;
     document.getElementById('end-session-btn').disabled = !isSessionActive;
 
-    // Bật/tắt toàn bộ phần còn lại của ứng dụng
-    document.getElementById('main-app-controls').disabled = !isSessionActive;
+    // (SỬA) Bật/tắt toàn bộ phần còn lại của ứng dụng
+    // Sẽ bật nếu (session đang hoạt động) HOẶC (bypass đang hoạt động)
+    document.getElementById('main-app-controls').disabled = !isSessionActive && !isBypassActive;
     
     // Nút "Bắt đầu phiên" luôn được bật, nhưng đổi văn bản nếu phiên đang hoạt động
     const loadDbBtn = document.getElementById('load-db-btn');
@@ -478,6 +563,14 @@ function handleProductSearch() {
     const query = document.getElementById('product-search').value.toLowerCase();
     const resultsContainer = document.getElementById('product-search-results');
     resultsContainer.innerHTML = '';
+    
+    // (MỚI) Nếu đang ở bypass mode, không cần tìm kiếm
+    if (devBypassMode) {
+        selectedProduct = null;
+        resultsContainer.innerHTML = '<div class="p-2 text-sm text-center text-gray-500 italic">Chế độ Bypass: Nhập tên & số lượng rồi Thêm.</div>';
+        return;
+    }
+
     if (query.length < 2) {
         selectedProduct = null; 
         return;
@@ -502,9 +595,44 @@ function selectProduct(product) {
     document.getElementById('product-quantity').focus();
 }
 
+// (SỬA) Thêm logic cho Bypass Mode
 function handleAddProduct(e) {
     e.preventDefault(); 
     
+    // (MỚI) Logic cho Bypass Mode
+    if (devBypassMode && !selectedProduct) {
+        const name = document.getElementById('product-search').value.trim();
+        const quantity = parseFloat(document.getElementById('product-quantity').value);
+        
+        if (!name || !quantity || quantity <= 0) {
+            return showStatus('Bypass Mode: Vui lòng nhập Tên SP và Số Lượng hợp lệ!', true);
+        }
+        
+        // Tạo một sản phẩm giả với các giá trị mặc định/an toàn
+        const dummyProduct = { 
+            name: name, 
+            unit: 'Cái', // Đơn vị mặc định
+            price: 0,     // Giá mặc định 0
+            taxRate: 0, // Thuế mặc định 0
+            quantity: quantity 
+        };
+
+        const existingCartItem = currentCart.find(item => item.name === name);
+        if (existingCartItem) {
+            existingCartItem.quantity += quantity;
+        } else {
+            currentCart.push(dummyProduct);
+        }
+        
+        renderCart();
+        document.getElementById('add-product-form').reset();
+        selectedProduct = null; 
+        document.getElementById('product-search').focus();
+        showStatus(`Bypass Mode: Đã thêm "${name}" vào giỏ hàng.`, false);
+        return; // Thoát khỏi hàm
+    }
+
+    // --- Logic Gốc (chỉ chạy nếu không phải bypass mode) ---
     if (!selectedProduct) {
         return showStatus('Vui lòng chọn một sản phẩm từ danh sách!', true);
     }
@@ -568,7 +696,7 @@ function renderCart() {
                          <td>${currencyFormatter.format(item.price)}</td>
                          <td>${item.taxRate * 100}%</td>
                          <td>${currencyFormatter.format(thanhTienPreTax)}</td>
-                         <td>${currencyFormatter.format(tienThue)}</td> <td>${currencyFormatter.format(thanhTienPostTax)}</td> <td class="text-center"><button class="btn-secondary" onclick="removeCartItem(${index})">Xóa</button></td>`;
+                         <td>${currencyFormatter.format(tienThue)}</td> <td>${currencyFormatter.format(thanhTienPostTax)}</td> <td class="text-center"><button class="btn-secondary !py-2 !px-3 !text-sm" onclick="removeCartItem(${index})">Xóa</button></td>`;
     });
     
     document.getElementById('cart-total-pretax').textContent = `Tổng cộng (Chưa thuế): ${currencyFormatter.format(totalPreTax)}`;
@@ -619,13 +747,19 @@ function exportInvoiceFile() {
     const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
     XLSX.writeFile(workbook, fileName);
 
-    // Cập nhật tồn kho & lưu state
-    currentCart.forEach(item => updateInventory(item.name, item.quantity));
-    saveStateToStorage();
+    // (SỬA) Chỉ cập nhật tồn kho nếu không ở bypass mode
+    if (!devBypassMode) {
+        currentCart.forEach(item => updateInventory(item.name, item.quantity));
+        saveStateToStorage();
+    }
 
     // Reset giỏ hàng
     clearCart(false); 
-    showStatus(`Đã xuất hóa đơn "${fileName}" và cập nhật tồn kho. Giao dịch đã được lưu lại.`);
+    if (devBypassMode) {
+        showStatus(`Bypass Mode: Đã xuất hóa đơn "${fileName}". Tồn kho KHÔNG thay đổi.`);
+    } else {
+        showStatus(`Đã xuất hóa đơn "${fileName}" và cập nhật tồn kho. Giao dịch đã được lưu lại.`);
+    }
     updateSessionStatus(); // (MỚI) Cập nhật giao diện (để cập nhật số lượng giao dịch)
 }
 
@@ -748,6 +882,78 @@ function buildExcelData(transactions) {
     updateClock(); 
     setInterval(updateClock, 1000); 
 })(); 
+
+// --- (MỚI) CÁC HÀM NÂNG CAO (DEVELOPER) ---
+
+/** Hiển thị modal nâng cao */
+function showAdvancedModal() {
+    document.getElementById('advanced-modal').classList.remove('hidden');
+}
+
+/** Ẩn modal nâng cao */
+function hideAdvancedModal() {
+    document.getElementById('advanced-modal').classList.add('hidden');
+}
+
+/** Bật/tắt chế độ Bypass CSDL */
+function toggleBypassMode() {
+    devBypassMode = !devBypassMode;
+    
+    // Cập nhật nút
+    const btn = document.getElementById('dev-bypass-btn');
+    const statusSpan = btn.querySelector('span');
+    if (devBypassMode) {
+        statusSpan.textContent = '[BẬT]';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-warning');
+        showStatus('Chế độ Bypass CSDL đã BẬT. Giờ bạn có thể thêm sản phẩm thủ công.', false);
+    } else {
+        statusSpan.textContent = '[TẮT]';
+        btn.classList.add('btn-warning');
+        btn.classList.remove('btn-success');
+        showStatus('Chế độ Bypass CSDL đã TẮT.', false);
+    }
+
+    // Cập nhật lại toàn bộ giao diện
+    updateSessionStatus();
+    // Xóa kết quả tìm kiếm (nếu có) để hiển thị thông báo bypass
+    handleProductSearch(); 
+}
+
+/** Xuất file mẫu Hóa đơn (trống) */
+function exportEmptyInvoice() {
+    const dataForExport = buildExcelData([]); // Truyền mảng rỗng
+    const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon_Trong');
+    XLSX.writeFile(workbook, 'Template_HoaDon_Trong.xlsx');
+    showStatus('Đã xuất template Hóa Đơn (trống).', false);
+    hideAdvancedModal();
+}
+
+/** Xuất file mẫu Báo cáo Bán hàng (trống) */
+function exportEmptySalesReport() {
+    const dataForExport = buildExcelData([]); // Tái sử dụng hàm
+    const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'TongHopBanHang_Trong');
+    XLSX.writeFile(workbook, 'Template_BaoCao_BanHang_TongHop_Trong.xlsx');
+    showStatus('Đã xuất template Báo Cáo Bán Hàng (trống).', false);
+    hideAdvancedModal();
+}
+
+/** Xuất file mẫu Báo cáo Tồn kho (trống) */
+function exportEmptyInventory() {
+    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày']];
+    const worksheet = XLSX.utils.aoa_to_sheet(inventoryData);
+    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho_Trong');
+    XLSX.writeFile(workbook, 'Template_BaoCao_TonKho_Trong.xlsx');
+    showStatus('Đã xuất template Báo Cáo Tồn Kho (trống).', false);
+    hideAdvancedModal();
+}
+
 </script>
 </body>
 </html>
