@@ -74,14 +74,28 @@
 </head>
 <body class="bg-slate-100 font-sans text-slate-900 leading-relaxed">
 
-    <header class="bg-indigo-700 text-white p-5 shadow-lg flex items-center justify-between">
-        <h1 class="text-2xl md:text-3xl font-medium">Quản lý bán hàng - Cửa hàng VTNN Thành Nhân</h1>
-        
-        <div id="session-time-container" class="text-right hidden md:block">
-            <div class="text-lg font-medium" id="current-time-display">--:--:--</div>
-            <div class="text-sm opacity-80" id="current-date-display">----------</div>
-        </div>
-    </header>
+<header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+  <div class="flex items-center gap-3">
+    <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M3 7h18M3 12h18M3 17h18" />
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-xl md:text-2xl font-semibold text-gray-900 tracking-tight">
+        Phần mềm Quản lý bán hàng
+      </h1>
+      <p class="text-sm text-gray-500 hidden sm:block">Cửa hàng VTNN Thành Nhân</p>
+    </div>
+  </div>
+
+  <div id="session-time-container" class="hidden md:flex flex-col text-right">
+    <div class="text-lg font-semibold text-gray-800" id="current-time-display">--:--:--</div>
+    <div class="text-sm text-gray-500" id="current-date-display">----------</div>
+  </div>
+</header>
+
 
     <!-- Thanh trạng thái phiên (MỚI) -->
     <div id="session-status-bar" class="text-center p-3 font-medium status-session-inactive" role="status">
@@ -208,9 +222,12 @@
         </fieldset> <!-- Hết fieldset -->
     </div>
     
-    <footer class="text-center p-6 mt-8 text-slate-500 border-t border-slate-300">
-        <p>Cửa hàng VTNN Thành Nhân &copy; 2025 - Phiên bản 1.2 </p>
-    </footer>
+<footer class="bg-white border-t border-gray-200 py-6 px-4 text-center text-sm text-gray-500">
+  <p>
+    © 2025 <span class="font-medium text-gray-700">Cửa hàng VTNN Thành Nhân</span> — Phiên bản <span class="font-semibold">1.2</span>
+  </p>
+</footer>
+
 
 <script>
 // --- BIẾN TOÀN CỤC ---
