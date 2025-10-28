@@ -1093,6 +1093,7 @@ function updateInventory(productName, soldQuantity) {
 
 /**
  * Xây dựng dữ liệu Hóa đơn phẳng (theo yêu cầu A-M)
+ * (SỬA ĐỔI) - Logic gộp STT cho nhiều sản phẩm
  */
 function buildFlatInvoiceData(transactions) {
     const data = [[
@@ -1100,17 +1101,50 @@ function buildFlatInvoiceData(transactions) {
         'Hình thức thanh toán', 'Tên hàng hóa/dịch vụ', 'Đơn vị tính', 'Số lượng', 'Đơn giá', 'Thành tiền'
     ]];
 
-    let sttCounter = 0;
+    let sttCounter = 0; // Tăng mỗi giao dịch
     transactions.forEach(transaction => {
+        sttCounter++; // STT cho giao dịch này
         const { customerInfo, items } = transaction;
-        items.forEach((item) => {
-            sttCounter++;
+
+        items.forEach((item, itemIndex) => { // Lấy chỉ số của sản phẩm
             const thanhTienPreTax = item.quantity * item.price;
-            const row = [
-                sttCounter, customerInfo.date, customerInfo.name, customerInfo.address, customerInfo.tin, 
-                customerInfo.buyerName, customerInfo.email, customerInfo.paymentMethod,
-                item.name, item.unit, item.quantity, item.price, thanhTienPreTax
-            ];
+            let row;
+
+            if (itemIndex === 0) {
+                // Sản phẩm ĐẦU TIÊN của giao dịch
+                row = [
+                    sttCounter,                 // A: Số thứ tự
+                    customerInfo.date,          // B: Ngày hóa đơn
+                    customerInfo.name,          // C: Tên khách hàng
+                    customerInfo.address,       // D: Địa chỉ
+                    customerInfo.tin,           // E: Mã số thuế
+                    customerInfo.buyerName,     // F: Người mua hàng
+                    customerInfo.email,         // G: Email
+                    customerInfo.paymentMethod, // H: Hình thức thanh toán
+                    item.name,                  // I: Tên hàng hóa/dịch vụ
+                    item.unit,                  // J: Đơn vị tính
+                    item.quantity,              // K: Số lượng
+                    item.price,                 // L: Đơn giá
+                    thanhTienPreTax             // M: Thành tiền
+                ];
+            } else {
+                // Sản phẩm THỨ HAI TRỞ ĐI của cùng giao dịch
+                row = [
+                    sttCounter,                 // A: Số thứ tự (GIỮ NGUYÊN)
+                    '',                         // B: (Trống)
+                    '',                         // C: (Trống)
+                    '',                         // D: (Trống)
+                    '',                         // E: (Trống)
+                    '',                         // F: (Trống)
+                    '',                         // G: (Trống)
+                    '',                         // H: (Trống)
+                    item.name,                  // I: Tên hàng hóa/dịch vụ
+                    item.unit,                  // J: Đơn vị tính
+                    item.quantity,              // K: Số lượng
+                    item.price,                 // L: Đơn giá
+                    thanhTienPreTax             // M: Thành tiền
+                ];
+            }
             data.push(row);
         });
     });
