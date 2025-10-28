@@ -195,7 +195,7 @@
     </div>
     <div>
       <h1 class="text-lg md:text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
-        Quản lý bán hàng
+        Phần mềm Quản lý bán hàng
       </h1>
       <p class="text-sm text-gray-500 dark:text-slate-400 hidden sm:block">VTNN Thành Nhân</p>
     </div>
@@ -268,6 +268,10 @@
             </button>
             <button id="export-inventory-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
                 Xuất Tồn Kho
+            </button>
+            <!-- (MỚI) Nút xem HĐ đã xuất -->
+            <button id="view-exports-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
+                Xem HĐ đã xuất
             </button>
             <button id="end-session-btn" disabled class="btn-danger flex-grow sm:flex-grow-0">
                 Kết thúc phiên
@@ -476,6 +480,46 @@
     </div>
 </div>
 
+<!-- (MỚI) Modal Danh sách Hóa đơn đã xuất -->
+<div id="exported-invoices-modal" class="modal-overlay hidden" aria-labelledby="exported-invoices-modal-title" role="dialog" aria-modal="true">
+    <div id="modal-overlay-bg-exports" class="fixed inset-0"></div>
+    <div class="modal-content relative !max-w-3xl"> <!-- Rộng hơn một chút -->
+        <div class="flex justify-between items-center mb-4">
+            <h3 id="exported-invoices-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
+                Hóa đơn đã xuất (Phiên này)
+            </h3>
+            <button id="modal-close-btn-exports" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">
+            Đây là danh sách các hóa đơn đã được tạo và xuất file trong phiên làm việc này. Bạn có thể tải lại nếu lỡ hủy hộp thoại tải về.
+        </p>
+
+        <!-- Bảng danh sách -->
+        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 max-h-[60vh] overflow-y-auto">
+            <table class="table-base !min-w-full mobile-table-optimise">
+                <thead>
+                    <tr>
+                        <th>Tên khách hàng</th>
+                        <th>Thời gian xuất</th>
+                        <th>Tên file</th>
+                        <th class="text-center">Tải lại</th>
+                    </tr>
+                </thead>
+                <tbody id="exported-invoices-list" class="divide-y divide-gray-200 dark:divide-slate-700">
+                    <!-- Dữ liệu sẽ được JS chèn vào đây -->
+                    <!-- <tr><td colspan="4" class="text-center italic text-slate-500 dark:text-slate-400 py-6">Chưa có hóa đơn nào được xuất trong phiên này.</td></tr> -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
     
 <footer class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 py-6 px-4 text-center text-sm text-gray-500 dark:text-slate-400">
   <p>
@@ -495,6 +539,7 @@ let productDatabase = [];
 let productDatabaseOriginal = [];
 let currentCart = []; 
 let dailyTransactions = []; 
+let exportedInvoicesLog = []; // (MỚI) Log hóa đơn đã xuất
 let selectedProduct = null; 
 let devBypassMode = false;
 
@@ -510,6 +555,11 @@ let onConfirmCallback = () => {}; // Callback để gọi khi nhấn OK
 let themeToggleBtn = null;
 let themeIconSun = null;
 let themeIconMoon = null;
+
+// (MỚI) Biến cho Modal Hóa đơn đã xuất
+let exportedInvoicesModal = null;
+let exportedInvoicesList = null;
+
 
 // --- 1. KHỞI TẠO & SỰ KIỆN ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -527,8 +577,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Khởi tạo
     document.getElementById('invoice-date').valueAsDate = new Date();
-    loadStateFromStorage(); // Hàm này sẽ tự động gọi updateSessionStatus
+    loadStateFromStorage(); // Hàm này sẽ tự động gọi updateSessionStatus & updateExportedInvoicesButtonState
     setupThemeToggle(); // (MỚI)
+    setupExportedInvoicesModal(); // (MỚI)
     startClock(); // (MỚI)
 
     // Gán sự kiện cho các nút
@@ -655,6 +706,7 @@ function updateSessionStatus() {
     }
     
     toggleAppControls(isSessionActive, devBypassMode);
+    updateExportedInvoicesButtonState(); // (MỚI) Cập nhật nút HĐ đã xuất
 }
 
 function toggleAppControls(isSessionActive, isBypassActive = false) {
@@ -674,6 +726,15 @@ function toggleAppControls(isSessionActive, isBypassActive = false) {
     }
 }
 
+// (MỚI) Cập nhật trạng thái nút "Xem HĐ đã xuất"
+function updateExportedInvoicesButtonState() {
+    const btn = document.getElementById('view-exports-btn');
+    if (!btn) return; // Guard clause
+    const isSessionActive = productDatabase.length > 0;
+    // Chỉ bật khi phiên hoạt động VÀ có log hóa đơn
+    btn.disabled = !(isSessionActive && exportedInvoicesLog.length > 0);
+}
+
 
 // --- 2. QUẢN LÝ DỮ LIỆU & STATE (LOCALSTORAGE) ---
 function saveStateToStorage() {
@@ -683,9 +744,12 @@ function saveStateToStorage() {
         transactions: dailyTransactions 
     };
     localStorage.setItem('inventoryState', JSON.stringify(state));
+    // (MỚI) Log hóa đơn được lưu riêng (trong hàm exportInvoiceFile)
+    // vì nó không thuộc về "state" của tồn kho
 }
 
 function loadStateFromStorage() {
+    // 1. Tải state tồn kho
     const savedState = localStorage.getItem('inventoryState');
     if (savedState) {
         try {
@@ -701,7 +765,20 @@ function loadStateFromStorage() {
             localStorage.removeItem('inventoryState');
         }
     }
-    updateSessionStatus();
+    
+    // 2. (MỚI) Tải log hóa đơn đã xuất
+    const savedLogs = localStorage.getItem('exportedInvoicesLog');
+    if (savedLogs) {
+        try {
+            exportedInvoicesLog = JSON.parse(savedLogs);
+        } catch (e) {
+            console.error('Lỗi khôi phục exportedInvoicesLog:', e);
+            localStorage.removeItem('exportedInvoicesLog');
+            exportedInvoicesLog = [];
+        }
+    }
+    
+    updateSessionStatus(); // Hàm này sẽ tự động gọi updateExportedInvoicesButtonState
 }
 
 // --- 3. TẢI DATABASE & QUẢN LÝ PHIÊN ---
@@ -725,6 +802,8 @@ function handleFileLoad() {
                 productDatabaseOriginal = [];
                 dailyTransactions = [];
                 currentCart = [];
+                exportedInvoicesLog = []; // (MỚI) Xóa log cũ khi nạp CSDL mới
+                localStorage.removeItem('exportedInvoicesLog'); // (MỚI)
                 
                 const COL = {TIN: 16, TEN: 17, DVT: 18, GIA: 19, THUE: 20};
                 let productsLoaded = 0;
@@ -766,7 +845,7 @@ function handleFileLoad() {
         // (SỬA) Dùng modal xác nhận
         showConfirmModal(
             'Bắt đầu phiên mới?',
-            'Bạn có chắc chắn muốn bắt đầu lại phiên làm việc? TẤT CẢ giao dịch đã lưu trong ngày sẽ bị XÓA.',
+            'Bạn có chắc chắn muốn bắt đầu lại phiên làm việc? TẤT CẢ giao dịch và log hóa đơn đã lưu sẽ bị XÓA.',
             startLoad // Hàm startLoad sẽ là callback
         );
     } else {
@@ -787,7 +866,9 @@ function endSession() {
         productDatabaseOriginal = [];
         dailyTransactions = [];
         currentCart = [];
+        exportedInvoicesLog = []; // (MỚI) Xóa log
         localStorage.removeItem('inventoryState');
+        localStorage.removeItem('exportedInvoicesLog'); // (MỚI) Xóa log
         
         renderCart();
         document.getElementById('customer-info-form').reset();
@@ -1016,6 +1097,25 @@ function exportInvoiceFile() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
     const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    
+    // (MỚI) Lưu vào log để tải lại, TRƯỚC KHI gọi writeFile
+    try {
+        const exportLogEntry = {
+            id: Date.now(),
+            customerName: customerInfo.name,
+            fileName: fileName,
+            timestamp: new Date().toISOString(),
+            dataForExport: dataForExport, // Store the data
+            worksheetName: 'HoaDon'
+        };
+        exportedInvoicesLog.push(exportLogEntry);
+        localStorage.setItem('exportedInvoicesLog', JSON.stringify(exportedInvoicesLog));
+    } catch (e) {
+        console.error("Lỗi khi lưu log hóa đơn:", e);
+        // Không chặn việc xuất file, chỉ log lỗi
+        console.warn("Đã xuất hóa đơn, nhưng có lỗi khi lưu vào log phiên.");
+    }
+
     XLSX.writeFile(workbook, fileName);
 
     if (!devBypassMode) {
@@ -1029,7 +1129,7 @@ function exportInvoiceFile() {
     } else {
         showStatus(`Đã xuất hóa đơn "${fileName}" và cập nhật tồn kho. Giao dịch đã được lưu lại.`);
     }
-    updateSessionStatus(); 
+    updateSessionStatus(); // Sẽ tự động gọi updateExportedInvoicesButtonState
 }
 
 function exportDailySalesReport() {
@@ -1215,6 +1315,64 @@ function showAdvancedModal() {
 function hideAdvancedModal() {
     document.getElementById('advanced-modal').classList.add('hidden');
 }
+
+// --- (MỚI) QUẢN LÝ MODAL HÓA ĐƠN ĐÃ XUẤT ---
+function setupExportedInvoicesModal() {
+    exportedInvoicesModal = document.getElementById('exported-invoices-modal');
+    exportedInvoicesList = document.getElementById('exported-invoices-list');
+    
+    document.getElementById('view-exports-btn').addEventListener('click', showExportedInvoicesModal);
+    document.getElementById('modal-close-btn-exports').addEventListener('click', hideExportedInvoicesModal);
+    document.getElementById('modal-overlay-bg-exports').addEventListener('click', hideExportedInvoicesModal);
+}
+
+function showExportedInvoicesModal() {
+    exportedInvoicesList.innerHTML = ''; // Xóa nội dung cũ
+    
+    if (exportedInvoicesLog.length === 0) {
+        exportedInvoicesList.innerHTML = '<tr><td colspan="4" class="text-center italic text-slate-500 dark:text-slate-400 py-6" data-label="">Chưa có hóa đơn nào được xuất trong phiên này.</td></tr>';
+    } else {
+        // Hiển thị từ mới nhất đến cũ nhất
+        exportedInvoicesLog.slice().reverse().forEach(logEntry => {
+            const row = exportedInvoicesList.insertRow();
+            // Thêm class cho <td> để mobile-table-optimise hoạt động
+            row.innerHTML = `
+                <td data-label="Khách hàng" class="font-medium">${logEntry.customerName}</td>
+                <td data-label="Thời gian">${new Date(logEntry.timestamp).toLocaleString('vi-VN')}</td>
+                <td data-label="Tên file" class="text-sm italic">${logEntry.fileName}</td>
+                <td class_="cell-action text-center">
+                    <button class="btn-primary !py-1.5 !px-3 !text-sm w-full" onclick="reExportInvoice(${logEntry.id})">
+                        Tải lại
+                    </button>
+                </td>
+            `;
+        });
+    }
+    exportedInvoicesModal.classList.remove('hidden');
+}
+
+function hideExportedInvoicesModal() {
+    exportedInvoicesModal.classList.add('hidden');
+}
+
+function reExportInvoice(id) {
+    const logEntry = exportedInvoicesLog.find(log => log.id === id);
+    if (!logEntry) { 
+        return showStatus('Lỗi: Không tìm thấy hóa đơn để tải lại!', true); 
+    }
+    
+    try {
+        const worksheet = XLSX.utils.aoa_to_sheet(logEntry.dataForExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, logEntry.worksheetName || 'HoaDon');
+        XLSX.writeFile(workbook, logEntry.fileName);
+        showStatus(`Đã tải lại: ${logEntry.fileName}`, false);
+    } catch (e) {
+        console.error("Lỗi khi tải lại hóa đơn:", e);
+        showStatus(`Lỗi khi tải lại: ${e.message}`, true);
+    }
+}
+
 
 function toggleBypassMode() {
     devBypassMode = !devBypassMode;
