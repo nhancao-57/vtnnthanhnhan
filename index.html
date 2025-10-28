@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- Thêm class 'dark' ở đây nếu được lưu trong localStorage -->
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -14,13 +13,8 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#4f46e5"> <!-- Cập nhật theme-color -->
-    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <meta name="theme-color" content="#4f46e5"> <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
 
-    <!-- 
-      (MỚI) Script chặn FOUC (Flash of Unstyled Content) cho Dark Mode
-      Phải đặt ở đây (trong <head>) để chạy trước khi <body> được render.
-    -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -181,12 +175,9 @@
     </style>
 </head>
 
-<!-- (SỬA) Thêm class cho body -->
 <body class="bg-slate-100 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-200 leading-relaxed transition-colors duration-200">
 
-<!-- (SỬA) Header với Dark Mode Toggle -->
 <header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-  <!-- Phần Logo/Title -->
   <div class="flex items-center gap-3">
     <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -201,21 +192,16 @@
     </div>
   </div>
 
-  <!-- Phần Đồng hồ & Nút Dark Mode -->
   <div class="flex items-center gap-3 md:gap-6">
-    <!-- Đồng hồ (Ẩn trên mobile) -->
     <div id="session-time-container" class="hidden md:flex flex-col text-right">
       <div class="text-lg font-semibold text-gray-800 dark:text-slate-200" id="current-time-display">--:--:--</div>
       <div class="text-sm text-gray-500 dark:text-slate-400" id="current-date-display">----------</div>
     </div>
     
-    <!-- (MỚI) Nút Dark Mode Toggle -->
     <button id="theme-toggle-btn" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Toggle dark mode">
-      <!-- Icon Sun (Hiện ở Dark Mode) -->
       <svg id="theme-icon-sun" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
       </svg>
-      <!-- Icon Moon (Hiện ở Light Mode) -->
       <svg id="theme-icon-moon" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
       </svg>
@@ -228,11 +214,9 @@
     Đang tải...
 </div>
 
-<!-- (SỬA) Thêm padding-top để không bị thanh status che -->
 <div class="max-w-7xl mx-auto p-4 md:p-6 pt-8">
     <div id="status-container" class="sticky top-[125px] z-30"></div>
     
-    <!-- (SỬA) Card Phiên làm việc -->
     <div class="card-base md:col-span-2 mb-6">
         <h2 class="card-title">
             <span class="card-title-bar"></span>
@@ -244,7 +228,6 @@
             Kết thúc phiên sẽ <span class="text-indigo-600 dark:text-indigo-400 font-medium">xuất tất cả báo cáo</span> và <span class="text-red-500 font-medium">xóa dữ liệu</span>.
         </p>
 
-        <!-- (MỚI) Restyle File Input -->
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
             <input 
                 type="file" 
@@ -252,11 +235,9 @@
                 accept=".xlsx, .xls, .csv" 
                 class="hidden" 
             >
-            <!-- Nút giả cho file input -->
             <label for="file-input" class="btn-secondary !py-2.5 !px-5 shrink-0 cursor-pointer text-center">
                 Chọn tệp CSDL...
             </label>
-            <!-- Nơi hiển thị tên file -->
             <span id="file-name-display" class="text-sm text-slate-500 dark:text-slate-400 italic truncate">
                 Chưa chọn tệp nào.
             </span>
@@ -269,7 +250,6 @@
             <button id="export-inventory-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
                 Xuất Tồn Kho
             </button>
-            <!-- (MỚI) Nút xem HĐ đã xuất -->
             <button id="view-exports-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
                 Xem HĐ đã xuất
             </button>
@@ -283,7 +263,6 @@
     <fieldset id="main-app-controls" disabled>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            <!-- (SỬA) Card 1: Tạo Đơn Hàng -->
             <div class="card-base">
                 <h2 class="card-title">
                     <span class="card-title-bar"></span>
@@ -296,6 +275,25 @@
                         <input type="text" id="product-search" placeholder="Nhập tên sản phẩm..." class="input-base" />
                     </div>
 
+                    <div id="bypass-inputs" class="hidden space-y-4 pt-2">
+                        <p class="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                          Chế độ Bypass: Nhập thông tin sản phẩm thủ công
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label for="product-unit" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">ĐVT:</label>
+                                <input type="text" id="product-unit" placeholder="Cái, Chai, Bao..." class="input-base !py-2.5 !text-sm" />
+                            </div>
+                            <div>
+                                <label for="product-price" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Đơn giá (Chưa thuế):</label>
+                                <input type="number" id="product-price" placeholder="0" min="0" class="input-base !py-2.5 !text-sm" />
+                            </div>
+                            <div>
+                                <label for="product-tax" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Thuế suất (%):</label>
+                                <input type="number" id="product-tax" placeholder="0" min="0" value="0" class="input-base !py-2.5 !text-sm" />
+                            </div>
+                        </div>
+                        <div class="h-px bg-slate-200 dark:bg-slate-700"></div> </div>
                     <div id="product-search-results"
                         class="max-h-52 overflow-y-auto border border-gray-300 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-600 shadow-inner mb-2">
                     </div>
@@ -311,7 +309,6 @@
                 </form>
             </div>
 
-            <!-- (SỬA) Card 2: Thông Tin Khách Hàng -->
             <div class="card-base">
                 <h2 class="card-title">
                     <span class="card-title-bar"></span>
@@ -357,21 +354,18 @@
                     </div>
                     <div>
                         <label for="invoice-date" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Ngày hóa đơn:</label>
-                        <!-- (SỬA) Thêm style cho date picker dark mode -->
                         <input type="date" id="invoice-date" class="input-base [color-scheme:light] dark:[color-scheme:dark]" />
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- (SỬA) Card 3: Giỏ Hàng -->
         <div class="card-base md:col-span-2 mt-6">
             <h2 class="card-title">
                 <span class="card-title-bar"></span>
                 3. Giỏ Hàng Hiện Tại
             </h2>
 
-            <!-- (SỬA) Tối ưu table cho mobile -->
             <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
                 <table id="cart-table" class="table-base mobile-table-optimise">
                     <thead class="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 uppercase text-xs tracking-wider">
@@ -389,8 +383,7 @@
                         </tr>
                     </thead>
                     <tbody id="cart-body" class="divide-y divide-gray-200 dark:divide-slate-700">
-                        <!-- Các dòng <tr> sẽ được JS thêm vào đây -->
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
@@ -413,10 +406,7 @@
             </div>
         </div>
     </fieldset>
-</div> <!-- Đóng thẻ max-w-7xl -->
-
-<!-- (SỬA) Modal Nâng cao (Thêm style Dark Mode) -->
-<div id="advanced-modal" class="modal-overlay hidden" aria-labelledby="advanced-modal-title" role="dialog" aria-modal="true">
+</div> <div id="advanced-modal" class="modal-overlay hidden" aria-labelledby="advanced-modal-title" role="dialog" aria-modal="true">
     <div id="modal-overlay-bg-adv" class="fixed inset-0"></div>
     <div class="modal-content relative">
         <div class="flex justify-between items-center mb-4">
@@ -437,14 +427,14 @@
                     Bypass Nhập CSDL: <span class="font-bold">[TẮT]</span>
                 </button>
                 <p class="text-sm text-gray-500 dark:text-slate-400 mt-1 px-1">
-                    Cho phép nhập sản phẩm thủ công vào giỏ hàng mà không cần tải CSDL.
+                    Cho phép nhập sản phẩm thủ công (tên, giá, thuế) vào giỏ hàng.
                 </p>
             </div>
             
             <div>
                 <h4 class="font-medium text-gray-800 dark:text-slate-300 mb-2">Xuất Template (Trống)</h4>
                 <div class="flex flex-wrap gap-2">
-                    <button id="export-empty-invoice-btn" class="btn-secondary !py-2 !px-4 flex-1">Hóa Đơn</button>
+                    <button id="export-empty-invoice-btn" class="btn-secondary !py-2 !px-4 flex-1">Hóa Đơn</DVT</button>
                     <button id="export-empty-sales-btn" class="btn-secondary !py-2 !px-4 flex-1">Báo Cáo Bán Hàng</button>
                     <button id="export-empty-inventory-btn" class="btn-secondary !py-2 !px-4 flex-1">Báo Cáo Tồn Kho</button>
                 </div>
@@ -456,11 +446,7 @@
     </div>
 </div>
 
-<!-- 
-  (MỚI) Modal Xác Nhận (Thay thế cho window.confirm())
--->
 <div id="confirm-modal" class="modal-overlay hidden" aria-labelledby="confirm-modal-title" role="dialog" aria-modal="true">
-    <!-- Nền mờ, không có chức năng click-để-đóng (cố ý) -->
     <div class="fixed inset-0"></div>
     <div class="modal-content relative">
         <h3 id="confirm-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-3">
@@ -480,11 +466,9 @@
     </div>
 </div>
 
-<!-- (MỚI) Modal Danh sách Hóa đơn đã xuất -->
 <div id="exported-invoices-modal" class="modal-overlay hidden" aria-labelledby="exported-invoices-modal-title" role="dialog" aria-modal="true">
     <div id="modal-overlay-bg-exports" class="fixed inset-0"></div>
-    <div class="modal-content relative !max-w-3xl"> <!-- Rộng hơn một chút -->
-        <div class="flex justify-between items-center mb-4">
+    <div class="modal-content relative !max-w-4xl"> <div class="flex justify-between items-center mb-4">
             <h3 id="exported-invoices-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
                 Hóa đơn đã xuất (Phiên này)
             </h3>
@@ -499,7 +483,6 @@
             Đây là danh sách các hóa đơn đã được tạo và xuất file trong phiên làm việc này. Bạn có thể tải lại nếu lỡ hủy hộp thoại tải về.
         </p>
 
-        <!-- Bảng danh sách -->
         <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 max-h-[60vh] overflow-y-auto">
             <table class="table-base !min-w-full mobile-table-optimise">
                 <thead>
@@ -507,13 +490,11 @@
                         <th>Tên khách hàng</th>
                         <th>Thời gian xuất</th>
                         <th>Tên file</th>
-                        <th class="text-center">Tải lại</th>
+                        <th>Loại</th> <th class="text-center">Tải lại</th>
                     </tr>
                 </thead>
                 <tbody id="exported-invoices-list" class="divide-y divide-gray-200 dark:divide-slate-700">
-                    <!-- Dữ liệu sẽ được JS chèn vào đây -->
-                    <!-- <tr><td colspan="4" class="text-center italic text-slate-500 dark:text-slate-400 py-6">Chưa có hóa đơn nào được xuất trong phiên này.</td></tr> -->
-                </tbody>
+                    </tbody>
             </table>
         </div>
 
@@ -523,7 +504,7 @@
     
 <footer class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 py-6 px-4 text-center text-sm text-gray-500 dark:text-slate-400">
   <p>
-    © 2025 <span class="font-medium text-gray-700 dark:text-slate-300">Cửa hàng VTNN Thành Nhân</span> — Phiên bản <span class="font-semibold">1.4</span>
+    © 2025 <span class="font-medium text-gray-700 dark:text-slate-300">Cửa hàng VTNN Thành Nhân</span> — Phiên bản <span class="font-semibold">1.5</span>
   </p>
   <p class="mt-2">
     <button id="advanced-mode-btn" class="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
@@ -854,13 +835,14 @@ function handleFileLoad() {
 }
 
 function endSession() {
-    if (productDatabase.length === 0) {
+    if (productDatabase.length === 0 && dailyTransactions.length === 0) {
         return showStatus('Chưa có dữ liệu nào trong phiên. Vui lòng bắt đầu phiên trước.', true);
     }
 
     const doEndSession = () => {
-        exportDailySalesReport();
-        exportInventory();
+        // Chỉ xuất nếu có dữ liệu
+        if (dailyTransactions.length > 0) exportDailySalesReport();
+        if (productDatabaseOriginal.length > 0 || dailyTransactions.length > 0) exportInventory();
 
         productDatabase = [];
         productDatabaseOriginal = [];
@@ -904,7 +886,7 @@ function handleProductSearch() {
     
     if (devBypassMode) {
         selectedProduct = null;
-        resultsContainer.innerHTML = '<div class="p-2 text-sm text-center text-gray-500 dark:text-slate-400 italic">Chế độ Bypass: Nhập tên & số lượng rồi Thêm.</div>';
+        resultsContainer.innerHTML = '<div class="p-2 text-sm text-center text-gray-500 dark:text-slate-400 italic">Chế độ Bypass: Nhập tên & thông tin ở trên.</div>';
         return;
     }
 
@@ -941,6 +923,7 @@ function clearProductSelection() {
 function handleAddProduct(e) {
     e.preventDefault(); 
     
+    // (*** SỬA ***) Logic cho Bypass Mode
     if (devBypassMode && !selectedProduct) {
         const name = document.getElementById('product-search').value.trim();
         const quantity = parseFloat(document.getElementById('product-quantity').value);
@@ -949,22 +932,37 @@ function handleAddProduct(e) {
             return showStatus('Bypass Mode: Vui lòng nhập Tên SP và Số Lượng hợp lệ!', true);
         }
         
+        // (*** MỚI ***) Lấy thông tin từ input bypass
+        const unit = document.getElementById('product-unit').value.trim() || 'Cái';
+        const price = parseFloat(document.getElementById('product-price').value) || 0;
+        const taxRate = (parseFloat(document.getElementById('product-tax').value) || 0) / 100.0; // Chuyển % về số thập phân
+
         const dummyProduct = { 
-            name: name, unit: 'Cái', price: 0, taxRate: 0, quantity: quantity 
+            name: name, unit: unit, price: price, taxRate: taxRate, quantity: quantity 
         };
 
         const existingCartItem = currentCart.find(item => item.name === name);
         if (existingCartItem) {
+            // Cập nhật thông tin nếu thêm lại (giá, thuế có thể đổi)
             existingCartItem.quantity += quantity;
+            existingCartItem.unit = unit;
+            existingCartItem.price = price;
+            existingCartItem.taxRate = taxRate;
         } else {
             currentCart.push(dummyProduct);
         }
         
         renderCart();
-        document.getElementById('add-product-form').reset();
-        clearProductSelection(); // (MỚI)
+        // Reset các trường
+        document.getElementById('product-search').value = '';
+        document.getElementById('product-quantity').value = '';
+        document.getElementById('product-unit').value = '';
+        document.getElementById('product-price').value = '';
+        document.getElementById('product-tax').value = '0';
+        
+        clearProductSelection();
         document.getElementById('product-search').focus();
-        showStatus(`Bypass Mode: Đã thêm "${name}" vào giỏ hàng.`, false);
+        showStatus(`Bypass Mode: Đã thêm/cập nhật "${name}" vào giỏ hàng.`, false);
         return;
     }
 
@@ -1061,6 +1059,12 @@ function clearCart(confirmNeeded = true) {
         currentCart = [];
         document.getElementById('customer-info-form').reset();
         document.getElementById('invoice-date').valueAsDate = new Date();
+        
+        // (*** MỚI ***) Reset luôn form bypass
+        document.getElementById('product-unit').value = '';
+        document.getElementById('product-price').value = '';
+        document.getElementById('product-tax').value = '0';
+        
         renderCart();
         if (confirmNeeded) {
             showStatus('Đã xóa giỏ hàng, sẵn sàng cho đơn mới.', false);
@@ -1085,6 +1089,30 @@ function exportInvoiceFile() {
     const customerInfo = getCustomerInfo();
     if (!customerInfo.name || !customerInfo.date) return showStatus('Vui lòng nhập Tên Khách Hàng và Ngày Hóa Đơn!', true);
     
+    // (*** MỚI ***) Xác định loại hóa đơn (Trong CSDL, Ngoài CSDL, Hỗn hợp)
+    let hasDbProduct = false;
+    let hasBypassProduct = false;
+    const dbProductNames = new Set(productDatabaseOriginal.map(p => p.name));
+    
+    for (const item of currentCart) {
+        if (dbProductNames.has(item.name)) {
+            hasDbProduct = true;
+        } else {
+            hasBypassProduct = true;
+        }
+    }
+    
+    let invoiceType = '';
+    if (hasDbProduct && hasBypassProduct) {
+        invoiceType = 'Hỗn hợp';
+    } else if (hasBypassProduct) {
+        invoiceType = 'Ngoài CSDL';
+    } else {
+        invoiceType = 'Trong CSDL';
+    }
+    // --- Kết thúc logic xác định loại
+    
+    
     const transaction = {
         customerInfo: customerInfo,
         items: JSON.parse(JSON.stringify(currentCart)) // Deep copy
@@ -1098,7 +1126,7 @@ function exportInvoiceFile() {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
     const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
     
-    // (MỚI) Lưu vào log để tải lại, TRƯỚC KHI gọi writeFile
+    // (*** SỬA ***) Lưu vào log để tải lại, TRƯỚC KHI gọi writeFile
     try {
         const exportLogEntry = {
             id: Date.now(),
@@ -1106,7 +1134,8 @@ function exportInvoiceFile() {
             fileName: fileName,
             timestamp: new Date().toISOString(),
             dataForExport: dataForExport, // Store the data
-            worksheetName: 'HoaDon'
+            worksheetName: 'HoaDon',
+            invoiceType: invoiceType // (*** MỚI ***) Thêm loại hóa đơn
         };
         exportedInvoicesLog.push(exportLogEntry);
         localStorage.setItem('exportedInvoicesLog', JSON.stringify(exportedInvoicesLog));
@@ -1118,17 +1147,24 @@ function exportInvoiceFile() {
 
     XLSX.writeFile(workbook, fileName);
 
-    if (!devBypassMode) {
-        currentCart.forEach(item => updateInventory(item.name, item.quantity));
+    // (*** SỬA ***) Chỉ cập nhật tồn kho cho các sản phẩm "Trong CSDL"
+    let inventoryUpdated = false;
+    currentCart.forEach(item => {
+        if (dbProductNames.has(item.name)) { // Chỉ update nếu là hàng CSDL
+            updateInventory(item.name, item.quantity);
+            inventoryUpdated = true;
+        }
+    });
+    
+    if (inventoryUpdated) {
         saveStateToStorage();
+        showStatus(`Đã xuất hóa đơn "${fileName}" và cập nhật tồn kho (hàng CSDL). Giao dịch đã được lưu lại.`);
+    } else {
+        showStatus(`Đã xuất hóa đơn (ngoài CSDL) "${fileName}". Tồn kho KHÔNG thay đổi. Giao dịch đã được lưu lại.`);
     }
 
+
     clearCart(false); 
-    if (devBypassMode) {
-        showStatus(`Bypass Mode: Đã xuất hóa đơn "${fileName}". Tồn kho KHÔNG thay đổi.`);
-    } else {
-        showStatus(`Đã xuất hóa đơn "${fileName}" và cập nhật tồn kho. Giao dịch đã được lưu lại.`);
-    }
     updateSessionStatus(); // Sẽ tự động gọi updateExportedInvoicesButtonState
 }
 
@@ -1149,20 +1185,56 @@ function exportDailySalesReport() {
 }
 
 
+// (*** SỬA ***) Cập nhật báo cáo tồn kho
 function exportInventory() {
-    if (productDatabaseOriginal.length === 0) return showStatus('Chưa có dữ liệu tồn kho.', true);
-    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày']];
+    if (productDatabaseOriginal.length === 0 && dailyTransactions.length === 0) {
+        return showStatus('Chưa có dữ liệu tồn kho hoặc giao dịch nào.', true);
+    }
+    
+    // (*** MỚI ***) Thêm cột "Ghi chú"
+    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày', 'Ghi chú']];
+    
+    // 1. Xử lý hàng trong CSDL
+    const dbProductNames = new Set();
     productDatabaseOriginal.forEach(originalProduct => {
+        dbProductNames.add(originalProduct.name); // Thêm vào Set
         const currentProduct = productDatabase.find(p => p.name === originalProduct.name);
         const originalStock = originalProduct.stock;
         const currentStock = currentProduct ? currentProduct.stock : originalStock;
         inventoryData.push([
             originalProduct.name, originalProduct.unit, originalStock,
-            originalStock - currentStock, currentStock
+            originalStock - currentStock, currentStock,
+            '' // Ghi chú trống
         ]);
     });
+    
+    // 2. (*** MỚI ***) Xử lý hàng "Ngoài CSDL" (Bypass)
+    const bypassSales = new Map();
+    dailyTransactions.forEach(transaction => {
+        transaction.items.forEach(item => {
+            if (!dbProductNames.has(item.name)) { // Nếu không có trong CSDL
+                let entry = bypassSales.get(item.name) || { unit: item.unit, totalSold: 0 };
+                entry.totalSold += item.quantity;
+                bypassSales.set(item.name, entry);
+            }
+        });
+    });
+    
+    // Thêm hàng bypass vào báo cáo
+    bypassSales.forEach((data, name) => {
+        inventoryData.push([
+            name, 
+            data.unit, 
+            0, // Tồn đầu
+            data.totalSold, // Đã bán
+            -data.totalSold, // Tồn cuối (âm)
+            'Xuất ngoài CSDL' // Ghi chú
+        ]);
+    });
+
     const worksheet = XLSX.utils.aoa_to_sheet(inventoryData);
-    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+    // (*** SỬA ***) Thêm độ rộng cột Ghi chú
+    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho');
     const fileName = `BaoCao_TonKho_${new Date().toISOString().slice(0,10)}.xlsx`;
@@ -1316,7 +1388,7 @@ function hideAdvancedModal() {
     document.getElementById('advanced-modal').classList.add('hidden');
 }
 
-// --- (MỚI) QUẢN LÝ MODAL HÓA ĐƠN ĐÃ XUẤT ---
+// --- (*** SỬA ***) QUẢN LÝ MODAL HÓA ĐƠN ĐÃ XUẤT ---
 function setupExportedInvoicesModal() {
     exportedInvoicesModal = document.getElementById('exported-invoices-modal');
     exportedInvoicesList = document.getElementById('exported-invoices-list');
@@ -1330,17 +1402,18 @@ function showExportedInvoicesModal() {
     exportedInvoicesList.innerHTML = ''; // Xóa nội dung cũ
     
     if (exportedInvoicesLog.length === 0) {
-        exportedInvoicesList.innerHTML = '<tr><td colspan="4" class="text-center italic text-slate-500 dark:text-slate-400 py-6" data-label="">Chưa có hóa đơn nào được xuất trong phiên này.</td></tr>';
+        // (*** SỬA ***) Cập nhật colspan
+        exportedInvoicesList.innerHTML = '<tr><td colspan="5" class="text-center italic text-slate-500 dark:text-slate-400 py-6" data-label="">Chưa có hóa đơn nào được xuất trong phiên này.</td></tr>';
     } else {
         // Hiển thị từ mới nhất đến cũ nhất
         exportedInvoicesLog.slice().reverse().forEach(logEntry => {
             const row = exportedInvoicesList.insertRow();
-            // Thêm class cho <td> để mobile-table-optimise hoạt động
+            // (*** SỬA ***) Thêm cột "Loại"
             row.innerHTML = `
                 <td data-label="Khách hàng" class="font-medium">${logEntry.customerName}</td>
                 <td data-label="Thời gian">${new Date(logEntry.timestamp).toLocaleString('vi-VN')}</td>
                 <td data-label="Tên file" class="text-sm italic">${logEntry.fileName}</td>
-                <td class_="cell-action text-center">
+                <td data-label="Loại" class="font-medium">${logEntry.invoiceType || 'Trong CSDL'}</td> <td class="cell-action text-center">
                     <button class="btn-primary !py-1.5 !px-3 !text-sm w-full" onclick="reExportInvoice(${logEntry.id})">
                         Tải lại
                     </button>
@@ -1374,19 +1447,24 @@ function reExportInvoice(id) {
 }
 
 
+// (*** SỬA ***) Cập nhật logic Bật/Tắt Bypass Mode
 function toggleBypassMode() {
     devBypassMode = !devBypassMode;
     const btn = document.getElementById('dev-bypass-btn');
     const statusSpan = btn.querySelector('span');
+    const bypassDiv = document.getElementById('bypass-inputs');
+    
     if (devBypassMode) {
         statusSpan.textContent = '[BẬT]';
         btn.classList.add('btn-success');
         btn.classList.remove('btn-warning');
+        bypassDiv.classList.remove('hidden'); // (*** MỚI ***)
         showStatus('Chế độ Bypass CSDL đã BẬT. Giờ bạn có thể thêm sản phẩm thủ công.', false);
     } else {
         statusSpan.textContent = '[TẮT]';
         btn.classList.add('btn-warning');
         btn.classList.remove('btn-success');
+        bypassDiv.classList.add('hidden'); // (*** MỚI ***)
         showStatus('Chế độ Bypass CSDL đã TẮT.', false);
     }
     updateSessionStatus();
@@ -1413,10 +1491,11 @@ function exportEmptySalesReport() {
     hideAdvancedModal();
 }
 
+// (*** SỬA ***) Cập nhật template tồn kho
 function exportEmptyInventory() {
-    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày']];
+    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày', 'Ghi chú']];
     const worksheet = XLSX.utils.aoa_to_sheet(inventoryData);
-    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho_Trong');
     XLSX.writeFile(workbook, 'Template_BaoCao_TonKho_Trong.xlsx');
@@ -1426,16 +1505,5 @@ function exportEmptyInventory() {
 
 </script>
 
-  <!-- (SỬA) Xóa Service Worker - Gây lỗi khi update file -->
-  <!-- 
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(() => console.log('✅ Service Worker registered!'))
-          .catch(err => console.error('Service Worker registration failed:', err));
-      }
-    </script>
-  -->
-  
-</body>
+  </body>
 </html>
