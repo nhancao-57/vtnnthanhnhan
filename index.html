@@ -204,7 +204,7 @@
   <div class="flex items-center gap-3 md:gap-6">
     <div id="session-time-container" class="hidden md:flex flex-col text-right">
       <div class="text-lg font-semibold text-gray-800 dark:text-slate-200" id="current-time-display">--:--:--</div>
-      <div class="text-sm text-gray-500 dark:text-slate-400" id="current-date-display">----------</div>
+      <div class="text-sm text-gray-500 dark:text-slate-400" id="current-date-display">--/--/----</div>
     </div>
     
     <button id="theme-toggle-btn" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Toggle dark mode">
@@ -681,6 +681,38 @@ function showStatus(message, isError = false) {
 }
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+
+/**
+ * (MỚI) Formats a date object or a yyyy-mm-dd string into dd/mm/yyyy.
+ * @param {Date | string} dateInput The date object or string to format.
+ */
+function formatDateDDMMYYYY(dateInput) {
+    if (!dateInput) return '';
+    
+    let dateObj;
+    if (typeof dateInput === 'string' && dateInput.includes('-')) {
+        // Handle 'yyyy-mm-dd' string from <input type="date">
+        const parts = dateInput.split('-');
+        if (parts.length === 3) {
+            // new Date(year, monthIndex, day) - month is 0-indexed
+            dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+        } else {
+            dateObj = new Date(dateInput); // Fallback
+        }
+    } else {
+        dateObj = new Date(dateInput);
+    }
+    
+    // Check for invalid date
+    if (isNaN(dateObj.getTime())) {
+        return ''; // Return empty string for invalid dates
+    }
+
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const year = dateObj.getFullYear();
+    return `${day}/${month}/${year}`;
+}
 
 // --- QUẢN LÝ TRẠNG THÁI PHIÊN & GIAO DIỆN ---
 function updateSessionStatus() {
@@ -1263,7 +1295,7 @@ function getCustomerInfo() {
         mdvcqhns: document.getElementById('customer-mdvcqhns').value,
         cccd: document.getElementById('customer-cccd').value,
         passport: document.getElementById('customer-passport').value,
-        date: document.getElementById('invoice-date').value
+        date: document.getElementById('invoice-date').value // This returns 'yyyy-mm-dd'
     };
 }
 
@@ -1275,6 +1307,7 @@ function updateInventory(productName, soldQuantity) {
 /**
  * Xây dựng dữ liệu Hóa đơn phẳng (theo yêu cầu A-M)
  * (SỬA ĐỔI) - Logic gộp STT cho nhiều sản phẩm
+ * (*** SỬA - 2025-10-29 ***) - Áp dụng Math.round() cho giá trị tiền tệ
  */
 function buildFlatInvoiceData(transactions) {
     const data = [[
@@ -1288,14 +1321,19 @@ function buildFlatInvoiceData(transactions) {
         const { customerInfo, items } = transaction;
 
         items.forEach((item, itemIndex) => { // Lấy chỉ số của sản phẩm
-            const thanhTienPreTax = item.quantity * item.price;
+            const thanhTienPreTax = item.quantity * item.price; // Tính toán trên giá trị gốc
+            
+            // (*** SỬA ***) Áp dụng làm tròn theo yêu cầu (0 decimal places)
+            const roundedPrice = Math.round(item.price);
+            const roundedThanhTienPreTax = Math.round(thanhTienPreTax);
+            
             let row;
 
             if (itemIndex === 0) {
                 // Sản phẩm ĐẦU TIÊN của giao dịch
                 row = [
                     sttCounter,                 // A: Số thứ tự
-                    customerInfo.date,          // B: Ngày hóa đơn
+                    formatDateDDMMYYYY(customerInfo.date), // B: Ngày hóa đơn (SỬA)
                     customerInfo.name,          // C: Tên khách hàng
                     customerInfo.address,       // D: Địa chỉ
                     customerInfo.tin,           // E: Mã số thuế
@@ -1305,8 +1343,8 @@ function buildFlatInvoiceData(transactions) {
                     item.name,                  // I: Tên hàng hóa/dịch vụ
                     item.unit,                  // J: Đơn vị tính
                     item.quantity,              // K: Số lượng
-                    item.price,                 // L: Đơn giá
-                    thanhTienPreTax             // M: Thành tiền
+                    roundedPrice,               // L: Đơn giá (ĐÃ LÀM TRÒN)
+                    roundedThanhTienPreTax      // M: Thành tiền (ĐÃ LÀM TRÒN)
                 ];
             } else {
                 // Sản phẩm THỨ HAI TRỞ ĐI của cùng giao dịch
@@ -1322,8 +1360,8 @@ function buildFlatInvoiceData(transactions) {
                     item.name,                  // I: Tên hàng hóa/dịch vụ
                     item.unit,                  // J: Đơn vị tính
                     item.quantity,              // K: Số lượng
-                    item.price,                 // L: Đơn giá
-                    thanhTienPreTax             // M: Thành tiền
+                    roundedPrice,               // L: Đơn giá (ĐÃ LÀM TRÒN)
+                    roundedThanhTienPreTax      // M: Thành tiền (ĐÃ LÀM TRÒN)
                 ];
             }
             data.push(row);
@@ -1334,6 +1372,7 @@ function buildFlatInvoiceData(transactions) {
 
 /**
  * (GỐC - KHÔNG CÒN DÙNG) Xây dựng dữ liệu Báo Cáo Bán Hàng (chi tiết)
+ * (*** SỬA - 2025-10-29 ***) - Áp dụng Math.round() cho giá trị tiền tệ
  */
 function buildExcelData(transactions) {
     const data = [[
@@ -1349,6 +1388,12 @@ function buildExcelData(transactions) {
             const thueSuat = item.taxRate * 100;
             const thanhTienPreTax = item.quantity * item.price;
             const tienThueGTGT = thanhTienPreTax * item.taxRate;
+            
+            // (*** SỬA ***) Áp dụng làm tròn
+            const roundedPrice = Math.round(item.price);
+            const roundedThanhTienPreTax = Math.round(thanhTienPreTax);
+            const roundedTienThueGTGT = Math.round(tienThueGTGT);
+            
             const isFirstItemOfTransaction = itemIndex === 0;
             const row = [
                 sttCounter, 
@@ -1359,8 +1404,11 @@ function buildExcelData(transactions) {
                 isFirstItemOfTransaction ? customerInfo.buyerName : '',
                 isFirstItemOfTransaction ? customerInfo.email : '',
                 isFirstItemOfTransaction ? customerInfo.paymentMethod : '',
-                thueSuat, tienThueGTGT,
-                item.name, item.unit, item.quantity, item.price, thanhTienPreTax,
+                thueSuat, 
+                roundedTienThueGTGT, // (ĐÃ LÀM TRÒN)
+                item.name, item.unit, item.quantity, 
+                roundedPrice, // (ĐÃ LÀM TRÒN)
+                roundedThanhTienPreTax, // (ĐÃ LÀM TRÒN)
                 isFirstItemOfTransaction ? customerInfo.mdvcqhns : '',
                 isFirstItemOfTransaction ? customerInfo.cccd : '',
                 isFirstItemOfTransaction ? customerInfo.passport : ''
@@ -1376,14 +1424,19 @@ function startClock() {
     const timeEl = document.getElementById('current-time-display');
     const dateEl = document.getElementById('current-date-display');
     if (!timeEl || !dateEl) return; 
-    const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+    // (SỬA) Tùy chọn ngày đã bị xóa, sẽ dùng hàm formatDateDDMMYYYY
+    // const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
 
     function updateClock() {
         const now = new Date();
         const timeString = now.toLocaleTimeString('vi-VN', { hour12: false }); 
-        const dateString = now.toLocaleDateString('vi-VN', dateOptions);
+        // (SỬA) Sử dụng hàm format mới
+        // const dateString = now.toLocaleDateString('vi-VN', dateOptions);
+        const dateString = formatDateDDMMYYYY(now);
         timeEl.textContent = timeString;
-        dateEl.textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+        // (SỬA) Cập nhật textContent
+        // dateEl.textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+        dateEl.textContent = dateString;
     }
     updateClock(); 
     setInterval(updateClock, 1000); 
