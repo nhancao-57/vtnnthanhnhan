@@ -1,13 +1,21 @@
 {
-  "name": "Phần mềm Quản lý bán hàng - Cửa hàng VTNN Thành Nhân",
-  "short_name": "QLBH - VTNN Thành Nhân",
-  "start_url": "/index.html",
-  "scope": "/",
+  "name": "Phần mềm Quản lý bán hàng",
+  "short_name": "Quản lý bán hàng",
+  "description": "Ứng dụng quản lý bán hàng cho cửa hàng VTNN Thành Nhân",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2196f3",
+  "theme_color": "#4f46e5",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/images/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
