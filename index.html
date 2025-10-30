@@ -259,6 +259,9 @@
             <button id="export-inventory-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
                 Xuất Tồn Kho
             </button>
+            <button id="export-sales-report-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
+                Xuất BC Bán Hàng
+            </button>
             <button id="view-exports-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
                 Xem HĐ đã xuất
             </button>
@@ -415,7 +418,60 @@
             </div>
         </div>
     </fieldset>
-</div> <div id="advanced-modal" class="modal-overlay hidden" aria-labelledby="advanced-modal-title" role="dialog" aria-modal="true">
+</div> 
+<div id="info-modal" class="modal-overlay hidden" aria-labelledby="info-modal-title" role="dialog" aria-modal="true">
+    <div id="modal-overlay-bg-info" class="fixed inset-0"></div>
+    <div class="modal-content relative">
+        <div class="flex justify-between items-center mb-4">
+            <h3 id="info-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
+                Thông tin phần mềm
+            </h3>
+            <button id="modal-close-btn-info" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="space-y-3 text-gray-600 dark:text-slate-300">
+            <p><strong>Tên phần mềm:</strong> Phần mềm Quản lý bán hàng</p>
+            <p><strong>Đơn vị:</strong> Cửa hàng VTNN Thành Nhân</p>
+            <p><strong>Phiên bản:</strong> <span class="font-semibold text-indigo-600 dark:text-indigo-400">1.5</span></p>
+            <p class="mt-4 pt-4 border-t dark:border-slate-700 text-sm">Phần mềm này giúp quản lý việc xuất hóa đơn bán hàng và theo dõi tồn kho trong ngày.</p>
+        </div>
+    </div>
+</div>
+
+<div id="end-session-modal" class="modal-overlay hidden" aria-labelledby="end-session-modal-title" role="dialog" aria-modal="true">
+    <div class="fixed inset-0"></div>
+    <div class="modal-content relative">
+        <h3 id="end-session-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+            Kết thúc phiên làm việc
+        </h3>
+        <p class="text-gray-600 dark:text-slate-300 mb-6">
+            Chọn các báo cáo bạn muốn xuất trước khi kết thúc phiên.
+        </p>
+        <div class="space-y-4 mb-6">
+            <label class="flex items-center p-3 rounded-lg border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+                <input type="checkbox" id="end-session-check-sales" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:checked:bg-indigo-600" checked>
+                <span class="ml-3 font-medium text-gray-800 dark:text-slate-200">Xuất Báo Cáo Bán Hàng</span>
+            </label>
+            <label class="flex items-center p-3 rounded-lg border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
+                <input type="checkbox" id="end-session-check-inventory" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:checked:bg-indigo-600" checked>
+                <span class="ml-3 font-medium text-gray-800 dark:text-slate-200">Xuất Báo Cáo Tồn Kho</span>
+            </label>
+        </div>
+        <div class="flex flex-wrap gap-3 justify-end">
+            <button id="end-session-modal-cancel-btn" class="btn-secondary">
+                Hủy bỏ
+            </button>
+            <button id="end-session-modal-continue-btn" class="btn-primary">
+                Tiếp tục
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="advanced-modal" class="modal-overlay hidden" aria-labelledby="advanced-modal-title" role="dialog" aria-modal="true">
     <div id="modal-overlay-bg-adv" class="fixed inset-0"></div>
     <div class="modal-content relative">
         <div class="flex justify-between items-center mb-4">
@@ -519,6 +575,9 @@
     <button id="advanced-mode-btn" class="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
       Chế độ nâng cao
     </button>
+    <button id="info-mode-btn" class="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors ml-4">
+      Thông tin phần mềm
+    </button>
   </p>
 </footer>
 
@@ -550,6 +609,16 @@ let themeIconMoon = null;
 let exportedInvoicesModal = null;
 let exportedInvoicesList = null;
 
+// (*** MỚI ***) Biến cho Modal Kết thúc Phiên
+let endSessionModal = null;
+let endSessionCheckSales = null;
+let endSessionCheckInventory = null;
+let endSessionModalContinueBtn = null;
+let endSessionModalCancelBtn = null;
+
+// (*** MỚI ***) Biến cho Modal Thông tin
+let infoModal = null;
+
 
 // --- 1. KHỞI TẠO & SỰ KIỆN ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -559,6 +628,16 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmModalCancelBtn = document.getElementById('confirm-modal-cancel-btn');
     confirmModalTitle = document.getElementById('confirm-modal-title');
     confirmModalMessage = document.getElementById('confirm-modal-message');
+
+    // (*** MỚI ***) Gán biến Modal Kết thúc Phiên
+    endSessionModal = document.getElementById('end-session-modal');
+    endSessionCheckSales = document.getElementById('end-session-check-sales');
+    endSessionCheckInventory = document.getElementById('end-session-check-inventory');
+    endSessionModalContinueBtn = document.getElementById('end-session-modal-continue-btn');
+    endSessionModalCancelBtn = document.getElementById('end-session-modal-cancel-btn');
+
+    // (*** MỚI ***) Gán biến Modal Thông tin
+    infoModal = document.getElementById('info-modal');
 
     // Gán biến Dark Mode
     themeToggleBtn = document.getElementById('theme-toggle-btn');
@@ -570,12 +649,15 @@ document.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage(); // Hàm này sẽ tự động gọi updateSessionStatus & updateExportedInvoicesButtonState
     setupThemeToggle(); // (MỚI)
     setupExportedInvoicesModal(); // (MỚI)
+    setupInfoModal(); // (*** MỚI ***)
+    setupEndSessionModal(); // (*** MỚI ***)
     startClock(); // (MỚI)
 
     // Gán sự kiện cho các nút
     document.getElementById('load-db-btn').addEventListener('click', handleFileLoad);
     document.getElementById('export-inventory-btn').addEventListener('click', exportInventory);
-    document.getElementById('end-session-btn').addEventListener('click', endSession); 
+    document.getElementById('export-sales-report-btn').addEventListener('click', exportDailySalesReport); // (*** MỚI ***)
+    document.getElementById('end-session-btn').addEventListener('click', startEndSessionProcess); // (*** SỬA ***)
     document.getElementById('add-product-form').addEventListener('submit', handleAddProduct);
     document.getElementById('product-search').addEventListener('keyup', handleProductSearch);
     document.getElementById('export-invoice-btn').addEventListener('click', exportInvoiceFile);
@@ -600,6 +682,9 @@ document.addEventListener('DOMContentLoaded', () => {
         hideConfirmModal();
     });
     confirmModalCancelBtn.addEventListener('click', hideConfirmModal);
+    
+    // (*** MỚI ***) Gán sự kiện cho Modal Thông tin (Đã chuyển vào setupInfoModal)
+    // document.getElementById('info-mode-btn').addEventListener('click', showInfoModal);
 });
 
 // --- (MỚI) HÀM TIỆN ÍCH MODAL XÁC NHẬN ---
@@ -733,6 +818,7 @@ function updateSessionStatus() {
 
 function toggleAppControls(isSessionActive, isBypassActive = false) {
     document.getElementById('export-inventory-btn').disabled = !isSessionActive;
+    document.getElementById('export-sales-report-btn').disabled = !isSessionActive; // (*** MỚI ***)
     document.getElementById('end-session-btn').disabled = !isSessionActive;
     document.getElementById('main-app-controls').disabled = !isSessionActive && !isBypassActive;
     
@@ -875,41 +961,70 @@ function handleFileLoad() {
     }
 }
 
-function endSession() {
+// (*** SỬA ***)
+// Bước 1: Người dùng nhấn nút "Kết thúc phiên"
+function startEndSessionProcess() {
     if (productDatabase.length === 0 && dailyTransactions.length === 0) {
         return showStatus('Chưa có dữ liệu nào trong phiên. Vui lòng bắt đầu phiên trước.', true);
     }
+    // Hiển thị modal chọn file
+    showEndSessionModal();
+}
 
-    const doEndSession = () => {
-        // Chỉ xuất nếu có dữ liệu
-        if (dailyTransactions.length > 0) exportDailySalesReport();
-        if (productDatabaseOriginal.length > 0 || dailyTransactions.length > 0) exportInventory();
-
-        productDatabase = [];
-        productDatabaseOriginal = [];
-        dailyTransactions = [];
-        currentCart = [];
-        exportedInvoicesLog = []; // (MỚI) Xóa log
-        localStorage.removeItem('inventoryState');
-        localStorage.removeItem('exportedInvoicesLog'); // (MỚI) Xóa log
-        
-        renderCart();
-        document.getElementById('customer-info-form').reset();
-        document.getElementById('add-product-form').reset();
-        document.getElementById('invoice-date').valueAsDate = new Date();
-        selectedProduct = null;
-        clearProductSelection(); // (MỚI)
-
-        showStatus('Phiên làm việc đã kết thúc thành công! Dữ liệu đã được xóa sạch.');
-        updateSessionStatus();
-    };
-
-    // (SỬA) Dùng modal xác nhận
+// (*** SỬA ***)
+// Bước 2: Người dùng nhấn "Tiếp tục" trên modal chọn file
+function handleEndSessionContinue() {
+    hideEndSessionModal();
+    
+    const exportSales = endSessionCheckSales.checked;
+    const exportInventory = endSessionCheckInventory.checked;
+    
+    // Thực thi download
+    if (exportSales) {
+        // Kiểm tra lại (phòng hờ)
+        if (dailyTransactions.length > 0) {
+            exportDailySalesReport();
+        } else {
+            showStatus('Không có dữ liệu bán hàng để xuất.', false);
+        }
+    }
+    if (exportInventory) {
+        // Kiểm tra lại (phòng hờ)
+        if (productDatabaseOriginal.length > 0 || dailyTransactions.length > 0) {
+            exportInventory();
+        } else {
+            showStatus('Không có dữ liệu tồn kho để xuất.', false);
+        }
+    }
+    
+    // Bước 3: Hiển thị hộp thoại XÁC NHẬN CUỐI CÙNG (Fallback)
     showConfirmModal(
-        'Kết thúc phiên làm việc?',
-        'Bạn có chắc chắn muốn KẾT THÚC PHIÊN? Thao tác này sẽ xuất 2 báo cáo (Bán Hàng, Tồn Kho) và XÓA TẤT CẢ dữ liệu phiên.',
-        doEndSession
+        'Xác nhận XÓA DỮ LIỆU?',
+        'Tất cả dữ liệu phiên (CSDL, Giao dịch, Log Hóa đơn) sẽ bị XÓA SẠCH. Đây là thao tác KHÔNG THỂ HỒI PHỤC. Bạn có chắc chắn muốn kết thúc?',
+        performDataDeletion // Callback là hàm xóa dữ liệu
     );
+}
+
+// (*** SỬA ***)
+// Bước 4: Người dùng nhấn "Xác nhận" trên modal cuối cùng -> Xóa dữ liệu
+function performDataDeletion() {
+    productDatabase = [];
+    productDatabaseOriginal = [];
+    dailyTransactions = [];
+    currentCart = [];
+    exportedInvoicesLog = [];
+    localStorage.removeItem('inventoryState');
+    localStorage.removeItem('exportedInvoicesLog');
+    
+    renderCart();
+    document.getElementById('customer-info-form').reset();
+    document.getElementById('add-product-form').reset();
+    document.getElementById('invoice-date').valueAsDate = new Date();
+    selectedProduct = null;
+    clearProductSelection();
+
+    showStatus('Phiên làm việc đã kết thúc thành công! Dữ liệu đã được xóa sạch.');
+    updateSessionStatus();
 }
 
 
@@ -1211,7 +1326,8 @@ function exportInvoiceFile() {
 
 function exportDailySalesReport() {
     if (dailyTransactions.length === 0) {
-        showStatus('Không có giao dịch nào được ghi nhận trong ngày để xuất báo cáo.', true);
+        // (*** SỬA ***)
+        showStatus('Không có giao dịch nào được ghi nhận để xuất báo cáo.', false);
         return;
     }
 
@@ -1229,7 +1345,8 @@ function exportDailySalesReport() {
 // (*** SỬA ***) Cập nhật báo cáo tồn kho
 function exportInventory() {
     if (productDatabaseOriginal.length === 0 && dailyTransactions.length === 0) {
-        return showStatus('Chưa có dữ liệu tồn kho hoặc giao dịch nào.', true);
+        // (*** SỬA ***)
+        return showStatus('Chưa có dữ liệu tồn kho hoặc giao dịch nào.', false);
     }
     
     // (*** MỚI ***) Thêm cột "Ghi chú"
@@ -1458,6 +1575,46 @@ function setupExportedInvoicesModal() {
     document.getElementById('view-exports-btn').addEventListener('click', showExportedInvoicesModal);
     document.getElementById('modal-close-btn-exports').addEventListener('click', hideExportedInvoicesModal);
     document.getElementById('modal-overlay-bg-exports').addEventListener('click', hideExportedInvoicesModal);
+}
+
+// (*** MỚI ***) QUẢN LÝ MODAL THÔNG TIN ---
+function setupInfoModal() {
+    if (!infoModal) return;
+    document.getElementById('info-mode-btn').addEventListener('click', showInfoModal);
+    document.getElementById('modal-close-btn-info').addEventListener('click', hideInfoModal);
+    document.getElementById('modal-overlay-bg-info').addEventListener('click', hideInfoModal);
+}
+
+function showInfoModal() {
+    if (infoModal) infoModal.classList.remove('hidden');
+}
+
+function hideInfoModal() {
+    if (infoModal) infoModal.classList.add('hidden');
+}
+
+// (*** MỚI ***) QUẢN LÝ MODAL KẾT THÚC PHIÊN ---
+function setupEndSessionModal() {
+    if (!endSessionModal) return;
+    endSessionModalCancelBtn.addEventListener('click', hideEndSessionModal);
+    endSessionModalContinueBtn.addEventListener('click', handleEndSessionContinue);
+}
+
+function showEndSessionModal() {
+    if (!endSessionModal) return;
+    // (MỚI) Chỉ check "Bán hàng" nếu có giao dịch
+    endSessionCheckSales.checked = dailyTransactions.length > 0;
+    endSessionCheckSales.disabled = dailyTransactions.length === 0;
+    
+    // (MỚI) Chỉ check "Tồn kho" nếu có CSDL hoặc giao dịch (cho hàng bypass)
+    endSessionCheckInventory.checked = productDatabaseOriginal.length > 0 || dailyTransactions.length > 0;
+    endSessionCheckInventory.disabled = !(productDatabaseOriginal.length > 0 || dailyTransactions.length > 0);
+
+    endSessionModal.classList.remove('hidden');
+}
+
+function hideEndSessionModal() {
+    if (endSessionModal) endSessionModal.classList.add('hidden');
 }
 
 function showExportedInvoicesModal() {

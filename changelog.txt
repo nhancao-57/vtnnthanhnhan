@@ -1,0 +1,24 @@
+1.0 
+- Release of the program.
+
+1.1
+- Bugs fixed. 
+
+1.2
+- Bug fixed.
+- Implemented Tailwind CSS.
+- Implemented session live update.
+
+1.3
+- Bugs fixed. 
+
+1.4
+- Added Developer mode. 
+- Bugs fixed.
+- Added dark mode.
+
+
+1.5
+- Fixed rounding errors.
+- Bugs fixed.
+- Improved functionality.
