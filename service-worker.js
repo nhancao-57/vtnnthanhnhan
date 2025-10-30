@@ -1,21 +1,39 @@
-const CACHE_NAME = 'myapp-cache-v1';
-const URLS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-];
+// service-worker.js
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(URLS_TO_CACHE))
+    caches.open('my-cache').then((cache) => {
+      return cache.addAll([
+        '/', // Home page
+        '/index.html',
+        '/images/favicon.ico',
+      ]);
+    })
   );
 });
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request);
+    })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  const cacheWhitelist = ['my-cache'];
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (!cacheWhitelist.includes(cacheName)) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
     })
   );
 });
