@@ -272,6 +272,9 @@
             <button id="load-db-btn" class="btn-primary flex-grow sm:flex-grow-0">
                 Bắt đầu phiên (Tải CSDL)
             </button>
+            <button id="view-database-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
+                Xem CSDL
+            </button>
             <button id="export-inventory-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
                 Xuất Tồn Kho
             </button>
@@ -307,18 +310,14 @@
                         <p class="text-sm font-medium text-indigo-600 dark:text-indigo-400">
                           Chế độ Bypass: Nhập thông tin sản phẩm thủ công
                         </p>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label for="product-unit" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">ĐVT:</label>
                                 <input type="text" id="product-unit" placeholder="Cái, Chai, Bao..." class="input-base !py-2.5 !text-sm" />
                             </div>
                             <div>
-                                <label for="product-price" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Đơn giá (Chưa thuế):</label>
+                                <label for="product-price" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Đơn giá:</label>
                                 <input type="number" id="product-price" placeholder="0" min="0" class="input-base !py-2.5 !text-sm" />
-                            </div>
-                            <div>
-                                <label for="product-tax" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Thuế suất (%):</label>
-                                <input type="number" id="product-tax" placeholder="0" min="0" value="0" class="input-base !py-2.5 !text-sm" />
                             </div>
                         </div>
                         <div class="h-px bg-slate-200 dark:bg-slate-700"></div> </div>
@@ -402,11 +401,8 @@
                             <th class="px-4 py-3">Tên hàng hóa/dịch vụ</th>
                             <th class="px-4 py-3">ĐVT</th>
                             <th class="px-4 py-3">Số lượng</th>
-                            <th class="px-4 py-3">Đơn giá (Chưa thuế)</th>
-                            <th class="px-4 py-3">Thuế suất (%)</th>
-                            <th class="px-4 py-3">Thành tiền (Chưa thuế)</th>
-                            <th class="px-4 py-3">Tiền thuế</th>
-                            <th class="px-4 py-3">Thành tiền (Sau thuế)</th>
+                            <th class="px-4 py-3">Đơn giá</th>
+                            <th class="px-4 py-3">Thành tiền</th>
                             <th class="px-4 py-3 text-center">Xóa</th>
                         </tr>
                     </thead>
@@ -416,15 +412,16 @@
             </div>
 
             <div id="cart-total-container" class="text-right mt-6 space-y-2">
-                <div id="cart-total-pretax" class="text-lg text-gray-600 dark:text-slate-400">
-                    Tổng cộng (Chưa thuế): 0 VNĐ
-                </div>
                 <div id="cart-total-posttax" class="text-3xl font-bold text-red-600 dark:text-red-500">
-                    Tổng cộng (Sau thuế): 0 VNĐ
+                    Tổng cộng: 0 VNĐ
                 </div>
             </div>
 
-            <div class="mt-6 border-t border-gray-200 dark:border-slate-700 pt-6 flex flex-wrap gap-3 justify-end">
+            <div class="mt-6 border-t border-gray-200 dark:border-slate-700 pt-6 flex flex-wrap gap-x-4 gap-y-3 justify-end items-center">
+                <label class="flex items-center text-sm text-gray-600 dark:text-slate-400 mr-auto sm:mr-0 cursor-pointer order-last sm:order-first">
+                    <input type="checkbox" id="save-invoice-only-check" class="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:checked:bg-indigo-600">
+                    <span class="ml-2">Chỉ lưu, không tải file</span>
+                </label>
                 <button id="export-invoice-btn" class="btn-primary flex-grow sm:flex-grow-0">
                     Xuất Hóa Đơn Này
                 </button>
@@ -508,14 +505,14 @@
                     Bypass Nhập CSDL: <span class="font-bold">[TẮT]</span>
                 </button>
                 <p class="text-sm text-gray-500 dark:text-slate-400 mt-1 px-1">
-                    Cho phép nhập sản phẩm thủ công (tên, giá, thuế) vào giỏ hàng.
+                    Cho phép nhập sản phẩm thủ công (tên, giá) vào giỏ hàng.
                 </p>
             </div>
             
             <div>
                 <h4 class="font-medium text-gray-800 dark:text-slate-300 mb-2">Xuất Template (Trống)</h4>
                 <div class="flex flex-wrap gap-2">
-                    <button id="export-empty-invoice-btn" class="btn-secondary !py-2 !px-4 flex-1">Hóa Đơn</DVT</button>
+                    <button id="export-empty-invoice-btn" class="btn-secondary !py-2 !px-4 flex-1">Hóa Đơn</button>
                     <button id="export-empty-sales-btn" class="btn-secondary !py-2 !px-4 flex-1">Báo Cáo Bán Hàng</button>
                     <button id="export-empty-inventory-btn" class="btn-secondary !py-2 !px-4 flex-1">Báo Cáo Tồn Kho</button>
                 </div>
@@ -523,6 +520,27 @@
                     Xuất các file mẫu (chỉ có tiêu đề) để kiểm tra định dạng.
                 </p>
             </div>
+            
+            <div>
+                <h4 class="font-medium text-gray-800 dark:text-slate-300 mb-2">Quản lý Phiên (Backup/Restore)</h4>
+                <p class="text-sm text-gray-500 dark:text-slate-400 mb-2 px-1">
+                    Dùng để chuyển/khôi phục dữ liệu phiên (CSDL, Giao dịch, Log Hóa đơn) giữa các thiết bị.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <button id="backup-session-btn" class="btn-primary !py-2 !px-4 flex-1">
+                        Xuất file Backup (.json)
+                    </button>
+                    
+                    <input type="file" id="restore-file-input" class="hidden" accept=".json">
+                    <label for="restore-file-input" class="btn-danger !py-2 !px-4 flex-1 cursor-pointer text-center">
+                        Nhập file Restore (.json)
+                    </label>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-slate-400 mt-1 px-1">
+                    <span class="font-bold text-red-600 dark:text-red-400">CẢNH BÁO:</span> Thao tác 'Nhập' sẽ <span class="font-bold">xóa sạch</span> phiên hiện tại.
+                </p>
+            </div>
+
         </div>
     </div>
 </div>
@@ -575,6 +593,42 @@
                     </tr>
                 </thead>
                 <tbody id="exported-invoices-list" class="divide-y divide-gray-200 dark:divide-slate-700">
+                    </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div id="database-viewer-modal" class="modal-overlay hidden" aria-labelledby="database-viewer-modal-title" role="dialog" aria-modal="true">
+    <div id="modal-overlay-bg-db" class="fixed inset-0"></div>
+    <div class="modal-content relative !max-w-6xl"> <div class="flex justify-between items-center mb-4">
+            <h3 id="database-viewer-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
+                Cơ sở dữ liệu Sản phẩm
+            </h3>
+            <button id="modal-close-btn-db" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="mb-4">
+            <input type="text" id="db-modal-search-input" placeholder="Tìm kiếm theo tên sản phẩm..." class="input-base">
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 max-h-[60vh] overflow-y-auto">
+            <table class="table-base !min-w-full">
+                <thead>
+                    <tr>
+                        <th class="!p-2 !text-center">STT</th>
+                        <th class="!p-2">Tên sản phẩm</th>
+                        <th class="!p-2">ĐVT</th>
+                        <th class="!p-2 !text-right">Đơn giá</th>
+                        <th class="!p-2 !text-right">Tồn kho</th>
+                    </tr>
+                </thead>
+                <tbody id="database-viewer-list" class="divide-y divide-gray-200 dark:divide-slate-700">
                     </tbody>
             </table>
         </div>
@@ -635,6 +689,11 @@ let endSessionModalCancelBtn = null;
 // (*** MỚI ***) Biến cho Modal Thông tin
 let infoModal = null;
 
+// (*** MỚI ***) Biến cho Modal Xem CSDL
+let databaseViewerModal = null;
+let databaseViewerList = null;
+let dbModalSearchInput = null;
+
 
 // --- 1. KHỞI TẠO & SỰ KIỆN ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -654,6 +713,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // (*** MỚI ***) Gán biến Modal Thông tin
     infoModal = document.getElementById('info-modal');
+    
+    // (*** MỚI ***) Gán biến Modal Xem CSDL
+    databaseViewerModal = document.getElementById('database-viewer-modal');
+    databaseViewerList = document.getElementById('database-viewer-list');
+    dbModalSearchInput = document.getElementById('db-modal-search-input');
 
     // Gán biến Dark Mode
     themeToggleBtn = document.getElementById('theme-toggle-btn');
@@ -667,6 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupExportedInvoicesModal(); // (MỚI)
     setupInfoModal(); // (*** MỚI ***)
     setupEndSessionModal(); // (*** MỚI ***)
+    setupDatabaseViewerModal(); // (*** MỚI ***)
     startClock(); // (MỚI)
 
     // Gán sự kiện cho các nút
@@ -692,6 +757,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('export-empty-sales-btn').addEventListener('click', exportEmptySalesReport);
     document.getElementById('export-empty-inventory-btn').addEventListener('click', exportEmptyInventory);
     
+    // (*** MỚI ***) Gán sự kiện cho Backup/Restore
+    document.getElementById('backup-session-btn').addEventListener('click', handleBackupSession);
+    document.getElementById('restore-file-input').addEventListener('change', handleRestoreSession);
+
     // (MỚI) Gán sự kiện cho Modal Xác nhận
     confirmModalConfirmBtn.addEventListener('click', () => {
         onConfirmCallback();
@@ -836,6 +905,7 @@ function toggleAppControls(isSessionActive, isBypassActive = false) {
     document.getElementById('export-inventory-btn').disabled = !isSessionActive;
     document.getElementById('export-sales-report-btn').disabled = !isSessionActive; // (*** MỚI ***)
     document.getElementById('end-session-btn').disabled = !isSessionActive;
+    document.getElementById('view-database-btn').disabled = !isSessionActive; // (*** MỚI ***)
     document.getElementById('main-app-controls').disabled = !isSessionActive && !isBypassActive;
     
     const loadDbBtn = document.getElementById('load-db-btn');
@@ -929,18 +999,20 @@ function handleFileLoad() {
                 exportedInvoicesLog = []; // (MỚI) Xóa log cũ khi nạp CSDL mới
                 localStorage.removeItem('exportedInvoicesLog'); // (MỚI)
                 
-                const COL = {TIN: 16, TEN: 17, DVT: 18, GIA: 19, THUE: 20};
+                // (*** SỬA ***) Xóa cột THUE (20) khỏi COL object
+                const COL = {TIN: 16, TEN: 17, DVT: 18, GIA: 19};
                 let productsLoaded = 0;
                 for (let i = 3; i < jsonData.length; i++) {
                     const row = jsonData[i];
-                    if (row && row.length >= COL.THUE && row[COL.TEN]) {
+                    // (*** SỬA ***) Cập nhật điều kiện check độ dài
+                    if (row && row.length >= COL.GIA && row[COL.TEN]) {
                         const productName = String(row[COL.TEN]).trim();
                         if (productName.length > 0) {
                             productDatabase.push({
                                 name: productName,
                                 unit: String(row[COL.DVT] || '').trim(),
                                 price: parseFloat(row[COL.GIA]) || 0,
-                                taxRate: parseFloat(row[COL.THUE]) || 0,
+                                // (*** SỬA ***) Xóa taxRate
                                 stock: parseInt(row[COL.TIN]) || 0
                             });
                             productsLoaded++;
@@ -1070,8 +1142,8 @@ function handleProductSearch() {
     filteredProducts.forEach(product => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'search-item';
-        const postTaxPrice = product.price * (1 + product.taxRate);
-        itemDiv.innerHTML = `${product.name} <small>(Tồn: ${product.stock} ${product.unit} - Giá sau thuế: ${currencyFormatter.format(postTaxPrice)})</small>`;
+        // (*** SỬA ***) Xóa tính toán giá sau thuế
+        itemDiv.innerHTML = `${product.name} <small>(Tồn: ${product.stock} ${product.unit} - Giá: ${currencyFormatter.format(product.price)})</small>`;
         itemDiv.onclick = () => selectProduct(product);
         resultsContainer.appendChild(itemDiv);
     });
@@ -1104,22 +1176,22 @@ function handleAddProduct(e) {
             return showStatus('Bypass Mode: Vui lòng nhập Tên SP và Số Lượng hợp lệ!', true);
         }
         
-        // (*** MỚI ***) Lấy thông tin từ input bypass
+        // (*** SỬA ***) Lấy thông tin từ input bypass (bỏ thuế)
         const unit = document.getElementById('product-unit').value.trim() || 'Cái';
         const price = parseFloat(document.getElementById('product-price').value) || 0;
-        const taxRate = (parseFloat(document.getElementById('product-tax').value) || 0) / 100.0; // Chuyển % về số thập phân
+        // (*** SỬA ***) Xóa taxRate
 
         const dummyProduct = { 
-            name: name, unit: unit, price: price, taxRate: taxRate, quantity: quantity 
+            name: name, unit: unit, price: price, quantity: quantity 
         };
 
         const existingCartItem = currentCart.find(item => item.name === name);
         if (existingCartItem) {
-            // Cập nhật thông tin nếu thêm lại (giá, thuế có thể đổi)
+            // Cập nhật thông tin nếu thêm lại (giá có thể đổi)
             existingCartItem.quantity += quantity;
             existingCartItem.unit = unit;
             existingCartItem.price = price;
-            existingCartItem.taxRate = taxRate;
+            // (*** SỬA ***) Xóa taxRate
         } else {
             currentCart.push(dummyProduct);
         }
@@ -1130,7 +1202,7 @@ function handleAddProduct(e) {
         document.getElementById('product-quantity').value = '';
         document.getElementById('product-unit').value = '';
         document.getElementById('product-price').value = '';
-        document.getElementById('product-tax').value = '0';
+        // (*** SỬA ***) Xóa reset tax
         
         clearProductSelection();
         document.getElementById('product-search').focus();
@@ -1154,9 +1226,10 @@ function handleAddProduct(e) {
         if (existingCartItem) {
             existingCartItem.quantity += quantity;
         } else {
+            // (*** SỬA ***) Xóa taxRate khỏi object
             currentCart.push({ 
                 name: product.name, unit: product.unit, price: product.price, 
-                taxRate: product.taxRate, quantity: quantity 
+                quantity: quantity 
             });
         }
         
@@ -1182,32 +1255,28 @@ function handleAddProduct(e) {
 function renderCart() {
     const cartBody = document.getElementById('cart-body');
     cartBody.innerHTML = '';
-    let totalPreTax = 0, totalPostTax = 0;
+    // (*** SỬA ***) Chỉ cần 1 total
+    let totalAmount = 0;
     
     if (currentCart.length === 0) {
-        cartBody.innerHTML = '<tr><td colspan="10" class="text-center italic text-slate-500 dark:text-slate-400 py-6" data-label="">Giỏ hàng đang trống</td></tr>';
+        // (*** SỬA ***) Cập nhật colspan
+        cartBody.innerHTML = '<tr><td colspan="7" class="text-center italic text-slate-500 dark:text-slate-400 py-6" data-label="">Giỏ hàng đang trống</td></tr>';
     }
     
     currentCart.forEach((item, index) => {
-        const thanhTienPreTax = item.price * item.quantity;
-        const tienThue = thanhTienPreTax * item.taxRate;
-        const thanhTienPostTax = thanhTienPreTax + tienThue;
-
-        totalPreTax += thanhTienPreTax;
-        totalPostTax += thanhTienPostTax;
+        // (*** SỬA ***) Tính toán đơn giản
+        const thanhTien = item.price * item.quantity;
+        totalAmount += thanhTien;
         
         const row = cartBody.insertRow();
         
-        // (SỬA) Thêm data-label cho tối ưu mobile
+        // (*** SỬA ***) Cập nhật HTML (bỏ 3 cột thuế)
         row.innerHTML = `<td data-label="STT">${index + 1}</td>
                          <td data-label="Tên hàng hóa" class="font-medium">${item.name}</td>
                          <td data-label="ĐVT">${item.unit}</td>
                          <td data-label="Số lượng" class="font-medium">${item.quantity}</td>
                          <td data-label="Đơn giá">${currencyFormatter.format(item.price)}</td>
-                         <td data-label="Thuế suất">${item.taxRate * 100}%</td>
-                         <td data-label="Thành tiền (Chưa thuế)">${currencyFormatter.format(thanhTienPreTax)}</td>
-                         <td data-label="Tiền thuế">${currencyFormatter.format(tienThue)}</td>
-                         <td data-label="Thành tiền (Sau thuế)" class="font-bold">${currencyFormatter.format(thanhTienPostTax)}</td>
+                         <td data-label="Thành tiền" class="font-bold">${currencyFormatter.format(thanhTien)}</td>
                          <td class="cell-action">
                             <button class="btn-secondary !bg-red-50 !text-red-600 dark:!bg-red-900/50 dark:!text-red-400 hover:!bg-red-100 w-full md:w-auto !py-2 !px-3 !text-sm" onclick="removeCartItem(${index})">
                                 Xóa
@@ -1215,8 +1284,9 @@ function renderCart() {
                          </td>`;
     });
     
-    document.getElementById('cart-total-pretax').textContent = `Tổng cộng (Chưa thuế): ${currencyFormatter.format(totalPreTax)}`;
-    document.getElementById('cart-total-posttax').textContent = `Tổng cộng (Sau thuế): ${currencyFormatter.format(totalPostTax)}`;
+    // (*** SỬA ***) Xóa total pre-tax
+    // document.getElementById('cart-total-pretax').textContent = `Tổng cộng (Chưa thuế): ${currencyFormatter.format(totalPreTax)}`;
+    document.getElementById('cart-total-posttax').textContent = `Tổng cộng: ${currencyFormatter.format(totalAmount)}`;
 }
 
 function removeCartItem(index) { 
@@ -1231,11 +1301,11 @@ function clearCart(confirmNeeded = true) {
         currentCart = [];
         document.getElementById('customer-info-form').reset();
         document.getElementById('invoice-date').valueAsDate = new Date();
+        document.getElementById('save-invoice-only-check').checked = false; // (*** MỚI ***)
         
-        // (*** MỚI ***) Reset luôn form bypass
+        // (*** SỬA ***) Reset form bypass (bỏ thuế)
         document.getElementById('product-unit').value = '';
         document.getElementById('product-price').value = '';
-        document.getElementById('product-tax').value = '0';
         
         renderCart();
         if (confirmNeeded) {
@@ -1317,7 +1387,11 @@ function exportInvoiceFile() {
         console.warn("Đã xuất hóa đơn, nhưng có lỗi khi lưu vào log phiên.");
     }
 
-    XLSX.writeFile(workbook, fileName);
+    // (*** SỬA ***) Kiểm tra checkbox "Chỉ lưu"
+    const saveOnly = document.getElementById('save-invoice-only-check').checked;
+    if (!saveOnly) {
+        XLSX.writeFile(workbook, fileName);
+    }
 
     // (*** SỬA ***) Chỉ cập nhật tồn kho cho các sản phẩm "Trong CSDL"
     let inventoryUpdated = false;
@@ -1328,15 +1402,18 @@ function exportInvoiceFile() {
         }
     });
     
+    // (*** SỬA ***) Cập nhật thông báo
+    let successMessage = '';
+    const actionWord = saveOnly ? 'lưu' : 'xuất';
     if (inventoryUpdated) {
-        saveStateToStorage();
-        showStatus(`Đã xuất hóa đơn "${fileName}" và cập nhật tồn kho (hàng CSDL). Giao dịch đã được lưu lại.`);
+        successMessage = `Đã ${actionWord} hóa đơn "${fileName}" và cập nhật tồn kho (hàng CSDL). Giao dịch đã được lưu lại.`;
     } else {
-        showStatus(`Đã xuất hóa đơn (ngoài CSDL) "${fileName}". Tồn kho KHÔNG thay đổi. Giao dịch đã được lưu lại.`);
+        successMessage = `Đã ${actionWord} hóa đơn (ngoài CSDL) "${fileName}". Tồn kho KHÔNG thay đổi. Giao dịch đã được lưu lại.`;
     }
+    showStatus(successMessage, false);
 
 
-    clearCart(false); 
+    clearCart(false); // Sẽ tự động reset checkbox
     updateSessionStatus(); // Sẽ tự động gọi updateExportedInvoicesButtonState
 }
 
@@ -1441,6 +1518,7 @@ function updateInventory(productName, soldQuantity) {
  * Xây dựng dữ liệu Hóa đơn phẳng (theo yêu cầu A-M)
  * (SỬA ĐỔI) - Logic gộp STT cho nhiều sản phẩm
  * (*** SỬA - 2025-10-29 ***) - Áp dụng Math.round() cho giá trị tiền tệ
+ * (*** SỬA - 2025-10-31 ***) - Đơn giản hóa biến (không còn pre-tax)
  */
 function buildFlatInvoiceData(transactions) {
     const data = [[
@@ -1454,11 +1532,11 @@ function buildFlatInvoiceData(transactions) {
         const { customerInfo, items } = transaction;
 
         items.forEach((item, itemIndex) => { // Lấy chỉ số của sản phẩm
-            const thanhTienPreTax = item.quantity * item.price; // Tính toán trên giá trị gốc
+            const thanhTien = item.quantity * item.price; // Tính toán trên giá trị gốc
             
             // (*** SỬA ***) Áp dụng làm tròn theo yêu cầu (0 decimal places)
             const roundedPrice = Math.round(item.price);
-            const roundedThanhTienPreTax = Math.round(thanhTienPreTax);
+            const roundedThanhTien = Math.round(thanhTien);
             
             let row;
 
@@ -1477,7 +1555,7 @@ function buildFlatInvoiceData(transactions) {
                     item.unit,                  // J: Đơn vị tính
                     item.quantity,              // K: Số lượng
                     roundedPrice,               // L: Đơn giá (ĐÃ LÀM TRÒN)
-                    roundedThanhTienPreTax      // M: Thành tiền (ĐÃ LÀM TRÒN)
+                    roundedThanhTien            // M: Thành tiền (ĐÃ LÀM TRÒN)
                 ];
             } else {
                 // Sản phẩm THỨ HAI TRỞ ĐI của cùng giao dịch
@@ -1494,58 +1572,9 @@ function buildFlatInvoiceData(transactions) {
                     item.unit,                  // J: Đơn vị tính
                     item.quantity,              // K: Số lượng
                     roundedPrice,               // L: Đơn giá (ĐÃ LÀM TRÒN)
-                    roundedThanhTienPreTax      // M: Thành tiền (ĐÃ LÀM TRÒN)
+                    roundedThanhTien            // M: Thành tiền (ĐÃ LÀM TRÒN)
                 ];
             }
-            data.push(row);
-        });
-    });
-    return data;
-}
-
-/**
- * (GỐC - KHÔNG CÒN DÙNG) Xây dựng dữ liệu Báo Cáo Bán Hàng (chi tiết)
- * (*** SỬA - 2025-10-29 ***) - Áp dụng Math.round() cho giá trị tiền tệ
- */
-function buildExcelData(transactions) {
-    const data = [[
-        'Số thứ tự hóa đơn', 'Ngày hóa đơn', 'Tên khách hàng', 'Địa chỉ', 'Mã số thuế', 'Người mua hàng', 'Email', 
-        'Hình thức thanh toán', 'Thuế suất GTGT (%)', 'Tiền thuế GTGT', 'Tên hàng hóa/dịch vụ (*)', 'ĐVT', 
-        'Số lượng', 'Đơn giá', 'Thành tiền', 'MDVCQHVNS', 'Số CCCD', 'Số hộ chiếu'
-    ]];
-    let sttCounter = 0;
-    transactions.forEach(transaction => {
-        const { customerInfo, items } = transaction;
-        items.forEach((item, itemIndex) => {
-            sttCounter++;
-            const thueSuat = item.taxRate * 100;
-            const thanhTienPreTax = item.quantity * item.price;
-            const tienThueGTGT = thanhTienPreTax * item.taxRate;
-            
-            // (*** SỬA ***) Áp dụng làm tròn
-            const roundedPrice = Math.round(item.price);
-            const roundedThanhTienPreTax = Math.round(thanhTienPreTax);
-            const roundedTienThueGTGT = Math.round(tienThueGTGT);
-            
-            const isFirstItemOfTransaction = itemIndex === 0;
-            const row = [
-                sttCounter, 
-                isFirstItemOfTransaction ? customerInfo.date : '',
-                isFirstItemOfTransaction ? customerInfo.name : '',
-                isFirstItemOfTransaction ? customerInfo.address : '',
-                isFirstItemOfTransaction ? customerInfo.tin : '',
-                isFirstItemOfTransaction ? customerInfo.buyerName : '',
-                isFirstItemOfTransaction ? customerInfo.email : '',
-                isFirstItemOfTransaction ? customerInfo.paymentMethod : '',
-                thueSuat, 
-                roundedTienThueGTGT, // (ĐÃ LÀM TRÒN)
-                item.name, item.unit, item.quantity, 
-                roundedPrice, // (ĐÃ LÀM TRÒN)
-                roundedThanhTienPreTax, // (ĐÃ LÀM TRÒN)
-                isFirstItemOfTransaction ? customerInfo.mdvcqhns : '',
-                isFirstItemOfTransaction ? customerInfo.cccd : '',
-                isFirstItemOfTransaction ? customerInfo.passport : ''
-            ];
             data.push(row);
         });
     });
@@ -1632,6 +1661,60 @@ function showEndSessionModal() {
 function hideEndSessionModal() {
     if (endSessionModal) endSessionModal.classList.add('hidden');
 }
+
+// (*** MỚI ***) QUẢN LÝ MODAL XEM CSDL ---
+function setupDatabaseViewerModal() {
+    if (!databaseViewerModal) return;
+    document.getElementById('view-database-btn').addEventListener('click', showDatabaseViewerModal);
+    document.getElementById('modal-close-btn-db').addEventListener('click', hideDatabaseViewerModal);
+    document.getElementById('modal-overlay-bg-db').addEventListener('click', hideDatabaseViewerModal);
+    dbModalSearchInput.addEventListener('keyup', renderDatabaseViewerList);
+}
+
+function showDatabaseViewerModal() {
+    if (!databaseViewerModal) return;
+    renderDatabaseViewerList(); // Render với search query rỗng
+    databaseViewerModal.classList.remove('hidden');
+    dbModalSearchInput.focus();
+}
+
+function hideDatabaseViewerModal() {
+    if (databaseViewerModal) {
+        databaseViewerModal.classList.add('hidden');
+        dbModalSearchInput.value = ''; // Xóa search query khi đóng
+    }
+}
+
+function renderDatabaseViewerList() {
+    if (!databaseViewerList) return;
+    
+    const query = dbModalSearchInput.value.toLowerCase();
+    const filteredDB = productDatabase.filter(p => p.name.toLowerCase().includes(query));
+    
+    databaseViewerList.innerHTML = ''; // Xóa nội dung cũ
+    
+    if (filteredDB.length === 0) {
+        const message = productDatabase.length === 0 
+            ? 'Cơ sở dữ liệu trống.' 
+            : 'Không tìm thấy sản phẩm nào khớp.';
+        // (*** SỬA ***) Cập nhật colspan
+        databaseViewerList.innerHTML = `<tr><td colspan="5" class="text-center italic text-slate-500 dark:text-slate-400 py-6">${message}</td></tr>`;
+        return;
+    }
+    
+    filteredDB.forEach((product, index) => {
+        const row = databaseViewerList.insertRow();
+        // (*** SỬA ***) Cập nhật HTML (bỏ thuế)
+        row.innerHTML = `
+            <td class="!p-2 text-center">${index + 1}</td>
+            <td class="!p-2 font-medium">${product.name}</td>
+            <td class="!p-2">${product.unit}</td>
+            <td class="!p-2 text-right">${currencyFormatter.format(product.price)}</td>
+            <td class="!p-2 text-right font-medium">${product.stock}</td>
+        `;
+    });
+}
+
 
 function showExportedInvoicesModal() {
     exportedInvoicesList.innerHTML = ''; // Xóa nội dung cũ
@@ -1736,6 +1819,130 @@ function exportEmptyInventory() {
     XLSX.writeFile(workbook, 'Template_BaoCao_TonKho_Trong.xlsx');
     showStatus('Đã xuất template Báo Cáo Tồn Kho (trống).', false);
     hideAdvancedModal();
+}
+
+// --- (*** MỚI ***) CÁC HÀM BACKUP & RESTORE ---
+
+/**
+ * Xuất toàn bộ session (inventory state & logs) ra file JSON.
+ */
+function handleBackupSession() {
+    try {
+        const inventoryState = localStorage.getItem('inventoryState');
+        const exportedInvoicesLog = localStorage.getItem('exportedInvoicesLog');
+        
+        if (!inventoryState && !exportedInvoicesLog) {
+            return showStatus('Không có dữ liệu phiên để backup.', true);
+        }
+
+        const backupData = {
+            inventoryState: inventoryState ? JSON.parse(inventoryState) : null,
+            exportedInvoicesLog: exportedInvoicesLog ? JSON.parse(exportedInvoicesLog) : null,
+            backupMetadata: {
+                timestamp: new Date().toISOString(),
+                version: "1.5"
+            }
+        };
+        
+        const jsonString = JSON.stringify(backupData, null, 2); // Pretty print
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        a.href = url;
+        a.download = `VTNN_ThanhNhan_Backup_${dateStr}.json`;
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showStatus('Đã xuất file backup phiên thành công.', false);
+        hideAdvancedModal();
+    
+    } catch (e) {
+        console.error('Lỗi khi tạo backup:', e);
+        showStatus(`Lỗi khi tạo backup: ${e.message}`, true);
+    }
+}
+
+/**
+ * Xử lý file .json được chọn để khôi phục session.
+ */
+function handleRestoreSession(event) {
+    const fileInput = event.target;
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const jsonString = e.target.result;
+        
+        try {
+            const backupData = JSON.parse(jsonString);
+
+            // Phải check `inventoryState` và `exportedInvoicesLog` tồn tại (có thể là null, nhưng key phải có)
+            if (backupData && typeof backupData.inventoryState !== 'undefined' && typeof backupData.exportedInvoicesLog !== 'undefined') {
+                
+                // Dùng modal xác nhận
+                showConfirmModal(
+                    'Xác nhận Khôi Phục Phiên?',
+                    'Hành động này sẽ XÓA SẠCH phiên làm việc hiện tại và thay thế bằng dữ liệu từ file. Bạn có chắc chắn muốn tiếp tục?',
+                    () => {
+                        try {
+                            // Stringify lại trước khi lưu vào localStorage
+                            const invState = backupData.inventoryState ? JSON.stringify(backupData.inventoryState) : null;
+                            const logState = backupData.exportedInvoicesLog ? JSON.stringify(backupData.exportedInvoicesLog) : null;
+                            
+                            if (invState) {
+                                localStorage.setItem('inventoryState', invState);
+                            } else {
+                                localStorage.removeItem('inventoryState');
+                            }
+                            
+                            if (logState) {
+                                localStorage.setItem('exportedInvoicesLog', logState);
+                            } else {
+                                localStorage.removeItem('exportedInvoicesLog');
+                            }
+
+                            showStatus('Đã khôi phục phiên thành công! Trang sẽ tự động tải lại...', false);
+                            
+                            // Tải lại trang để load state mới
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+
+                        } catch (saveError) {
+                            console.error('Lỗi khi lưu state khôi phục:', saveError);
+                            showStatus(`Lỗi khi lưu state khôi phục: ${saveError.message}`, true);
+                        }
+                    },
+                    'btn-danger' // Dùng nút đỏ cho hành động nguy hiểm
+                );
+
+            } else {
+                throw new Error('File backup không hợp lệ hoặc thiếu dữ liệu.');
+            }
+
+        } catch (parseError) {
+            console.error('Lỗi khi đọc file backup:', parseError);
+            showStatus(`Lỗi khi đọc file backup: ${parseError.message}`, true);
+        } finally {
+            // Reset file input để có thể chọn lại file cũ (nếu fail)
+            fileInput.value = '';
+            hideAdvancedModal();
+        }
+    };
+    
+    reader.onerror = () => {
+        showStatus('Không thể đọc file đã chọn.', true);
+        fileInput.value = '';
+    };
+    
+    reader.readAsText(file);
 }
 
 </script>
