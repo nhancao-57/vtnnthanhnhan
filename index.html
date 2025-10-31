@@ -203,6 +203,8 @@
 <body class="bg-slate-100 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-200 leading-relaxed transition-colors duration-200">
 
 <header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+  
+  <!-- Left Side: Logo and Title (Unchanged) -->
   <div class="flex items-center gap-3">
     <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -217,13 +219,30 @@
     </div>
   </div>
 
-  <div class="flex items-center gap-3 md:gap-6">
+  <!-- 
+    Right Side: This new <div> groups the clocks and theme button together.
+    I used 'items-start' to make sure the tops of the clocks align 
+    with the top of the theme button, which looks cleaner.
+  -->
+  <div class="flex items-start gap-3 md:gap-6">
+    
+    <!-- Vietnam Clock Container (Unchanged, just moved) -->
     <div id="session-time-container" class="hidden md:flex flex-col text-right">
+      <div id="vietnam-clock-label" class="text-sm font-medium text-blue-600 dark:text-blue-400">...</div>
       <div class="text-lg font-semibold text-gray-800 dark:text-slate-200" id="current-time-display">--:--:--</div>
       <div class="text-sm text-gray-500 dark:text-slate-400" id="current-date-display">--/--/----</div>
     </div>
+
+    <!-- Local Clock Container (Unchanged, just moved) -->
+    <div id="local-time-container" class="hidden md:flex flex-col text-right">
+      <div class="text-sm font-medium text-blue-600 dark:text-blue-400">Giờ của bạn:</div>
+      <div class="text-lg font-semibold text-gray-800 dark:text-slate-200" id="local-time-display">--:--:--</div>
+      <div class="text-sm text-gray-500 dark:text-slate-400" id="local-date-display">--/--/----</div>
+    </div>
     
-    <button id="theme-toggle-btn" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Toggle dark mode">
+    <!-- Theme Toggle Button (Unchanged, just moved) -->
+    <!-- Note: Added 'mt-1' to visually align it better with the clock labels -->
+    <button id="theme-toggle-btn" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-1" aria-label="Toggle dark mode">
       <svg id="theme-icon-sun" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
       </svg>
@@ -232,8 +251,8 @@
       </svg>
     </button>
   </div>
+  
 </header>
-
 
 <div id="session-status-bar" class="text-center p-3 font-medium status-session-inactive sticky top-[73px] z-40" role="status">
     Đang tải...
@@ -733,6 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEndSessionModal(); // (*** MỚI ***)
     setupDatabaseViewerModal(); // (*** MỚI ***)
     startClock(); // (MỚI)
+    
 
     // Gán sự kiện cho các nút
     document.getElementById('load-db-btn').addEventListener('click', handleFileLoad);
@@ -1582,27 +1602,97 @@ function buildFlatInvoiceData(transactions) {
 }
 
 // --- (MỚI) Đồng hồ (Tách ra) ---
-function startClock() {
-    const timeEl = document.getElementById('current-time-display');
-    const dateEl = document.getElementById('current-date-display');
-    if (!timeEl || !dateEl) return; 
-    // (SỬA) Tùy chọn ngày đã bị xóa, sẽ dùng hàm formatDateDDMMYYYY
-    // const dateOptions = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+/**
+ * Helper function: Formats a Date object into DD/MM/YYYY string.
+ * Can optionally format for a specific timezone.
+ * (This was missing from your snippet, so I've added it)
+ */
+function formatDateDDMMYYYY(date, timeZone) {
+    const options = { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric',
+        timeZone: timeZone // If undefined, uses user's local timezone
+    };
+    return new Intl.DateTimeFormat('vi-VN', options).format(date);
+}
 
+/**
+ * Main function to start and update the clocks.
+ * This REPLACES your existing startClock function.
+ */
+function startClock() {
+    // Get elements for Vietnam time (your original elements)
+    const vnContainer = document.getElementById('session-time-container');
+    const vnLabel = document.getElementById('vietnam-clock-label'); // The new label
+    const vnTimeEl = document.getElementById('current-time-display');
+    const vnDateEl = document.getElementById('current-date-display');
+
+    // Get elements for Local time (the new elements)
+    const localContainer = document.getElementById('local-time-container');
+    const localTimeEl = document.getElementById('local-time-display');
+    const localDateEl = document.getElementById('local-date-display');
+
+    // Check if all elements are found
+    if (!vnContainer || !vnLabel || !vnTimeEl || !vnDateEl || !localContainer || !localTimeEl || !localDateEl) {
+        console.error("Clock elements missing.");
+        return;
+    }
+
+    // 1. TIMEZONE CHECK
+    const userTimezoneOffset = new Date().getTimezoneOffset();
+    const isGMT7 = userTimezoneOffset === -420; // GMT+7 is -420 mins from UTC
+
+    // 2. CREATE TIME FORMATTERS
+    const vnTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+    });
+    
+    const localTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+    });
+
+    // 3. CONFIGURE UI BASED ON TIMEZONE
+    if (isGMT7) {
+        // User is in GMT+7. Behave as normal.
+        vnLabel.textContent = "Giờ hiện tại (GMT +7)";
+        vnContainer.classList.remove('hidden'); // Show main clock
+        localContainer.classList.add('hidden'); // Hide local clock
+    } else {
+        // User is in a different timezone. Show both.
+        vnLabel.textContent = "Giờ Việt Nam (GMT +7)";
+        vnContainer.classList.remove('hidden'); // Show Vietnam clock
+        localContainer.classList.remove('hidden');  // Show Local clock
+    }
+
+    // 4. UPDATE CLOCK FUNCTION (This replaces your original updateClock)
     function updateClock() {
         const now = new Date();
-        const timeString = now.toLocaleTimeString('vi-VN', { hour12: false }); 
-        // (SỬA) Sử dụng hàm format mới
-        // const dateString = now.toLocaleDateString('vi-VN', dateOptions);
-        const dateString = formatDateDDMMYYYY(now);
-        timeEl.textContent = timeString;
-        // (SỬA) Cập nhật textContent
-        // dateEl.textContent = dateString.charAt(0).toUpperCase() + dateString.slice(1);
-        dateEl.textContent = dateString;
+
+        if (isGMT7) {
+            // Just update the single, main clock with local time
+            vnTimeEl.textContent = localTimeFormatter.format(now);
+            vnDateEl.textContent = formatDateDDMMYYYY(now);
+        } else {
+            // Update both clocks
+            
+            // Vietnam clock
+            vnTimeEl.textContent = vnTimeFormatter.format(now);
+            vnDateEl.textContent = formatDateDDMMYYYY(now, 'Asia/Ho_Chi_Minh');
+
+            // Local clock
+            localTimeEl.textContent = localTimeFormatter.format(now);
+            localDateEl.textContent = formatDateDDMMYYYY(now);
+        }
     }
+    
     updateClock(); 
     setInterval(updateClock, 1000); 
 }
+
 
 // --- CÁC HÀM NÂNG CAO (DEVELOPER) ---
 function showAdvancedModal() {
