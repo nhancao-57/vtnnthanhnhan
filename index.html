@@ -1085,21 +1085,21 @@ function handleEndSessionContinue() {
     hideEndSessionModal();
     
     const exportSales = endSessionCheckSales.checked;
-    const exportInventory = endSessionCheckInventory.checked;
+    const shouldExportInventory = endSessionCheckInventory.checked; // <-- RENAMED variable
     
     // Thực thi download
     if (exportSales) {
-        // Kiểm tra lại (phòng hờ)
+        // (This part was fine, but good to be consistent)
         if (dailyTransactions.length > 0) {
             exportDailySalesReport();
         } else {
             showStatus('Không có dữ liệu bán hàng để xuất.', false);
         }
     }
-    if (exportInventory) {
+    if (shouldExportInventory) { // <-- Use the new variable name
         // Kiểm tra lại (phòng hờ)
         if (productDatabaseOriginal.length > 0 || dailyTransactions.length > 0) {
-            exportInventory();
+            exportInventory(); // <-- CORRECT: Now calls the global function
         } else {
             showStatus('Không có dữ liệu tồn kho để xuất.', false);
         }
