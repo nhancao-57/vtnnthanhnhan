@@ -1622,64 +1622,62 @@ function formatDateDDMMYYYY(date, timeZone) {
  * This REPLACES your existing startClock function.
  */
 function startClock() {
-    // Get elements for Vietnam time (your original elements)
+    // Get elements for Vietnam time
     const vnContainer = document.getElementById('session-time-container');
-    const vnLabel = document.getElementById('vietnam-clock-label'); // The new label
+    const vnLabel = document.getElementById('vietnam-clock-label');
     const vnTimeEl = document.getElementById('current-time-display');
     const vnDateEl = document.getElementById('current-date-display');
 
-    // Get elements for Local time (the new elements)
+    // Get elements for Local time
     const localContainer = document.getElementById('local-time-container');
     const localTimeEl = document.getElementById('local-time-display');
     const localDateEl = document.getElementById('local-date-display');
 
-    // Check if all elements are found
+    // Validate elements
     if (!vnContainer || !vnLabel || !vnTimeEl || !vnDateEl || !localContainer || !localTimeEl || !localDateEl) {
         console.error("Clock elements missing.");
         return;
     }
 
-    // 1. TIMEZONE CHECK
+    // TIMEZONE CHECK
     const userTimezoneOffset = new Date().getTimezoneOffset();
-    const isGMT7 = userTimezoneOffset === -420; // GMT+7 is -420 mins from UTC
+    const isGMT7 = userTimezoneOffset === -420; // GMT+7 is -420 minutes
 
-    // 2. CREATE TIME FORMATTERS
+    // TIME FORMATTERS
     const vnTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
         timeZone: 'Asia/Ho_Chi_Minh',
         hour: '2-digit', minute: '2-digit', second: '2-digit',
         hour12: false
     });
-    
+
     const localTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
         hour: '2-digit', minute: '2-digit', second: '2-digit',
         hour12: false
     });
 
-    // 3. CONFIGURE UI BASED ON TIMEZONE
+    // CONFIGURE UI
     if (isGMT7) {
-        // User is in GMT+7. Behave as normal.
-        vnLabel.textContent = "Giờ hiện tại (GMT +7)";
-        vnContainer.classList.remove('hidden'); // Show main clock
-        localContainer.classList.add('hidden'); // Hide local clock
+        // User is in Vietnam timezone → show only VN section
+        vnLabel.textContent = "Giờ hiện tại";
+        vnContainer.style.display = 'block';
+        localContainer.style.display = 'none';
     } else {
-        // User is in a different timezone. Show both.
+        // Different timezone → show both sections
         vnLabel.textContent = "Giờ Việt Nam (GMT +7)";
-        vnContainer.classList.remove('hidden'); // Show Vietnam clock
-        localContainer.classList.remove('hidden');  // Show Local clock
+        vnContainer.style.display = 'block';
+        localContainer.style.display = 'block';
     }
 
-    // 4. UPDATE CLOCK FUNCTION (This replaces your original updateClock)
+    // UPDATE FUNCTION
     function updateClock() {
         const now = new Date();
 
         if (isGMT7) {
-            // Just update the single, main clock with local time
+            // Vietnam clock only (local time same as VN)
             vnTimeEl.textContent = localTimeFormatter.format(now);
             vnDateEl.textContent = formatDateDDMMYYYY(now);
         } else {
-            // Update both clocks
-            
-            // Vietnam clock
+            // Vietnam clock (converted)
             vnTimeEl.textContent = vnTimeFormatter.format(now);
             vnDateEl.textContent = formatDateDDMMYYYY(now, 'Asia/Ho_Chi_Minh');
 
@@ -1688,10 +1686,11 @@ function startClock() {
             localDateEl.textContent = formatDateDDMMYYYY(now);
         }
     }
-    
-    updateClock(); 
-    setInterval(updateClock, 1000); 
+
+    updateClock();
+    setInterval(updateClock, 1000);
 }
+
 
 
 // --- CÁC HÀM NÂNG CAO (DEVELOPER) ---
