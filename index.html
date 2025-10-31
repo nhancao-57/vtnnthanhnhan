@@ -1607,7 +1607,7 @@ function buildFlatInvoiceData(transactions) {
  * Can optionally format for a specific timezone.
  * (This was missing from your snippet, so I've added it)
  */
-function formatDateDDMMYYYY(date, timeZone) {
+function formatClockDate(date, timeZone) {
     const options = { 
         day: '2-digit', 
         month: '2-digit', 
@@ -1675,15 +1675,15 @@ function startClock() {
         if (isGMT7) {
             // Vietnam clock only (local time same as VN)
             vnTimeEl.textContent = localTimeFormatter.format(now);
-            vnDateEl.textContent = formatDateDDMMYYYY(now);
+            vnDateEl.textContent = formatClockDate(now); // <--- CHANGED HERE
         } else {
             // Vietnam clock (converted)
             vnTimeEl.textContent = vnTimeFormatter.format(now);
-            vnDateEl.textContent = formatDateDDMMYYYY(now, 'Asia/Ho_Chi_Minh');
+            vnDateEl.textContent = formatClockDate(now, 'Asia/Ho_Chi_Minh'); // <--- CHANGED HERE
 
             // Local clock
             localTimeEl.textContent = localTimeFormatter.format(now);
-            localDateEl.textContent = formatDateDDMMYYYY(now);
+            localDateEl.textContent = formatClockDate(now); // <--- CHANGED HERE
         }
     }
 
