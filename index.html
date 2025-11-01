@@ -480,24 +480,26 @@
             Kết thúc phiên làm việc
         </h3>
         <p class="text-gray-600 dark:text-slate-300 mb-6">
-            Chọn các báo cáo bạn muốn xuất trước khi kết thúc phiên.
+            Bạn có thể tải xuống các báo cáo riêng lẻ. Nhấn "Kết thúc" sẽ xóa tất cả dữ liệu phiên.
         </p>
+        
         <div class="space-y-4 mb-6">
-            <label class="flex items-center p-3 rounded-lg border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
-                <input type="checkbox" id="end-session-check-sales" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:checked:bg-indigo-600" checked>
-                <span class="ml-3 font-medium text-gray-800 dark:text-slate-200">Xuất Báo Cáo Bán Hàng</span>
-            </label>
-            <label class="flex items-center p-3 rounded-lg border dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer">
-                <input type="checkbox" id="end-session-check-inventory" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:checked:bg-indigo-600" checked>
-                <span class="ml-3 font-medium text-gray-800 dark:text-slate-200">Xuất Báo Cáo Tồn Kho</span>
-            </label>
+            <button id="end-session-download-sales" class="btn-primary w-full !py-3">
+                Tải Báo Cáo Bán Hàng
+            </button>
+            <button id="end-session-download-inventory" class="btn-primary w-full !py-3">
+                Tải Báo Cáo Tồn Kho
+            </button>
         </div>
+
+        <div class="h-px bg-slate-200 dark:bg-slate-700 my-6"></div>
+
         <div class="flex flex-wrap gap-3 justify-end">
             <button id="end-session-modal-cancel-btn" class="btn-secondary">
-                Hủy bỏ
+                Hủy bỏ (Vẫn giữ phiên)
             </button>
-            <button id="end-session-modal-continue-btn" class="btn-primary">
-                Tiếp tục
+            <button id="end-session-modal-confirm-btn" class="btn-danger">
+                Kết thúc phiên & Xóa dữ liệu
             </button>
         </div>
     </div>
@@ -698,12 +700,12 @@ let themeIconMoon = null;
 let exportedInvoicesModal = null;
 let exportedInvoicesList = null;
 
-// (*** MỚI ***) Biến cho Modal Kết thúc Phiên
+// (*** SỬA ***) Biến cho Modal Kết thúc Phiên
 let endSessionModal = null;
-let endSessionCheckSales = null;
-let endSessionCheckInventory = null;
-let endSessionModalContinueBtn = null;
-let endSessionModalCancelBtn = null;
+let endSessionModalCancelBtn = null; // Nút Hủy
+let endSessionDownloadSalesBtn = null; // (MỚI) Nút tải Bán hàng
+let endSessionDownloadInventoryBtn = null; // (MỚI) Nút tải Tồn kho
+let endSessionModalConfirmBtn = null; // (MỚI) Nút Xác nhận Xóa
 
 // (*** MỚI ***) Biến cho Modal Thông tin
 let infoModal = null;
@@ -723,12 +725,12 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmModalTitle = document.getElementById('confirm-modal-title');
     confirmModalMessage = document.getElementById('confirm-modal-message');
 
-    // (*** MỚI ***) Gán biến Modal Kết thúc Phiên
+// (*** SỬA ***) Gán biến Modal Kết thúc Phiên
     endSessionModal = document.getElementById('end-session-modal');
-    endSessionCheckSales = document.getElementById('end-session-check-sales');
-    endSessionCheckInventory = document.getElementById('end-session-check-inventory');
-    endSessionModalContinueBtn = document.getElementById('end-session-modal-continue-btn');
     endSessionModalCancelBtn = document.getElementById('end-session-modal-cancel-btn');
+    endSessionDownloadSalesBtn = document.getElementById('end-session-download-sales');
+    endSessionDownloadInventoryBtn = document.getElementById('end-session-download-inventory');
+    endSessionModalConfirmBtn = document.getElementById('end-session-modal-confirm-btn');
 
     // (*** MỚI ***) Gán biến Modal Thông tin
     infoModal = document.getElementById('info-modal');
@@ -1730,19 +1732,60 @@ function hideInfoModal() {
 // (*** MỚI ***) QUẢN LÝ MODAL KẾT THÚC PHIÊN ---
 function setupEndSessionModal() {
     if (!endSessionModal) return;
+    
+    // (SỬA) Gán sự kiện cho các nút mới
     endSessionModalCancelBtn.addEventListener('click', hideEndSessionModal);
-    endSessionModalContinueBtn.addEventListener('click', handleEndSessionContinue);
+    endSessionDownloadSalesBtn.addEventListener('click', handleModalDownloadSales);
+    endSessionDownloadInventoryBtn.addEventListener('click', handleModalDownloadInventory);
+    endSessionModalConfirmBtn.addEventListener('click', handleModalConfirmEnd);
+}
+
+function handleModalDownloadSales() {
+    if (dailyTransactions.length > 0) {
+        exportDailySalesReport(); // Gọi hàm global
+        // Tùy chọn: Vô hiệu hóa nút sau khi nhấp
+        endSessionDownloadSalesBtn.disabled = true;
+        endSessionDownloadSalesBtn.textContent = 'Đã tải Báo Cáo Bán Hàng';
+    } else {
+        showStatus('Không có dữ liệu bán hàng để xuất.', false);
+    }
+}
+
+function handleModalDownloadInventory() {
+    if (productDatabaseOriginal.length > 0 || dailyTransactions.length > 0) {
+        exportInventory(); // Gọi hàm global
+        // Tùy chọn: Vô hiệu hóa nút sau khi nhấp
+        endSessionDownloadInventoryBtn.disabled = true;
+        endSessionDownloadInventoryBtn.textContent = 'Đã tải Báo Cáo Tồn Kho';
+    } else {
+        showStatus('Không có dữ liệu tồn kho để xuất.', false);
+    }
+}
+
+function handleModalConfirmEnd() {
+    hideEndSessionModal(); // Ẩn modal chọn file
+    
+    // Hiển thị modal xác nhận CUỐI CÙNG (hộp thoại màu đỏ)
+    // Đây là logic cũ từ hàm handleEndSessionContinue()
+    showConfirmModal(
+        'Xác nhận XÓA DỮ LIỆU?',
+        'Tất cả dữ liệu phiên (CSDL, Giao dịch, Log Hóa đơn) sẽ bị XÓA SẠCH. Đây là thao tác KHÔNG THỂ HỒI PHỤC. Bạn có chắc chắn muốn kết thúc?',
+        performDataDeletion // Callback là hàm xóa dữ liệu
+    );
 }
 
 function showEndSessionModal() {
     if (!endSessionModal) return;
-    // (MỚI) Chỉ check "Bán hàng" nếu có giao dịch
-    endSessionCheckSales.checked = dailyTransactions.length > 0;
-    endSessionCheckSales.disabled = dailyTransactions.length === 0;
+
+    // (SỬA) Logic để BẬT/TẮT các nút TẢI XUỐNG
+    const hasSalesData = dailyTransactions.length > 0;
+    endSessionDownloadSalesBtn.disabled = !hasSalesData;
     
-    // (MỚI) Chỉ check "Tồn kho" nếu có CSDL hoặc giao dịch (cho hàng bypass)
-    endSessionCheckInventory.checked = productDatabaseOriginal.length > 0 || dailyTransactions.length > 0;
-    endSessionCheckInventory.disabled = !(productDatabaseOriginal.length > 0 || dailyTransactions.length > 0);
+    const hasInventoryData = productDatabaseOriginal.length > 0 || dailyTransactions.length > 0;
+    endSessionDownloadInventoryBtn.disabled = !hasInventoryData;
+    
+    // Nút Kết thúc & Xóa luôn luôn được bật
+    endSessionModalConfirmBtn.disabled = false;
 
     endSessionModal.classList.remove('hidden');
 }
