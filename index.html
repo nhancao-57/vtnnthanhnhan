@@ -79,6 +79,14 @@
             .input-selected {
                 @apply bg-indigo-50 border-indigo-300 dark:bg-indigo-900/50 dark:border-indigo-700;
             }
+            /* (MỚI) Input số lượng nhỏ trong giỏ hàng */
+            .input-quantity-cart {
+                @apply w-12 text-center p-1 border border-slate-300 rounded-md box-border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 focus:ring-indigo-500;
+            }
+            /* (MỚI) Nút điều chỉnh số lượng */
+            .btn-quantity-control {
+                @apply p-1 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors dark:bg-indigo-700 dark:text-indigo-100 dark:hover:bg-indigo-600;
+            }
 
             /* 3. Class JS */
             .search-item {
@@ -268,6 +276,21 @@
     <div id="session-time-container" ...>
 
     <div id="status-container" class="sticky top-[125px] z-30"></div>
+
+    <!-- START: LIVE ACCUMULATED TOTAL FEATURE -->
+    <div id="accumulated-total-card" class="card-base mb-6 p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 border-indigo-500 border-l-4 shadow-lg">
+        <div class="mb-2 sm:mb-0">
+            <p class="text-sm font-medium text-indigo-600 dark:text-indigo-400">Tổng Doanh Thu (Phiên làm việc)</p>
+            <h3 id="accumulated-total-display" class="text-3xl font-extrabold text-gray-900 dark:text-white">
+                0 VNĐ
+            </h3>
+        </div>
+        <div class="text-right text-sm text-gray-500 dark:text-slate-400">
+            <p id="total-transactions-count">Đã ghi nhận: 0 giao dịch</p>
+            <p class="mt-1">Số liệu trực tiếp từ các hóa đơn đã xuất.</p>
+        </div>
+    </div>
+    <!-- END: LIVE ACCUMULATED TOTAL FEATURE -->
 </div>
     
     <div class="card-base md:col-span-2 mb-6">
@@ -690,7 +713,7 @@ let currentCart = [];
 let dailyTransactions = []; 
 let exportedInvoicesLog = []; // (MỚI) Log hóa đơn đã xuất
 let selectedProduct = null; 
-let devBypassMode = false;
+let devBypassMode = false; // (*** MỚI - LƯU ***) Thêm vào backup
 
 // (MỚI) Biến cho Modal Xác nhận
 let confirmModal = null;
@@ -765,6 +788,8 @@ document.addEventListener('DOMContentLoaded', () => {
     startClock(); // (MỚI)
     updateFinancialQuarter(); // (*** MỚI ***)
     
+    // (*** MỚI ***) CẬP NHẬT TỔNG DOANH THU KHI KHỞI TẠO
+    updateLiveTotalAccumulated(); 
 
     // Gán sự kiện cho các nút
     document.getElementById('load-db-btn').addEventListener('click', handleFileLoad);
@@ -789,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('export-empty-sales-btn').addEventListener('click', exportEmptySalesReport);
     document.getElementById('export-empty-inventory-btn').addEventListener('click', exportEmptyInventory);
     
-    // (*** MỚI ***) Gán sự kiện cho Backup/Restore
+    // (*** SỬA ***) Gán sự kiện cho Backup/Restore
     document.getElementById('backup-session-btn').addEventListener('click', handleBackupSession);
     document.getElementById('restore-file-input').addEventListener('change', handleRestoreSession);
 
@@ -931,7 +956,28 @@ function updateSessionStatus() {
     
     toggleAppControls(isSessionActive, devBypassMode);
     updateExportedInvoicesButtonState(); // (MỚI) Cập nhật nút HĐ đã xuất
+    updateLiveTotalAccumulated(); // (*** MỚI ***) Cập nhật tổng doanh thu
+    // (*** MỚI ***) Cập nhật trạng thái nút Bypass trong Modal Nâng cao
+    updateBypassButtonState(); 
 }
+
+function updateBypassButtonState() {
+    const btn = document.getElementById('dev-bypass-btn');
+    const statusSpan = btn.querySelector('span');
+    
+    if (!btn || !statusSpan) return;
+
+    if (devBypassMode) {
+        statusSpan.textContent = '[BẬT]';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-warning');
+    } else {
+        statusSpan.textContent = '[TẮT]';
+        btn.classList.add('btn-warning');
+        btn.classList.remove('btn-success');
+    }
+}
+
 
 function toggleAppControls(isSessionActive, isBypassActive = false) {
     document.getElementById('export-inventory-btn').disabled = !isSessionActive;
@@ -961,19 +1007,48 @@ function updateExportedInvoicesButtonState() {
     btn.disabled = !(isSessionActive && exportedInvoicesLog.length > 0);
 }
 
+// (*** MỚI ***) HÀM TÍNH VÀ CẬP NHẬT TỔNG DOANH THU TỪ dailyTransactions
+function updateLiveTotalAccumulated() {
+    let totalRevenue = 0;
+    
+    dailyTransactions.forEach(transaction => {
+        transaction.items.forEach(item => {
+            // Tổng tiền = Đơn giá * Số lượng (Không cần quan tâm thuế vì đã đơn giản hóa)
+            const itemTotal = item.price * item.quantity; 
+            totalRevenue += itemTotal;
+        });
+    });
+
+    const totalDisplayEl = document.getElementById('accumulated-total-display');
+    const countDisplayEl = document.getElementById('total-transactions-count');
+
+    if (totalDisplayEl) {
+        // Áp dụng làm tròn trước khi format
+        const roundedTotal = Math.round(totalRevenue); 
+        totalDisplayEl.textContent = currencyFormatter.format(roundedTotal);
+    }
+    
+    if (countDisplayEl) {
+        countDisplayEl.textContent = `Đã ghi nhận: ${dailyTransactions.length} giao dịch`;
+    }
+}
+
 
 // --- 2. QUẢN LÝ DỮ LIỆU & STATE (LOCALSTORAGE) ---
+// (*** SỬA ***) Cập nhật hàm lưu state để bao gồm devBypassMode
 function saveStateToStorage() {
     const state = {
         current: productDatabase,
         original: productDatabaseOriginal,
-        transactions: dailyTransactions 
+        transactions: dailyTransactions,
+        devBypass: devBypassMode // (*** MỚI - LƯU ***) Lưu trạng thái Bypass
     };
     localStorage.setItem('inventoryState', JSON.stringify(state));
     // (MỚI) Log hóa đơn được lưu riêng (trong hàm exportInvoiceFile)
     // vì nó không thuộc về "state" của tồn kho
 }
 
+// (*** SỬA ***) Cập nhật hàm tải state để bao gồm devBypassMode
 function loadStateFromStorage() {
     // 1. Tải state tồn kho
     const savedState = localStorage.getItem('inventoryState');
@@ -984,6 +1059,7 @@ function loadStateFromStorage() {
                 productDatabase = state.current;
                 productDatabaseOriginal = state.original;
                 dailyTransactions = state.transactions || []; 
+                devBypassMode = state.devBypass || false; // (*** MỚI - TẢI ***) Tải trạng thái Bypass
                 showStatus('Đã khôi phục dữ liệu từ phiên làm việc trước.', false);
             }
         } catch (e) {
@@ -1004,7 +1080,7 @@ function loadStateFromStorage() {
         }
     }
     
-    updateSessionStatus(); // Hàm này sẽ tự động gọi updateExportedInvoicesButtonState
+    updateSessionStatus(); // Hàm này sẽ tự động gọi updateExportedInvoicesButtonState VÀ updateLiveTotalAccumulated
 }
 
 // --- 3. TẢI DATABASE & QUẢN LÝ PHIÊN ---
@@ -1030,6 +1106,7 @@ function handleFileLoad() {
                 currentCart = [];
                 exportedInvoicesLog = []; // (MỚI) Xóa log cũ khi nạp CSDL mới
                 localStorage.removeItem('exportedInvoicesLog'); // (MỚI)
+                devBypassMode = false; // (*** MỚI - RESET ***) Reset Bypass khi tải CSDL mới
                 
                 // (*** SỬA ***) Xóa cột THUE (20) khỏi COL object
                 const COL = {TIN: 16, TEN: 17, DVT: 18, GIA: 19};
@@ -1092,40 +1169,6 @@ function startEndSessionProcess() {
 }
 
 // (*** SỬA ***)
-// Bước 2: Người dùng nhấn "Tiếp tục" trên modal chọn file
-function handleEndSessionContinue() {
-    hideEndSessionModal();
-    
-    const exportSales = endSessionCheckSales.checked;
-    const shouldExportInventory = endSessionCheckInventory.checked; // <-- RENAMED variable
-    
-    // Thực thi download
-    if (exportSales) {
-        // (This part was fine, but good to be consistent)
-        if (dailyTransactions.length > 0) {
-            exportDailySalesReport();
-        } else {
-            showStatus('Không có dữ liệu bán hàng để xuất.', false);
-        }
-    }
-    if (shouldExportInventory) { // <-- Use the new variable name
-        // Kiểm tra lại (phòng hờ)
-        if (productDatabaseOriginal.length > 0 || dailyTransactions.length > 0) {
-            exportInventory(); // <-- CORRECT: Now calls the global function
-        } else {
-            showStatus('Không có dữ liệu tồn kho để xuất.', false);
-        }
-    }
-    
-    // Bước 3: Hiển thị hộp thoại XÁC NHẬN CUỐI CÙNG (Fallback)
-    showConfirmModal(
-        'Xác nhận XÓA DỮ LIỆU?',
-        'Tất cả dữ liệu phiên (CSDL, Giao dịch, Log Hóa đơn) sẽ bị XÓA SẠCH. Đây là thao tác KHÔNG THỂ HỒI PHỤC. Bạn có chắc chắn muốn kết thúc?',
-        performDataDeletion // Callback là hàm xóa dữ liệu
-    );
-}
-
-// (*** SỬA ***)
 // Bước 4: Người dùng nhấn "Xác nhận" trên modal cuối cùng -> Xóa dữ liệu
 function performDataDeletion() {
     productDatabase = [];
@@ -1135,7 +1178,8 @@ function performDataDeletion() {
     exportedInvoicesLog = [];
     localStorage.removeItem('inventoryState');
     localStorage.removeItem('exportedInvoicesLog');
-    
+    devBypassMode = false; // (*** MỚI - RESET ***) Reset Bypass mode
+
     renderCart();
     document.getElementById('customer-info-form').reset();
     document.getElementById('add-product-form').reset();
@@ -1333,11 +1377,32 @@ function renderCart() {
         
         const row = cartBody.insertRow();
         
+        // (*** MỚI ***) Thay thế cột Số lượng bằng ô điều khiển
+        const quantityControlHtml = `
+            <div class="flex items-center justify-center space-x-1">
+                <button class="btn-quantity-control" onclick="updateQuantity(${index}, -1)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" /></svg>
+                </button>
+                <input type="number" 
+                       value="${item.quantity}" 
+                       min="1" 
+                       class="input-base input-quantity-cart"
+                       onchange="handleQuantityInput(${index}, this.value)"
+                       onkeyup="handleQuantityInput(${index}, this.value)"
+                       inputmode="numeric"
+                       pattern="[0-9]*"
+                       >
+                <button class="btn-quantity-control" onclick="updateQuantity(${index}, 1)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                </button>
+            </div>
+        `;
+
         // (*** SỬA ***) Cập nhật HTML (bỏ 3 cột thuế)
         row.innerHTML = `<td data-label="STT">${index + 1}</td>
                          <td data-label="Tên hàng hóa" class="font-medium">${item.name}</td>
                          <td data-label="ĐVT">${item.unit}</td>
-                         <td data-label="Số lượng" class="font-medium">${item.quantity}</td>
+                         <td data-label="Số lượng" class="font-medium">${quantityControlHtml}</td> 
                          <td data-label="Đơn giá">${currencyFormatter.format(item.price)}</td>
                          <td data-label="Thành tiền" class="font-bold">${currencyFormatter.format(thanhTien)}</td>
                          <td class="cell-action">
@@ -1350,6 +1415,93 @@ function renderCart() {
     // (*** SỬA ***) Xóa total pre-tax
     // document.getElementById('cart-total-pretax').textContent = `Tổng cộng (Chưa thuế): ${currencyFormatter.format(totalPreTax)}`;
     document.getElementById('cart-total-posttax').textContent = `Tổng cộng: ${currencyFormatter.format(totalAmount)}`;
+}
+
+// (*** MỚI ***) Hàm cập nhật số lượng khi nhấn nút +/-
+function updateQuantity(index, delta) {
+    if (index >= currentCart.length) return;
+    
+    const currentItem = currentCart[index];
+    const newQuantity = currentItem.quantity + delta;
+
+    if (newQuantity < 1) {
+        // Hỏi người dùng nếu muốn xóa khi số lượng về 0 hoặc âm
+        showConfirmModal(
+            'Xóa sản phẩm?',
+            `Bạn có chắc muốn xóa sản phẩm "${currentItem.name}" khỏi giỏ hàng?`,
+            () => removeCartItem(index),
+            'btn-danger'
+        );
+        return;
+    }
+    
+    // Kiểm tra tồn kho (chỉ khi không phải Bypass Mode)
+    if (!devBypassMode) {
+        const dbProduct = productDatabase.find(p => p.name === currentItem.name);
+        if (dbProduct && newQuantity > dbProduct.stock) {
+            // Cảnh báo nhưng cho phép bán lố
+            showConfirmModal(
+                'Cảnh báo Tồn Kho',
+                `Sản phẩm "${currentItem.name}" chỉ còn ${dbProduct.stock}. Bạn có chắc chắn muốn bán lố ${newQuantity} không?`,
+                () => {
+                    currentItem.quantity = newQuantity;
+                    renderCart();
+                    showStatus(`Cập nhật số lượng cho "${currentItem.name}" (Bán lố).`);
+                },
+                'btn-warning'
+            );
+            return;
+        }
+    }
+    
+    currentItem.quantity = newQuantity;
+    renderCart();
+}
+
+// (*** MỚI ***) Hàm cập nhật số lượng khi nhập vào ô input
+function handleQuantityInput(index, value) {
+    if (index >= currentCart.length) return;
+
+    let newQuantity = parseFloat(value);
+    
+    // Xử lý giá trị nhập vào
+    if (isNaN(newQuantity) || newQuantity <= 0) {
+        // Không thể để giá trị NaN hoặc <= 0, hỏi xóa hoặc reset về 1
+        showConfirmModal(
+            'Số lượng không hợp lệ',
+            `Số lượng nhập vào không hợp lệ. Bạn có muốn xóa sản phẩm "${currentCart[index].name}" khỏi giỏ hàng không?`,
+            () => removeCartItem(index),
+            'btn-danger'
+        );
+        // Ngăn chặn renderCart() ngay lập tức để người dùng xem thông báo
+        return;
+    }
+    
+    newQuantity = Math.round(newQuantity); // Làm tròn số lượng
+
+    const currentItem = currentCart[index];
+    
+    // Kiểm tra tồn kho (chỉ khi không phải Bypass Mode)
+    if (!devBypassMode) {
+        const dbProduct = productDatabase.find(p => p.name === currentItem.name);
+        if (dbProduct && newQuantity > dbProduct.stock) {
+            // Cảnh báo nhưng cho phép bán lố
+            showConfirmModal(
+                'Cảnh báo Tồn Kho',
+                `Sản phẩm "${currentItem.name}" chỉ còn ${dbProduct.stock}. Bạn có chắc chắn muốn bán lố ${newQuantity} không?`,
+                () => {
+                    currentItem.quantity = newQuantity;
+                    renderCart();
+                    showStatus(`Cập nhật số lượng cho "${currentItem.name}" (Bán lố).`);
+                },
+                'btn-warning'
+            );
+            return;
+        }
+    }
+    
+    currentItem.quantity = newQuantity;
+    renderCart();
 }
 
 function removeCartItem(index) { 
@@ -1477,7 +1629,7 @@ function exportInvoiceFile() {
 
 
     clearCart(false); // Sẽ tự động reset checkbox
-    updateSessionStatus(); // Sẽ tự động gọi updateExportedInvoicesButtonState
+    updateSessionStatus(); // Sẽ tự động gọi updateExportedInvoicesButtonState VÀ updateLiveTotalAccumulated
 }
 
 function exportDailySalesReport() {
@@ -1941,23 +2093,20 @@ function reExportInvoice(id) {
 // (*** SỬA ***) Cập nhật logic Bật/Tắt Bypass Mode
 function toggleBypassMode() {
     devBypassMode = !devBypassMode;
-    const btn = document.getElementById('dev-bypass-btn');
-    const statusSpan = btn.querySelector('span');
     const bypassDiv = document.getElementById('bypass-inputs');
     
+    updateBypassButtonState(); // Cập nhật trạng thái nút
+    
     if (devBypassMode) {
-        statusSpan.textContent = '[BẬT]';
-        btn.classList.add('btn-success');
-        btn.classList.remove('btn-warning');
-        bypassDiv.classList.remove('hidden'); // (*** MỚI ***)
+        bypassDiv.classList.remove('hidden'); 
         showStatus('Chế độ Bypass CSDL đã BẬT. Giờ bạn có thể thêm sản phẩm thủ công.', false);
     } else {
-        statusSpan.textContent = '[TẮT]';
-        btn.classList.add('btn-warning');
-        btn.classList.remove('btn-success');
-        bypassDiv.classList.add('hidden'); // (*** MỚI ***)
+        bypassDiv.classList.add('hidden'); 
         showStatus('Chế độ Bypass CSDL đã TẮT.', false);
     }
+    // (*** MỚI ***) Lưu trạng thái mới vào localStorage
+    saveStateToStorage();
+    
     updateSessionStatus();
     handleProductSearch(); 
 }
@@ -1994,10 +2143,10 @@ function exportEmptyInventory() {
     hideAdvancedModal();
 }
 
-// --- (*** MỚI ***) CÁC HÀM BACKUP & RESTORE ---
-
+// --- (*** SỬA ***) CÁC HÀM BACKUP & RESTORE
 /**
  * Xuất toàn bộ session (inventory state & logs) ra file JSON.
+ * (Đã sửa để sao lưu toàn bộ trạng thái cần thiết)
  */
 function handleBackupSession() {
     try {
@@ -2008,12 +2157,22 @@ function handleBackupSession() {
             return showStatus('Không có dữ liệu phiên để backup.', true);
         }
 
+        // Tải toàn bộ state (đã bao gồm devBypass)
+        const state = inventoryState ? JSON.parse(inventoryState) : null;
+        const logs = exportedInvoicesLog ? JSON.parse(exportedInvoicesLog) : null;
+        
         const backupData = {
-            inventoryState: inventoryState ? JSON.parse(inventoryState) : null,
-            exportedInvoicesLog: exportedInvoicesLog ? JSON.parse(exportedInvoicesLog) : null,
+            // (*** SỬA ***) Đổi tên key để dễ quản lý hơn, và đảm bảo mọi thứ được lưu
+            fullSessionData: { 
+                productDatabase: state ? state.current : [],
+                productDatabaseOriginal: state ? state.original : [],
+                dailyTransactions: state ? state.transactions : [],
+                devBypassMode: state ? state.devBypass : false,
+            },
+            exportedInvoicesLog: logs,
             backupMetadata: {
                 timestamp: new Date().toISOString(),
-                version: "1.5"
+                version: "1.6" // Tăng version sau khi update tính năng
             }
         };
         
@@ -2024,7 +2183,7 @@ function handleBackupSession() {
         const a = document.createElement('a');
         const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
         a.href = url;
-        a.download = `VTNN_ThanhNhan_Backup_${dateStr}.json`;
+        a.download = `VTNN_ThanhNhan_Backup_${dateStr}_V1_6.json`;
         
         document.body.appendChild(a);
         a.click();
@@ -2042,6 +2201,7 @@ function handleBackupSession() {
 
 /**
  * Xử lý file .json được chọn để khôi phục session.
+ * (Đã sửa để khôi phục toàn bộ trạng thái cần thiết)
  */
 function handleRestoreSession(event) {
     const fileInput = event.target;
@@ -2056,8 +2216,11 @@ function handleRestoreSession(event) {
         try {
             const backupData = JSON.parse(jsonString);
 
-            // Phải check `inventoryState` và `exportedInvoicesLog` tồn tại (có thể là null, nhưng key phải có)
-            if (backupData && typeof backupData.inventoryState !== 'undefined' && typeof backupData.exportedInvoicesLog !== 'undefined') {
+            // (*** SỬA ***) Kiểm tra cấu trúc mới (fullSessionData)
+            const sessionData = backupData.fullSessionData;
+            const logData = backupData.exportedInvoicesLog;
+            
+            if (sessionData && typeof sessionData.productDatabase !== 'undefined' && typeof sessionData.dailyTransactions !== 'undefined' && typeof logData !== 'undefined') {
                 
                 // Dùng modal xác nhận
                 showConfirmModal(
@@ -2065,18 +2228,19 @@ function handleRestoreSession(event) {
                     'Hành động này sẽ XÓA SẠCH phiên làm việc hiện tại và thay thế bằng dữ liệu từ file. Bạn có chắc chắn muốn tiếp tục?',
                     () => {
                         try {
-                            // Stringify lại trước khi lưu vào localStorage
-                            const invState = backupData.inventoryState ? JSON.stringify(backupData.inventoryState) : null;
-                            const logState = backupData.exportedInvoicesLog ? JSON.stringify(backupData.exportedInvoicesLog) : null;
+                            // Tạo lại cấu trúc inventoryState để lưu vào localStorage
+                            const newInventoryState = {
+                                current: sessionData.productDatabase,
+                                original: sessionData.productDatabaseOriginal || [],
+                                transactions: sessionData.dailyTransactions,
+                                devBypass: sessionData.devBypassMode || false // Lấy trạng thái bypass
+                            };
+
+                            localStorage.setItem('inventoryState', JSON.stringify(newInventoryState));
                             
-                            if (invState) {
-                                localStorage.setItem('inventoryState', invState);
-                            } else {
-                                localStorage.removeItem('inventoryState');
-                            }
-                            
-                            if (logState) {
-                                localStorage.setItem('exportedInvoicesLog', logState);
+                            // Lưu log hóa đơn
+                            if (logData) {
+                                localStorage.setItem('exportedInvoicesLog', JSON.stringify(logData));
                             } else {
                                 localStorage.removeItem('exportedInvoicesLog');
                             }
@@ -2097,6 +2261,10 @@ function handleRestoreSession(event) {
                 );
 
             } else {
+                // (*** SỬA ***) Thêm thông báo nếu cấu trúc file cũ (inventoryState)
+                if (backupData.inventoryState) {
+                    throw new Error('File backup có vẻ là định dạng cũ. Vui lòng tải file mới nhất hoặc liên hệ hỗ trợ.');
+                }
                 throw new Error('File backup không hợp lệ hoặc thiếu dữ liệu.');
             }
 
