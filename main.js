@@ -519,9 +519,14 @@ function updateFinancialQuarter() {
 function handleAddProduct(e) {
     e.preventDefault(); 
     
-    // --- 1. BYPASS MODE LOGIC (Giữ nguyên) ---
+    // Get input values immediately
+    const searchInput = document.getElementById('product-search');
+    const inputValue = searchInput.value.trim();
+    
+    // --- 1. BYPASS MODE LOGIC ---
+    // (Giữ nguyên logic nhập thủ công nếu đang bật chế độ Dev/Bypass)
     if (devBypassMode && !selectedProduct) {
-        const name = document.getElementById('product-search').value.trim();
+        const name = inputValue;
         const quantity = parseFloat(document.getElementById('product-quantity').value);
         
         if (!name || !quantity || quantity <= 0) {
@@ -545,50 +550,44 @@ function handleAddProduct(e) {
         }
         
         renderCart();
-        document.getElementById('product-search').value = '';
+        // Reset form
+        searchInput.value = '';
         document.getElementById('product-quantity').value = '';
         document.getElementById('product-unit').value = '';
         document.getElementById('product-price').value = '';
         
         clearProductSelection();
-        document.getElementById('product-search').focus();
+        searchInput.focus();
         showStatus(`Bypass Mode: Đã thêm/cập nhật "${name}" vào giỏ hàng.`, false);
         return;
     }
 
-    // --- 2. (MỚI) AUTO-MATCH THÔNG MINH (XỬ LÝ UNICODE TIẾNG VIỆT) ---
-    if (!selectedProduct) {
-        const searchInput = document.getElementById('product-search');
-        const rawInput = searchInput.value;
+    // --- 2. "LET IT SLIDE" LOGIC (TỰ ĐỘNG KHỚP) ---
+    // Nếu chưa chọn sản phẩm từ dropdown (selectedProduct == null)
+    // Nhưng trong ô tìm kiếm lại có chữ, ta sẽ thử tìm trong CSDL xem có khớp không.
+    if (!selectedProduct && inputValue.length > 0) {
+        // Chuẩn hóa chuỗi nhập vào (chữ thường, bỏ dấu thừa, chuẩn Unicode)
+        const cleanInput = inputValue.normalize('NFC').toLowerCase();
 
-        if (rawInput) {
-            // Bước quan trọng: Chẩn hóa Unicode (NFC) -> Trim -> Lowercase
-            // Giúp so sánh "á" (dựng sẵn) và "a" + "dấu sắc" (tổ hợp) là giống nhau
-            const cleanInput = rawInput.normalize('NFC').trim().toLowerCase();
+        // Tìm trong CSDL
+        const matchedProduct = productDatabase.find(p => {
+            return p.name.normalize('NFC').trim().toLowerCase() === cleanInput;
+        });
 
-            // Tìm trong Database
-            const exactMatch = productDatabase.find(p => {
-                if (!p.name) return false;
-                return p.name.normalize('NFC').trim().toLowerCase() === cleanInput;
-            });
-
-            if (exactMatch) {
-                // Nếu tìm thấy, cưỡng chế chọn sản phẩm đó
-                selectedProduct = exactMatch;
-                
-                // Cập nhật giao diện để khớp chính xác tên trong DB
-                searchInput.value = exactMatch.name;
-                searchInput.classList.add('input-selected');
-                
-                // Xóa danh sách gợi ý để gọn giao diện
-                document.getElementById('product-search-results').innerHTML = '';
-            }
+        // Nếu tìm thấy tên trùng khớp 100%
+        if (matchedProduct) {
+            selectedProduct = matchedProduct;
+            
+            // Cập nhật lại UI cho khớp (Optional)
+            searchInput.value = matchedProduct.name;
+            searchInput.classList.add('input-selected');
+            document.getElementById('product-search-results').innerHTML = ''; // Ẩn dropdown gợi ý
         }
     }
 
     // --- 3. KIỂM TRA LỖI ---
+    // Nếu sau khi đã "Let it slide" mà vẫn không có sản phẩm -> Báo lỗi
     if (!selectedProduct) {
-        // Nếu sau khi đã quét Unicode mà vẫn không thấy -> Báo lỗi thật
         return showStatus('Vui lòng chọn một sản phẩm từ danh sách!', true);
     }
 
@@ -600,7 +599,7 @@ function handleAddProduct(e) {
     // Nếu Autofill chỉ điền tên mà chưa điền số lượng -> Focus vào ô số lượng
     if (!quantity || quantity <= 0) {
         quantityInput.focus();
-        return showStatus(`Đã chọn "${name}". Vui lòng nhập số lượng!`, false); // false = màu xanh/vàng nhẹ, không phải lỗi đỏ
+        return showStatus(`Đã chọn "${name}". Vui lòng nhập số lượng!`, false);
     }
     
     const product = selectedProduct; 
@@ -622,6 +621,7 @@ function handleAddProduct(e) {
         document.getElementById('product-search').focus();
     };
     
+    // Cảnh báo tồn kho (Logic cũ)
     if (quantity > product.stock) {
         showConfirmModal(
             'Cảnh báo Tồn Kho',
