@@ -514,68 +514,21 @@ function updateFinancialQuarter() {
     displayEl.textContent = displayText;
 }
 
-// --- 4. TÌM KIẾM & THÊM SẢN PHẨM VÀO GIỎ (ULTIMATE ROBUST) ---
+// --- 4. TÌM KIẾM & THÊM SẢN PHẨM VÀO GIỎ (NUCLEAR OPTION) ---
 function handleAddProduct(e) {
     e.preventDefault(); 
     
     const searchInput = document.getElementById('product-search');
-    // Normalize: NFC form, trim whitespace, and replace Non-Breaking Spaces with normal spaces
-    const rawInput = (searchInput.value || '').normalize('NFC').replace(/\u00A0/g, ' ').trim();
+    // Normalize input immediately
+    const rawInput = searchInput.value || '';
     
-    // --- HELPER: ROBUST FINDER ---
-    // This function tries to find a product using 3 levels of "looseness"
-    const findProductFlexible = (inputQuery) => {
-        if (!inputQuery) return null;
-
-        // Helper: Clean string for comparison (lowercase, standard spaces)
-        const clean = (str) => str.toLowerCase().replace(/\s+/g, ' ').trim();
-        
-        // Helper: Remove Vietnamese accents
-        const removeAccents = (str) => {
-            return str.normalize("NFD")
-                      .replace(/[\u0300-\u036f]/g, "")
-                      .replace(/đ/g, "d").replace(/Đ/g, "D");
-        };
-
-        const qClean = clean(inputQuery);
-        const qNoAccent = removeAccents(qClean);
-
-        // LEVEL 1: Exact Match (Insensitive to case & extra spaces)
-        // Checks: "Phân  Urê" == "phân urê"
-        let match = productDatabase.find(p => clean(p.name) === qClean);
-        if (match) {
-            console.log(`[AutoMatch] Level 1 (Exact): "${match.name}"`);
-            return match;
-        }
-
-        // LEVEL 2: No-Accent Match (Forgiving Vietnamese)
-        // Checks: "Phan Ure" == "Phân Urê"
-        match = productDatabase.find(p => removeAccents(clean(p.name)) === qNoAccent);
-        if (match) {
-            console.log(`[AutoMatch] Level 2 (No-Accent): "${match.name}"`);
-            return match;
-        }
-
-        // LEVEL 3: "Contains" Match (Risky, but useful for autofill cutoff)
-        // Checks: If user typed "Phân Urê Cà" -> Matches "Phân Urê Cà Mau"
-        // ONLY works if there is exactly ONE match to avoid wrong guesses.
-        const candidates = productDatabase.filter(p => clean(p.name).includes(qClean));
-        if (candidates.length === 1) {
-            console.log(`[AutoMatch] Level 3 (Contains): "${candidates[0].name}"`);
-            return candidates[0];
-        }
-
-        return null; // Give up
-    };
-
-    // --- 1. BYPASS MODE LOGIC ---
+    // --- 1. BYPASS MODE LOGIC (Giữ nguyên) ---
     if (devBypassMode && !selectedProduct) {
-        // ... (Keep your existing bypass logic here) ...
-        const name = rawInput;
+        // (Copy lại logic Bypass cũ của bạn vào đây hoặc giữ nguyên khối này)
+        const name = rawInput.trim();
         const quantity = parseFloat(document.getElementById('product-quantity').value);
         if (!name || !quantity || quantity <= 0) return showStatus('Bypass: Nhập tên & SL hợp lệ!', true);
         
-        // ... (Quick Logic for Bypass Add) ...
         const unit = document.getElementById('product-unit').value.trim() || 'Cái';
         const price = parseFloat(document.getElementById('product-price').value) || 0;
         const existing = currentCart.find(i => i.name === name);
@@ -585,60 +538,91 @@ function handleAddProduct(e) {
         return showStatus(`Bypass: Đã thêm "${name}"`, false);
     }
 
-    // --- 2. ATTEMPT TO AUTO-MATCH ---
+    // --- 2. LOGIC TỰ ĐỘNG KHỚP (SIÊU MẠNH) ---
+    // Hàm này xóa bỏ dấu, xóa bỏ MỌI khoảng trắng, đưa về chữ thường
+    // Ví dụ: "Phân   Urê" -> "phanure"
+    // Ví dụ: "phân ure" -> "phanure"
+    const skeletonString = (str) => {
+        if (!str) return '';
+        return str.toString()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Bỏ dấu tiếng Việt
+            .replace(/đ/g, "d").replace(/Đ/g, "D") // Chuyển đ -> d
+            .toLowerCase() // Chữ thường
+            .replace(/\s+/g, ''); // XÓA SẠCH KHOẢNG TRẮNG
+    };
+
     if (!selectedProduct && rawInput.length > 0) {
-        console.log(`[AutoMatch] Analyzing input: "${rawInput}"`);
-        const found = findProductFlexible(rawInput);
+        const inputSkeleton = skeletonString(rawInput);
         
-        if (found) {
-            selectedProduct = found;
-            // Visual Feedback: Update the box to the Real Name
-            searchInput.value = found.name; 
+        console.log(`[AutoMatch] Input gốc: "${rawInput}"`);
+        console.log(`[AutoMatch] Input "xương": "${inputSkeleton}"`);
+
+        // Tìm trong Database
+        const matchedProduct = productDatabase.find(p => {
+            const dbSkeleton = skeletonString(p.name);
+            // So sánh 2 chuỗi "xương" với nhau
+            return dbSkeleton === inputSkeleton;
+        });
+
+        if (matchedProduct) {
+            console.log(`[AutoMatch] ĐÃ KHỚP THÀNH CÔNG VỚI: "${matchedProduct.name}"`);
+            selectedProduct = matchedProduct;
+            
+            // Cập nhật UI để người dùng thấy tên chuẩn
+            searchInput.value = matchedProduct.name;
             searchInput.classList.add('input-selected');
-            document.getElementById('product-search-results').innerHTML = '';
+            const resultsDiv = document.getElementById('product-search-results');
+            if(resultsDiv) resultsDiv.innerHTML = '';
         } else {
-            console.warn("[AutoMatch] Failed. Input does not match any DB entry.");
-            // DEBUG: List close possibilities?
-            const debugCandidates = productDatabase.filter(p => 
-                p.name.toLowerCase().includes(rawInput.toLowerCase().split(' ')[0])
-            ).slice(0,3);
-            if(debugCandidates.length > 0) {
-                console.log("Did you mean one of these?", debugCandidates.map(p=>p.name));
-            }
+            console.log("[AutoMatch] Vẫn không tìm thấy. Danh sách 5 SP đầu tiên trong DB để kiểm tra:");
+            console.log(productDatabase.slice(0, 5).map(p => `${p.name} (${skeletonString(p.name)})`));
         }
     }
 
-    // --- 3. STANDARD VALIDATION ---
+    // --- 3. KIỂM TRA LỖI ---
     if (!selectedProduct) {
-        // If we fall through here, it means even the robust finder failed.
-        return showStatus(`Không tìm thấy sản phẩm "${rawInput}". Vui lòng chọn từ danh sách!`, true);
+        // Nếu vẫn thất bại, hiển thị lỗi kèm Input để bạn biết nó đang đọc được gì
+        return showStatus(`Không tìm thấy SP nào khớp với "${rawInput}". Vui lòng chọn từ danh sách!`, true);
     }
 
-    // --- 4. ADD TO CART (Standard Logic) ---
+    // --- 4. THÊM VÀO GIỎ ---
     const name = selectedProduct.name;
     const quantityInput = document.getElementById('product-quantity');
     const quantity = parseFloat(quantityInput.value);
 
     if (!quantity || quantity <= 0) {
         quantityInput.focus();
-        return showStatus(`Đã chọn "${name}". Nhập số lượng!`, false);
+        return showStatus(`Đã khớp "${name}". Vui lòng nhập số lượng!`, false);
     }
-
+    
+    const product = selectedProduct; 
+    
     const doAdd = () => {
-        const existing = currentCart.find(i => i.name === name);
-        if (existing) existing.quantity += quantity;
-        else currentCart.push({ name: selectedProduct.name, unit: selectedProduct.unit, price: selectedProduct.price, quantity: quantity });
+        const existingCartItem = currentCart.find(item => item.name === name);
+        if (existingCartItem) {
+            existingCartItem.quantity += quantity;
+        } else {
+            currentCart.push({ 
+                name: product.name, unit: product.unit, price: product.price, 
+                quantity: quantity 
+            });
+        }
         
         renderCart();
         document.getElementById('add-product-form').reset();
-        clearProductSelection();
+        clearProductSelection(); 
         document.getElementById('product-search').focus();
     };
-
-    if (quantity > selectedProduct.stock) {
-        showConfirmModal('Cảnh báo Tồn Kho', `"${name}" chỉ còn ${selectedProduct.stock}. Bán lố?`, doAdd, 'btn-warning');
+    
+    if (quantity > product.stock) {
+        showConfirmModal(
+            'Cảnh báo Tồn Kho',
+            `Sản phẩm "${name}" chỉ còn ${product.stock}. Bạn có chắc chắn muốn bán lố không?`,
+            doAdd, 
+            'btn-warning'
+        );
     } else {
-        doAdd();
+        doAdd(); 
     }
 }
 
