@@ -514,131 +514,131 @@ function updateFinancialQuarter() {
     displayEl.textContent = displayText;
 }
 
-// --- 4. TÌM KIẾM & THÊM SẢN PHẨM VÀO GIỎ (ĐÃ NÂNG CẤP) ---
+// --- 4. TÌM KIẾM & THÊM SẢN PHẨM VÀO GIỎ (ULTIMATE ROBUST) ---
 function handleAddProduct(e) {
     e.preventDefault(); 
     
-    // Lấy giá trị input ngay lập tức
     const searchInput = document.getElementById('product-search');
-    const rawInput = searchInput.value || '';
+    // Normalize: NFC form, trim whitespace, and replace Non-Breaking Spaces with normal spaces
+    const rawInput = (searchInput.value || '').normalize('NFC').replace(/\u00A0/g, ' ').trim();
     
-    // --- 1. BYPASS MODE LOGIC (Giữ nguyên) ---
-    if (devBypassMode && !selectedProduct) {
-        const name = rawInput.trim();
-        const quantity = parseFloat(document.getElementById('product-quantity').value);
-        
-        if (!name || !quantity || quantity <= 0) {
-            return showStatus('Bypass Mode: Vui lòng nhập Tên SP và Số Lượng hợp lệ!', true);
-        }
-        
-        const unit = document.getElementById('product-unit').value.trim() || 'Cái';
-        const price = parseFloat(document.getElementById('product-price').value) || 0;
+    // --- HELPER: ROBUST FINDER ---
+    // This function tries to find a product using 3 levels of "looseness"
+    const findProductFlexible = (inputQuery) => {
+        if (!inputQuery) return null;
 
-        const dummyProduct = { 
-            name: name, unit: unit, price: price, quantity: quantity 
+        // Helper: Clean string for comparison (lowercase, standard spaces)
+        const clean = (str) => str.toLowerCase().replace(/\s+/g, ' ').trim();
+        
+        // Helper: Remove Vietnamese accents
+        const removeAccents = (str) => {
+            return str.normalize("NFD")
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .replace(/đ/g, "d").replace(/Đ/g, "D");
         };
 
-        const existingCartItem = currentCart.find(item => item.name === name);
-        if (existingCartItem) {
-            existingCartItem.quantity += quantity;
-            existingCartItem.unit = unit;
-            existingCartItem.price = price;
-        } else {
-            currentCart.push(dummyProduct);
-        }
-        
-        renderCart();
-        searchInput.value = '';
-        document.getElementById('product-quantity').value = '';
-        document.getElementById('product-unit').value = '';
-        document.getElementById('product-price').value = '';
-        clearProductSelection();
-        searchInput.focus();
-        showStatus(`Bypass Mode: Đã thêm/cập nhật "${name}" vào giỏ hàng.`, false);
-        return;
-    }
+        const qClean = clean(inputQuery);
+        const qNoAccent = removeAccents(qClean);
 
-    // --- 2. "LET IT SLIDE" LOGIC (TỰ ĐỘNG KHỚP THÔNG MINH) ---
-    // Hàm hỗ trợ chuẩn hóa chuỗi: Chữ thường + Unicode chuẩn + Xóa khoảng trắng thừa
-    const normalizeStr = (str) => {
-        if (!str) return '';
-        return str
-            .toString()
-            .normalize('NFC')       // Chuẩn hóa Unicode
-            .toLowerCase()          // Về chữ thường
-            .replace(/\s+/g, ' ')   // Biến nhiều dấu cách thành 1 dấu cách (VD: "A   B" -> "A B")
-            .trim();                // Cắt đầu đuôi
+        // LEVEL 1: Exact Match (Insensitive to case & extra spaces)
+        // Checks: "Phân  Urê" == "phân urê"
+        let match = productDatabase.find(p => clean(p.name) === qClean);
+        if (match) {
+            console.log(`[AutoMatch] Level 1 (Exact): "${match.name}"`);
+            return match;
+        }
+
+        // LEVEL 2: No-Accent Match (Forgiving Vietnamese)
+        // Checks: "Phan Ure" == "Phân Urê"
+        match = productDatabase.find(p => removeAccents(clean(p.name)) === qNoAccent);
+        if (match) {
+            console.log(`[AutoMatch] Level 2 (No-Accent): "${match.name}"`);
+            return match;
+        }
+
+        // LEVEL 3: "Contains" Match (Risky, but useful for autofill cutoff)
+        // Checks: If user typed "Phân Urê Cà" -> Matches "Phân Urê Cà Mau"
+        // ONLY works if there is exactly ONE match to avoid wrong guesses.
+        const candidates = productDatabase.filter(p => clean(p.name).includes(qClean));
+        if (candidates.length === 1) {
+            console.log(`[AutoMatch] Level 3 (Contains): "${candidates[0].name}"`);
+            return candidates[0];
+        }
+
+        return null; // Give up
     };
 
-    if (!selectedProduct && rawInput.length > 0) {
-        const cleanInput = normalizeStr(rawInput);
+    // --- 1. BYPASS MODE LOGIC ---
+    if (devBypassMode && !selectedProduct) {
+        // ... (Keep your existing bypass logic here) ...
+        const name = rawInput;
+        const quantity = parseFloat(document.getElementById('product-quantity').value);
+        if (!name || !quantity || quantity <= 0) return showStatus('Bypass: Nhập tên & SL hợp lệ!', true);
         
-        // Debug: In ra console để kiểm tra (Nhấn F12 để xem nếu vẫn lỗi)
-        console.log(`[AutoMatch] Đang tìm: "${cleanInput}"`);
+        // ... (Quick Logic for Bypass Add) ...
+        const unit = document.getElementById('product-unit').value.trim() || 'Cái';
+        const price = parseFloat(document.getElementById('product-price').value) || 0;
+        const existing = currentCart.find(i => i.name === name);
+        if(existing) { existing.quantity += quantity; existing.price = price; }
+        else { currentCart.push({name, unit, price, quantity}); }
+        renderCart(); document.getElementById('add-product-form').reset(); clearProductSelection(); searchInput.focus();
+        return showStatus(`Bypass: Đã thêm "${name}"`, false);
+    }
 
-        // Tìm trong CSDL
-        const matchedProduct = productDatabase.find(p => {
-            const cleanName = normalizeStr(p.name);
-            return cleanName === cleanInput;
-        });
-
-        if (matchedProduct) {
-            console.log("[AutoMatch] Đã tìm thấy:", matchedProduct.name);
-            selectedProduct = matchedProduct;
-            
-            // Cập nhật lại giao diện cho khớp
-            searchInput.value = matchedProduct.name;
+    // --- 2. ATTEMPT TO AUTO-MATCH ---
+    if (!selectedProduct && rawInput.length > 0) {
+        console.log(`[AutoMatch] Analyzing input: "${rawInput}"`);
+        const found = findProductFlexible(rawInput);
+        
+        if (found) {
+            selectedProduct = found;
+            // Visual Feedback: Update the box to the Real Name
+            searchInput.value = found.name; 
             searchInput.classList.add('input-selected');
             document.getElementById('product-search-results').innerHTML = '';
         } else {
-            console.log("[AutoMatch] Không tìm thấy khớp chính xác.");
+            console.warn("[AutoMatch] Failed. Input does not match any DB entry.");
+            // DEBUG: List close possibilities?
+            const debugCandidates = productDatabase.filter(p => 
+                p.name.toLowerCase().includes(rawInput.toLowerCase().split(' ')[0])
+            ).slice(0,3);
+            if(debugCandidates.length > 0) {
+                console.log("Did you mean one of these?", debugCandidates.map(p=>p.name));
+            }
         }
     }
 
-    // --- 3. KIỂM TRA LỖI ---
+    // --- 3. STANDARD VALIDATION ---
     if (!selectedProduct) {
-        return showStatus('Vui lòng chọn một sản phẩm từ danh sách!', true);
+        // If we fall through here, it means even the robust finder failed.
+        return showStatus(`Không tìm thấy sản phẩm "${rawInput}". Vui lòng chọn từ danh sách!`, true);
     }
 
-    // --- 4. THÊM VÀO GIỎ (Logic cũ) ---
+    // --- 4. ADD TO CART (Standard Logic) ---
     const name = selectedProduct.name;
     const quantityInput = document.getElementById('product-quantity');
     const quantity = parseFloat(quantityInput.value);
 
-    // Nếu Autofill chỉ điền tên mà chưa điền số lượng -> Focus vào ô số lượng
     if (!quantity || quantity <= 0) {
         quantityInput.focus();
-        return showStatus(`Đã chọn "${name}". Vui lòng nhập số lượng!`, false);
+        return showStatus(`Đã chọn "${name}". Nhập số lượng!`, false);
     }
-    
-    const product = selectedProduct; 
-    
+
     const doAdd = () => {
-        const existingCartItem = currentCart.find(item => item.name === name);
-        if (existingCartItem) {
-            existingCartItem.quantity += quantity;
-        } else {
-            currentCart.push({ 
-                name: product.name, unit: product.unit, price: product.price, 
-                quantity: quantity 
-            });
-        }
+        const existing = currentCart.find(i => i.name === name);
+        if (existing) existing.quantity += quantity;
+        else currentCart.push({ name: selectedProduct.name, unit: selectedProduct.unit, price: selectedProduct.price, quantity: quantity });
         
         renderCart();
         document.getElementById('add-product-form').reset();
-        clearProductSelection(); 
+        clearProductSelection();
         document.getElementById('product-search').focus();
     };
-    
-    if (quantity > product.stock) {
-        showConfirmModal(
-            'Cảnh báo Tồn Kho',
-            `Sản phẩm "${name}" chỉ còn ${product.stock}. Bạn có chắc chắn muốn bán lố không?`,
-            doAdd, 
-            'btn-warning'
-        );
+
+    if (quantity > selectedProduct.stock) {
+        showConfirmModal('Cảnh báo Tồn Kho', `"${name}" chỉ còn ${selectedProduct.stock}. Bán lố?`, doAdd, 'btn-warning');
     } else {
-        doAdd(); 
+        doAdd();
     }
 }
 
