@@ -1,40 +1,40 @@
-/ --- BIẾN TOÀN CỤC ---
+// --- BIẾN TOÀN CỤC ---
 let productDatabase = []; 
 let productDatabaseOriginal = [];
 let currentCart = []; 
 let dailyTransactions = []; 
-let exportedInvoicesLog = []; // (MỚI) Log hóa đơn đã xuất
+let exportedInvoicesLog = []; 
 let selectedProduct = null; 
-let devBypassMode = false; // (*** MỚI - LƯU ***) Thêm vào backup
+let devBypassMode = false; 
 
-// (MỚI) Biến cho Modal Xác nhận
+// Biến cho Modal
 let confirmModal = null;
 let confirmModalConfirmBtn = null;
 let confirmModalCancelBtn = null;
 let confirmModalTitle = null;
 let confirmModalMessage = null;
-let onConfirmCallback = () => {}; // Callback để gọi khi nhấn OK
+let onConfirmCallback = () => {}; 
 
-// (MỚI) Biến cho Dark Mode
+// Biến cho Dark Mode
 let themeToggleBtn = null;
 let themeIconSun = null;
 let themeIconMoon = null;
 
-// (MỚI) Biến cho Modal Hóa đơn đã xuất
+// Biến cho Modal Hóa đơn đã xuất
 let exportedInvoicesModal = null;
 let exportedInvoicesList = null;
 
-// (*** SỬA ***) Biến cho Modal Kết thúc Phiên
+// Biến cho Modal Kết thúc Phiên
 let endSessionModal = null;
-let endSessionModalCancelBtn = null; // Nút Hủy
-let endSessionDownloadSalesBtn = null; // (MỚI) Nút tải Bán hàng
-let endSessionDownloadInventoryBtn = null; // (MỚI) Nút tải Tồn kho
-let endSessionModalConfirmBtn = null; // (MỚI) Nút Xác nhận Xóa
+let endSessionModalCancelBtn = null; 
+let endSessionDownloadSalesBtn = null; 
+let endSessionDownloadInventoryBtn = null; 
+let endSessionModalConfirmBtn = null; 
 
-// (*** MỚI ***) Biến cho Modal Thông tin
+// Biến cho Modal Thông tin
 let infoModal = null;
 
-// (*** MỚI ***) Biến cho Modal Xem CSDL
+// Biến cho Modal Xem CSDL
 let databaseViewerModal = null;
 let databaseViewerList = null;
 let dbModalSearchInput = null;
@@ -49,17 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
     confirmModalTitle = document.getElementById('confirm-modal-title');
     confirmModalMessage = document.getElementById('confirm-modal-message');
 
-// (*** SỬA ***) Gán biến Modal Kết thúc Phiên
     endSessionModal = document.getElementById('end-session-modal');
     endSessionModalCancelBtn = document.getElementById('end-session-modal-cancel-btn');
     endSessionDownloadSalesBtn = document.getElementById('end-session-download-sales');
     endSessionDownloadInventoryBtn = document.getElementById('end-session-download-inventory');
     endSessionModalConfirmBtn = document.getElementById('end-session-modal-confirm-btn');
 
-    // (*** MỚI ***) Gán biến Modal Thông tin
     infoModal = document.getElementById('info-modal');
     
-    // (*** MỚI ***) Gán biến Modal Xem CSDL
     databaseViewerModal = document.getElementById('database-viewer-modal');
     databaseViewerList = document.getElementById('database-viewer-list');
     dbModalSearchInput = document.getElementById('db-modal-search-input');
@@ -71,32 +68,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Khởi tạo
     document.getElementById('invoice-date').valueAsDate = new Date();
-    loadStateFromStorage(); // Hàm này sẽ tự động gọi updateSessionStatus & updateExportedInvoicesButtonState
-    setupThemeToggle(); // (MỚI)
-    setupExportedInvoicesModal(); // (MỚI)
-    setupInfoModal(); // (*** MỚI ***)
-    setupEndSessionModal(); // (*** MỚI ***)
-    setupDatabaseViewerModal(); // (*** MỚI ***)
-    startClock(); // (MỚI)
-    updateFinancialQuarter(); // (*** MỚI ***)
-    
-    // (*** MỚI ***) CẬP NHẬT TỔNG DOANH THU KHI KHỞI TẠO
+    loadStateFromStorage(); 
+    setupThemeToggle(); 
+    setupExportedInvoicesModal(); 
+    setupInfoModal(); 
+    setupEndSessionModal(); 
+    setupDatabaseViewerModal(); 
+    startClock(); 
+    updateFinancialQuarter(); 
     updateLiveTotalAccumulated(); 
 
     // Gán sự kiện cho các nút
     document.getElementById('load-db-btn').addEventListener('click', handleFileLoad);
     document.getElementById('export-inventory-btn').addEventListener('click', exportInventory);
-    document.getElementById('export-sales-report-btn').addEventListener('click', exportDailySalesReport); // (*** MỚI ***)
-    document.getElementById('end-session-btn').addEventListener('click', startEndSessionProcess); // (*** SỬA ***)
+    document.getElementById('export-sales-report-btn').addEventListener('click', exportDailySalesReport); 
+    document.getElementById('end-session-btn').addEventListener('click', startEndSessionProcess); 
     document.getElementById('add-product-form').addEventListener('submit', handleAddProduct);
     document.getElementById('product-search').addEventListener('keyup', handleProductSearch);
     document.getElementById('export-invoice-btn').addEventListener('click', exportInvoiceFile);
-    document.getElementById('clear-cart-btn').addEventListener('click', () => clearCart(true)); // (SỬA) Bọc trong hàm
+    document.getElementById('clear-cart-btn').addEventListener('click', () => clearCart(true)); 
     
-    // (MỚI) Gán sự kiện cho File Input
     document.getElementById('file-input').addEventListener('change', updateFileNameDisplay);
 
-    // (MỚI) Gán sự kiện cho Modal Nâng cao
     document.getElementById('advanced-mode-btn').addEventListener('click', showAdvancedModal);
     document.getElementById('modal-close-btn-adv').addEventListener('click', hideAdvancedModal);
     document.getElementById('modal-overlay-bg-adv').addEventListener('click', hideAdvancedModal);
@@ -106,49 +99,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('export-empty-sales-btn').addEventListener('click', exportEmptySalesReport);
     document.getElementById('export-empty-inventory-btn').addEventListener('click', exportEmptyInventory);
     
-    // (*** SỬA ***) Gán sự kiện cho Backup/Restore
     document.getElementById('backup-session-btn').addEventListener('click', handleBackupSession);
     document.getElementById('restore-file-input').addEventListener('change', handleRestoreSession);
 
-    // (MỚI) Gán sự kiện cho Modal Xác nhận
+    // Gán sự kiện cho Modal Xác nhận
     confirmModalConfirmBtn.addEventListener('click', () => {
         onConfirmCallback();
         hideConfirmModal();
     });
     confirmModalCancelBtn.addEventListener('click', hideConfirmModal);
-    
-    // (*** MỚI ***) Gán sự kiện cho Modal Thông tin (Đã chuyển vào setupInfoModal)
-    // document.getElementById('info-mode-btn').addEventListener('click', showInfoModal);
 });
 
-// --- (MỚI) HÀM TIỆN ÍCH MODAL XÁC NHẬN ---
-/**
- * Hiển thị modal xác nhận (thay thế window.confirm)
- * @param {string} title Tiêu đề của modal
- * @param {string} message Nội dung thông báo
- * @param {function} onConfirm Hàm callback sẽ chạy khi nhấn "Xác nhận"
- * @param {string} confirmBtnClass (Tùy chọn) Class của nút xác nhận (vd: 'btn-danger', 'btn-success')
- */
+// --- CÁC HÀM UI CƠ BẢN ---
 function showConfirmModal(title, message, onConfirm, confirmBtnClass = 'btn-danger') {
     confirmModalTitle.textContent = title;
     confirmModalMessage.textContent = message;
     onConfirmCallback = onConfirm;
-    
-    // Reset class nút
-    confirmModalConfirmBtn.className = ''; // Xóa hết class cũ
-    confirmModalConfirmBtn.classList.add('btn-base', confirmBtnClass); // Thêm class mới
-    
+    confirmModalConfirmBtn.className = ''; 
+    confirmModalConfirmBtn.classList.add('btn-base', confirmBtnClass); 
     confirmModal.classList.remove('hidden');
 }
 
 function hideConfirmModal() {
     confirmModal.classList.add('hidden');
-    onConfirmCallback = () => {}; // Xóa callback
+    onConfirmCallback = () => {}; 
 }
 
-// --- (MỚI) HÀM TIỆN ÍCH DARK MODE ---
 function setupThemeToggle() {
-    // Cập nhật icon dựa trên trạng thái hiện tại
     function updateIcon() {
         if (document.documentElement.classList.contains('dark')) {
             themeIconMoon.classList.add('hidden');
@@ -158,10 +135,7 @@ function setupThemeToggle() {
             themeIconMoon.classList.remove('hidden');
         }
     }
-    
-    updateIcon(); // Chạy lần đầu
-    
-    // Gán sự kiện click
+    updateIcon(); 
     themeToggleBtn.addEventListener('click', () => {
         if (document.documentElement.classList.contains('dark')) {
             document.documentElement.classList.remove('dark');
@@ -170,11 +144,10 @@ function setupThemeToggle() {
             document.documentElement.classList.add('dark');
             localStorage.setItem('theme', 'dark');
         }
-        updateIcon(); // Cập nhật lại icon
+        updateIcon(); 
     });
 }
 
-// --- (MỚI) HÀM TIỆN ÍCH FILE INPUT ---
 function updateFileNameDisplay() {
     const fileInput = document.getElementById('file-input');
     const display = document.getElementById('file-name-display');
@@ -187,7 +160,6 @@ function updateFileNameDisplay() {
     }
 }
 
-// --- CÁC HÀM TIỆN ÍCH (Hiển thị thông báo) ---
 function showStatus(message, isError = false) {
     const container = document.getElementById('status-container');
     const statusDiv = document.createElement('div');
@@ -201,39 +173,27 @@ function showStatus(message, isError = false) {
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
 
-/**
- * (MỚI) Formats a date object or a yyyy-mm-dd string into dd/mm/yyyy.
- * @param {Date | string} dateInput The date object or string to format.
- */
 function formatDateDDMMYYYY(dateInput) {
     if (!dateInput) return '';
-    
     let dateObj;
     if (typeof dateInput === 'string' && dateInput.includes('-')) {
-        // Handle 'yyyy-mm-dd' string from <input type="date">
         const parts = dateInput.split('-');
         if (parts.length === 3) {
-            // new Date(year, monthIndex, day) - month is 0-indexed
             dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
         } else {
-            dateObj = new Date(dateInput); // Fallback
+            dateObj = new Date(dateInput); 
         }
     } else {
         dateObj = new Date(dateInput);
     }
-    
-    // Check for invalid date
-    if (isNaN(dateObj.getTime())) {
-        return ''; // Return empty string for invalid dates
-    }
-
+    if (isNaN(dateObj.getTime())) return ''; 
     const day = String(dateObj.getDate()).padStart(2, '0');
-    const month = String(dateObj.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0'); 
     const year = dateObj.getFullYear();
     return `${day}/${month}/${year}`;
 }
 
-// --- QUẢN LÝ TRẠNG THÁI PHIÊN & GIAO DIỆN ---
+// --- QUẢN LÝ TRẠNG THÁI PHIÊN ---
 function updateSessionStatus() {
     const statusBar = document.getElementById('session-status-bar');
     const isSessionActive = productDatabase.length > 0;
@@ -247,18 +207,15 @@ function updateSessionStatus() {
     }
     
     toggleAppControls(isSessionActive, devBypassMode);
-    updateExportedInvoicesButtonState(); // (MỚI) Cập nhật nút HĐ đã xuất
-    updateLiveTotalAccumulated(); // (*** MỚI ***) Cập nhật tổng doanh thu
-    // (*** MỚI ***) Cập nhật trạng thái nút Bypass trong Modal Nâng cao
+    updateExportedInvoicesButtonState(); 
+    updateLiveTotalAccumulated(); 
     updateBypassButtonState(); 
 }
 
 function updateBypassButtonState() {
     const btn = document.getElementById('dev-bypass-btn');
     const statusSpan = btn.querySelector('span');
-    
     if (!btn || !statusSpan) return;
-
     if (devBypassMode) {
         statusSpan.textContent = '[BẬT]';
         btn.classList.add('btn-success');
@@ -270,12 +227,11 @@ function updateBypassButtonState() {
     }
 }
 
-
 function toggleAppControls(isSessionActive, isBypassActive = false) {
     document.getElementById('export-inventory-btn').disabled = !isSessionActive;
-    document.getElementById('export-sales-report-btn').disabled = !isSessionActive; // (*** MỚI ***)
+    document.getElementById('export-sales-report-btn').disabled = !isSessionActive; 
     document.getElementById('end-session-btn').disabled = !isSessionActive;
-    document.getElementById('view-database-btn').disabled = !isSessionActive; // (*** MỚI ***)
+    document.getElementById('view-database-btn').disabled = !isSessionActive; 
     document.getElementById('main-app-controls').disabled = !isSessionActive && !isBypassActive;
     
     const loadDbBtn = document.getElementById('load-db-btn');
@@ -290,59 +246,44 @@ function toggleAppControls(isSessionActive, isBypassActive = false) {
     }
 }
 
-// (MỚI) Cập nhật trạng thái nút "Xem HĐ đã xuất"
 function updateExportedInvoicesButtonState() {
     const btn = document.getElementById('view-exports-btn');
-    if (!btn) return; // Guard clause
+    if (!btn) return; 
     const isSessionActive = productDatabase.length > 0;
-    // Chỉ bật khi phiên hoạt động VÀ có log hóa đơn
     btn.disabled = !(isSessionActive && exportedInvoicesLog.length > 0);
 }
 
-// (*** MỚI ***) HÀM TÍNH VÀ CẬP NHẬT TỔNG DOANH THU TỪ dailyTransactions
 function updateLiveTotalAccumulated() {
     let totalRevenue = 0;
-    
     dailyTransactions.forEach(transaction => {
         transaction.items.forEach(item => {
-            // Tổng tiền = Đơn giá * Số lượng (Không cần quan tâm thuế vì đã đơn giản hóa)
             const itemTotal = item.price * item.quantity; 
             totalRevenue += itemTotal;
         });
     });
-
     const totalDisplayEl = document.getElementById('accumulated-total-display');
     const countDisplayEl = document.getElementById('total-transactions-count');
-
     if (totalDisplayEl) {
-        // Áp dụng làm tròn trước khi format
         const roundedTotal = Math.round(totalRevenue); 
         totalDisplayEl.textContent = currencyFormatter.format(roundedTotal);
     }
-    
     if (countDisplayEl) {
         countDisplayEl.textContent = `Đã ghi nhận: ${dailyTransactions.length} giao dịch`;
     }
 }
 
-
-// --- 2. QUẢN LÝ DỮ LIỆU & STATE (LOCALSTORAGE) ---
-// (*** SỬA ***) Cập nhật hàm lưu state để bao gồm devBypassMode
+// --- QUẢN LÝ LOCALSTORAGE ---
 function saveStateToStorage() {
     const state = {
         current: productDatabase,
         original: productDatabaseOriginal,
         transactions: dailyTransactions,
-        devBypass: devBypassMode // (*** MỚI - LƯU ***) Lưu trạng thái Bypass
+        devBypass: devBypassMode 
     };
     localStorage.setItem('inventoryState', JSON.stringify(state));
-    // (MỚI) Log hóa đơn được lưu riêng (trong hàm exportInvoiceFile)
-    // vì nó không thuộc về "state" của tồn kho
 }
 
-// (*** SỬA ***) Cập nhật hàm tải state để bao gồm devBypassMode
 function loadStateFromStorage() {
-    // 1. Tải state tồn kho
     const savedState = localStorage.getItem('inventoryState');
     if (savedState) {
         try {
@@ -351,7 +292,7 @@ function loadStateFromStorage() {
                 productDatabase = state.current;
                 productDatabaseOriginal = state.original;
                 dailyTransactions = state.transactions || []; 
-                devBypassMode = state.devBypass || false; // (*** MỚI - TẢI ***) Tải trạng thái Bypass
+                devBypassMode = state.devBypass || false; 
                 showStatus('Đã khôi phục dữ liệu từ phiên làm việc trước.', false);
             }
         } catch (e) {
@@ -359,8 +300,6 @@ function loadStateFromStorage() {
             localStorage.removeItem('inventoryState');
         }
     }
-    
-    // 2. (MỚI) Tải log hóa đơn đã xuất
     const savedLogs = localStorage.getItem('exportedInvoicesLog');
     if (savedLogs) {
         try {
@@ -371,11 +310,10 @@ function loadStateFromStorage() {
             exportedInvoicesLog = [];
         }
     }
-    
-    updateSessionStatus(); // Hàm này sẽ tự động gọi updateExportedInvoicesButtonState VÀ updateLiveTotalAccumulated
+    updateSessionStatus(); 
 }
 
-// --- 3. TẢI DATABASE & QUẢN LÝ PHIÊN ---
+// --- XỬ LÝ DATABASE ---
 function handleFileLoad() {
     const fileInput = document.getElementById('file-input');
     if (fileInput.files.length === 0) return showStatus('Vui lòng chọn Cơ sở dữ liệu!', true);
@@ -396,16 +334,14 @@ function handleFileLoad() {
                 productDatabaseOriginal = [];
                 dailyTransactions = [];
                 currentCart = [];
-                exportedInvoicesLog = []; // (MỚI) Xóa log cũ khi nạp CSDL mới
-                localStorage.removeItem('exportedInvoicesLog'); // (MỚI)
-                devBypassMode = false; // (*** MỚI - RESET ***) Reset Bypass khi tải CSDL mới
+                exportedInvoicesLog = []; 
+                localStorage.removeItem('exportedInvoicesLog'); 
+                devBypassMode = false; 
                 
-                // (*** SỬA ***) Xóa cột THUE (20) khỏi COL object
                 const COL = {TIN: 16, TEN: 17, DVT: 18, GIA: 19};
                 let productsLoaded = 0;
                 for (let i = 3; i < jsonData.length; i++) {
                     const row = jsonData[i];
-                    // (*** SỬA ***) Cập nhật điều kiện check độ dài
                     if (row && row.length >= COL.GIA && row[COL.TEN]) {
                         const productName = String(row[COL.TEN]).trim();
                         if (productName.length > 0) {
@@ -413,7 +349,6 @@ function handleFileLoad() {
                                 name: productName,
                                 unit: String(row[COL.DVT] || '').trim(),
                                 price: parseFloat(row[COL.GIA]) || 0,
-                                // (*** SỬA ***) Xóa taxRate
                                 stock: parseInt(row[COL.TIN]) || 0
                             });
                             productsLoaded++;
@@ -439,29 +374,19 @@ function handleFileLoad() {
     };
 
     if (dailyTransactions.length > 0) {
-        // (SỬA) Dùng modal xác nhận
-        showConfirmModal(
-            'Bắt đầu phiên mới?',
-            'Bạn có chắc chắn muốn bắt đầu lại phiên làm việc? TẤT CẢ giao dịch và log hóa đơn đã lưu sẽ bị XÓA.',
-            startLoad // Hàm startLoad sẽ là callback
-        );
+        showConfirmModal('Bắt đầu phiên mới?', 'Bạn có chắc chắn muốn bắt đầu lại phiên làm việc? TẤT CẢ giao dịch và log hóa đơn đã lưu sẽ bị XÓA.', startLoad);
     } else {
-        startLoad(); // Nếu không có giao dịch, chạy luôn
+        startLoad(); 
     }
 }
 
-// (*** SỬA ***)
-// Bước 1: Người dùng nhấn nút "Kết thúc phiên"
 function startEndSessionProcess() {
     if (productDatabase.length === 0 && dailyTransactions.length === 0) {
         return showStatus('Chưa có dữ liệu nào trong phiên. Vui lòng bắt đầu phiên trước.', true);
     }
-    // Hiển thị modal chọn file
     showEndSessionModal();
 }
 
-// (*** SỬA ***)
-// Bước 4: Người dùng nhấn "Xác nhận" trên modal cuối cùng -> Xóa dữ liệu
 function performDataDeletion() {
     productDatabase = [];
     productDatabaseOriginal = [];
@@ -470,7 +395,7 @@ function performDataDeletion() {
     exportedInvoicesLog = [];
     localStorage.removeItem('inventoryState');
     localStorage.removeItem('exportedInvoicesLog');
-    devBypassMode = false; // (*** MỚI - RESET ***) Reset Bypass mode
+    devBypassMode = false; 
 
     renderCart();
     document.getElementById('customer-info-form').reset();
@@ -483,48 +408,83 @@ function performDataDeletion() {
     updateSessionStatus();
 }
 
-// (*** MỚI ***) HÀM HIỂN THỊ QUÝ TÀI CHÍNH
-/**
- * Cập nhật hiển thị Quý và Năm Tài chính dựa trên ngày giờ của máy
- */
 function updateFinancialQuarter() {
     const displayEl = document.getElementById('financial-quarter-display');
-    if (!displayEl) {
-        console.warn('Element #financial-quarter-display not found.');
-        return; 
-    }
-
-    // 1. Lấy ngày giờ hiện tại của máy tính
+    if (!displayEl) return; 
     const now = new Date();
-    const month = now.getMonth(); // 0 = Tháng 1, 1 = Tháng 2, ..., 11 = Tháng 12
+    const month = now.getMonth(); 
     const year = now.getFullYear();
-    
-    // 2. Tính toán Quý (theo lịch Việt Nam)
-    // Math.floor(month / 3) + 1
-    // - Tháng 0, 1, 2 (Q1) -> Math.floor(0.x) + 1 = 1
-    // - Tháng 3, 4, 5 (Q2) -> Math.floor(1.x) + 1 = 2
-    // - Tháng 6, 7, 8 (Q3) -> Math.floor(2.x) + 1 = 3
-    // - Tháng 9, 10, 11 (Q4) -> Math.floor(3.x) + 1 = 4
     const quarter = Math.floor(month / 3) + 1;
-    
-    // 3. Tạo chuỗi hiển thị
-    const displayText = `Quý ${quarter}, ${year}`;
-    
-    // 4. Cập nhật HTML
-    displayEl.textContent = displayText;
+    displayEl.textContent = `Quý ${quarter}, ${year}`;
 }
 
-// --- 4. TÌM KIẾM & THÊM SẢN PHẨM VÀO GIỎ (NUCLEAR OPTION) ---
+// --- TÌM KIẾM & THÊM SẢN PHẨM (NUCLEAR OPTION) ---
+function handleProductSearch(e) {
+    if (!productDatabase.length && !devBypassMode) return; 
+    const keyword = e.target.value.toLowerCase();
+    const resultsDiv = document.getElementById('product-search-results');
+    resultsDiv.innerHTML = '';
+    
+    // Nếu đang bypass, không cần search CSDL
+    if (devBypassMode) return;
+
+    if (keyword.length < 2) {
+        selectedProduct = null;
+        e.target.classList.remove('input-selected');
+        return;
+    }
+
+    const filtered = productDatabase.filter(p => p.name.toLowerCase().includes(keyword));
+    
+    if (filtered.length === 0) {
+        const noResult = document.createElement('div');
+        noResult.className = 'p-3 text-sm text-gray-500 italic';
+        noResult.textContent = 'Không tìm thấy sản phẩm.';
+        resultsDiv.appendChild(noResult);
+    } else {
+        filtered.slice(0, 10).forEach(product => {
+            const div = document.createElement('div');
+            div.className = 'search-item border-b border-gray-100 dark:border-slate-700 last:border-0';
+            div.innerHTML = `
+                <div class="font-medium text-gray-800 dark:text-slate-200">${product.name}</div>
+                <div class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 flex justify-between">
+                    <span>ĐVT: ${product.unit} | Giá: ${currencyFormatter.format(product.price)}</span>
+                    <span class="${product.stock <= 5 ? 'text-red-500 font-bold' : 'text-emerald-600'}">Kho: ${product.stock}</span>
+                </div>
+            `;
+            div.addEventListener('click', () => {
+                selectProduct(product);
+                resultsDiv.innerHTML = '';
+            });
+            resultsDiv.appendChild(div);
+        });
+    }
+}
+
+function selectProduct(product) {
+    selectedProduct = product;
+    const searchInput = document.getElementById('product-search');
+    searchInput.value = product.name;
+    searchInput.classList.add('input-selected'); // Hiệu ứng xanh
+    document.getElementById('product-quantity').focus(); // Chuyển sang ô số lượng
+}
+
+function clearProductSelection() {
+    selectedProduct = null;
+    const searchInput = document.getElementById('product-search');
+    searchInput.value = '';
+    searchInput.classList.remove('input-selected');
+    document.getElementById('product-search-results').innerHTML = '';
+}
+
 function handleAddProduct(e) {
     e.preventDefault(); 
     
     const searchInput = document.getElementById('product-search');
-    // Normalize input immediately
     const rawInput = searchInput.value || '';
     
-    // --- 1. BYPASS MODE LOGIC (Giữ nguyên) ---
+    // --- 1. BYPASS MODE LOGIC ---
     if (devBypassMode && !selectedProduct) {
-        // (Copy lại logic Bypass cũ của bạn vào đây hoặc giữ nguyên khối này)
         const name = rawInput.trim();
         const quantity = parseFloat(document.getElementById('product-quantity').value);
         if (!name || !quantity || quantity <= 0) return showStatus('Bypass: Nhập tên & SL hợp lệ!', true);
@@ -538,50 +498,40 @@ function handleAddProduct(e) {
         return showStatus(`Bypass: Đã thêm "${name}"`, false);
     }
 
-    // --- 2. LOGIC TỰ ĐỘNG KHỚP (SIÊU MẠNH) ---
-    // Hàm này xóa bỏ dấu, xóa bỏ MỌI khoảng trắng, đưa về chữ thường
-    // Ví dụ: "Phân   Urê" -> "phanure"
-    // Ví dụ: "phân ure" -> "phanure"
+    // --- 2. LOGIC TỰ ĐỘNG KHỚP (SIÊU MẠNH - NUCLEAR OPTION) ---
     const skeletonString = (str) => {
         if (!str) return '';
         return str.toString()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Bỏ dấu tiếng Việt
-            .replace(/đ/g, "d").replace(/Đ/g, "D") // Chuyển đ -> d
-            .toLowerCase() // Chữ thường
-            .replace(/\s+/g, ''); // XÓA SẠCH KHOẢNG TRẮNG
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Bỏ dấu
+            .replace(/đ/g, "d").replace(/Đ/g, "D")
+            .toLowerCase()
+            .replace(/\s+/g, ''); // Xóa sạch khoảng trắng
     };
 
     if (!selectedProduct && rawInput.length > 0) {
         const inputSkeleton = skeletonString(rawInput);
         
         console.log(`[AutoMatch] Input gốc: "${rawInput}"`);
-        console.log(`[AutoMatch] Input "xương": "${inputSkeleton}"`);
+        console.log(`[AutoMatch] Input xương: "${inputSkeleton}"`);
 
-        // Tìm trong Database
         const matchedProduct = productDatabase.find(p => {
             const dbSkeleton = skeletonString(p.name);
-            // So sánh 2 chuỗi "xương" với nhau
             return dbSkeleton === inputSkeleton;
         });
 
         if (matchedProduct) {
-            console.log(`[AutoMatch] ĐÃ KHỚP THÀNH CÔNG VỚI: "${matchedProduct.name}"`);
+            console.log(`[AutoMatch] ĐÃ KHỚP: "${matchedProduct.name}"`);
             selectedProduct = matchedProduct;
-            
-            // Cập nhật UI để người dùng thấy tên chuẩn
             searchInput.value = matchedProduct.name;
             searchInput.classList.add('input-selected');
-            const resultsDiv = document.getElementById('product-search-results');
-            if(resultsDiv) resultsDiv.innerHTML = '';
+            document.getElementById('product-search-results').innerHTML = '';
         } else {
-            console.log("[AutoMatch] Vẫn không tìm thấy. Danh sách 5 SP đầu tiên trong DB để kiểm tra:");
-            console.log(productDatabase.slice(0, 5).map(p => `${p.name} (${skeletonString(p.name)})`));
+            console.log("[AutoMatch] Không tìm thấy.");
         }
     }
 
     // --- 3. KIỂM TRA LỖI ---
     if (!selectedProduct) {
-        // Nếu vẫn thất bại, hiển thị lỗi kèm Input để bạn biết nó đang đọc được gì
         return showStatus(`Không tìm thấy SP nào khớp với "${rawInput}". Vui lòng chọn từ danh sách!`, true);
     }
 
@@ -615,57 +565,39 @@ function handleAddProduct(e) {
     };
     
     if (quantity > product.stock) {
-        showConfirmModal(
-            'Cảnh báo Tồn Kho',
-            `Sản phẩm "${name}" chỉ còn ${product.stock}. Bạn có chắc chắn muốn bán lố không?`,
-            doAdd, 
-            'btn-warning'
-        );
+        showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${name}" chỉ còn ${product.stock}. Bạn có chắc chắn muốn bán lố không?`, doAdd, 'btn-warning');
     } else {
         doAdd(); 
     }
 }
 
+// --- GIỎ HÀNG ---
 function renderCart() {
     const cartBody = document.getElementById('cart-body');
     cartBody.innerHTML = '';
-    // (*** SỬA ***) Chỉ cần 1 total
     let totalAmount = 0;
     
     if (currentCart.length === 0) {
-        // (*** SỬA ***) Cập nhật colspan
         cartBody.innerHTML = '<tr><td colspan="7" class="text-center italic text-slate-500 dark:text-slate-400 py-6" data-label="">Giỏ hàng đang trống</td></tr>';
     }
     
     currentCart.forEach((item, index) => {
-        // (*** SỬA ***) Tính toán đơn giản
         const thanhTien = item.price * item.quantity;
         totalAmount += thanhTien;
         
         const row = cartBody.insertRow();
-        
-        // (*** MỚI ***) Thay thế cột Số lượng bằng ô điều khiển
         const quantityControlHtml = `
             <div class="flex items-center justify-center space-x-1">
                 <button class="btn-quantity-control" onclick="updateQuantity(${index}, -1)">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" /></svg>
                 </button>
-                <input type="number" 
-                       value="${item.quantity}" 
-                       min="1" 
-                       class="input-base input-quantity-cart"
-                       onchange="handleQuantityInput(${index}, this.value)"
-                       onkeyup="handleQuantityInput(${index}, this.value)"
-                       inputmode="numeric"
-                       pattern="[0-9]*"
-                       >
+                <input type="number" value="${item.quantity}" min="1" class="input-base input-quantity-cart" onchange="handleQuantityInput(${index}, this.value)" onkeyup="handleQuantityInput(${index}, this.value)" inputmode="numeric" pattern="[0-9]*">
                 <button class="btn-quantity-control" onclick="updateQuantity(${index}, 1)">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
                 </button>
             </div>
         `;
 
-        // (*** SỬA ***) Cập nhật HTML (bỏ 3 cột thuế)
         row.innerHTML = `<td data-label="STT">${index + 1}</td>
                          <td data-label="Tên hàng hóa" class="font-medium">${item.name}</td>
                          <td data-label="ĐVT">${item.unit}</td>
@@ -673,50 +605,31 @@ function renderCart() {
                          <td data-label="Đơn giá">${currencyFormatter.format(item.price)}</td>
                          <td data-label="Thành tiền" class="font-bold">${currencyFormatter.format(thanhTien)}</td>
                          <td class="cell-action">
-                            <button class="btn-secondary !bg-red-50 !text-red-600 dark:!bg-red-900/50 dark:!text-red-400 hover:!bg-red-100 w-full md:w-auto !py-2 !px-3 !text-sm" onclick="removeCartItem(${index})">
-                                Xóa
-                            </button>
+                            <button class="btn-secondary !bg-red-50 !text-red-600 dark:!bg-red-900/50 dark:!text-red-400 hover:!bg-red-100 w-full md:w-auto !py-2 !px-3 !text-sm" onclick="removeCartItem(${index})">Xóa</button>
                          </td>`;
     });
     
-    // (*** SỬA ***) Xóa total pre-tax
-    // document.getElementById('cart-total-pretax').textContent = `Tổng cộng (Chưa thuế): ${currencyFormatter.format(totalPreTax)}`;
     document.getElementById('cart-total-posttax').textContent = `Tổng cộng: ${currencyFormatter.format(totalAmount)}`;
 }
 
-// (*** MỚI ***) Hàm cập nhật số lượng khi nhấn nút +/-
 function updateQuantity(index, delta) {
     if (index >= currentCart.length) return;
-    
     const currentItem = currentCart[index];
     const newQuantity = currentItem.quantity + delta;
 
     if (newQuantity < 1) {
-        // Hỏi người dùng nếu muốn xóa khi số lượng về 0 hoặc âm
-        showConfirmModal(
-            'Xóa sản phẩm?',
-            `Bạn có chắc muốn xóa sản phẩm "${currentItem.name}" khỏi giỏ hàng?`,
-            () => removeCartItem(index),
-            'btn-danger'
-        );
+        showConfirmModal('Xóa sản phẩm?', `Bạn có chắc muốn xóa sản phẩm "${currentItem.name}" khỏi giỏ hàng?`, () => removeCartItem(index), 'btn-danger');
         return;
     }
     
-    // Kiểm tra tồn kho (chỉ khi không phải Bypass Mode)
     if (!devBypassMode) {
         const dbProduct = productDatabase.find(p => p.name === currentItem.name);
         if (dbProduct && newQuantity > dbProduct.stock) {
-            // Cảnh báo nhưng cho phép bán lố
-            showConfirmModal(
-                'Cảnh báo Tồn Kho',
-                `Sản phẩm "${currentItem.name}" chỉ còn ${dbProduct.stock}. Bạn có chắc chắn muốn bán lố ${newQuantity} không?`,
-                () => {
+            showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${currentItem.name}" chỉ còn ${dbProduct.stock}. Bạn có chắc chắn muốn bán lố ${newQuantity} không?`, () => {
                     currentItem.quantity = newQuantity;
                     renderCart();
                     showStatus(`Cập nhật số lượng cho "${currentItem.name}" (Bán lố).`);
-                },
-                'btn-warning'
-            );
+                }, 'btn-warning');
             return;
         }
     }
@@ -725,48 +638,29 @@ function updateQuantity(index, delta) {
     renderCart();
 }
 
-// (*** MỚI ***) Hàm cập nhật số lượng khi nhập vào ô input
 function handleQuantityInput(index, value) {
     if (index >= currentCart.length) return;
-
     let newQuantity = parseFloat(value);
     
-    // Xử lý giá trị nhập vào
     if (isNaN(newQuantity) || newQuantity <= 0) {
-        // Không thể để giá trị NaN hoặc <= 0, hỏi xóa hoặc reset về 1
-        showConfirmModal(
-            'Số lượng không hợp lệ',
-            `Số lượng nhập vào không hợp lệ. Bạn có muốn xóa sản phẩm "${currentCart[index].name}" khỏi giỏ hàng không?`,
-            () => removeCartItem(index),
-            'btn-danger'
-        );
-        // Ngăn chặn renderCart() ngay lập tức để người dùng xem thông báo
+        showConfirmModal('Số lượng không hợp lệ', `Số lượng nhập vào không hợp lệ. Xóa "${currentCart[index].name}" khỏi giỏ hàng?`, () => removeCartItem(index), 'btn-danger');
         return;
     }
     
-    newQuantity = Math.round(newQuantity); // Làm tròn số lượng
-
+    newQuantity = Math.round(newQuantity); 
     const currentItem = currentCart[index];
     
-    // Kiểm tra tồn kho (chỉ khi không phải Bypass Mode)
     if (!devBypassMode) {
         const dbProduct = productDatabase.find(p => p.name === currentItem.name);
         if (dbProduct && newQuantity > dbProduct.stock) {
-            // Cảnh báo nhưng cho phép bán lố
-            showConfirmModal(
-                'Cảnh báo Tồn Kho',
-                `Sản phẩm "${currentItem.name}" chỉ còn ${dbProduct.stock}. Bạn có chắc chắn muốn bán lố ${newQuantity} không?`,
-                () => {
+            showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${currentItem.name}" chỉ còn ${dbProduct.stock}. Bán lố?`, () => {
                     currentItem.quantity = newQuantity;
                     renderCart();
                     showStatus(`Cập nhật số lượng cho "${currentItem.name}" (Bán lố).`);
-                },
-                'btn-warning'
-            );
+                }, 'btn-warning');
             return;
         }
     }
-    
     currentItem.quantity = newQuantity;
     renderCart();
 }
@@ -783,199 +677,22 @@ function clearCart(confirmNeeded = true) {
         currentCart = [];
         document.getElementById('customer-info-form').reset();
         document.getElementById('invoice-date').valueAsDate = new Date();
-        document.getElementById('save-invoice-only-check').checked = false; // (*** MỚI ***)
-        
-        // (*** SỬA ***) Reset form bypass (bỏ thuế)
+        document.getElementById('save-invoice-only-check').checked = false; 
         document.getElementById('product-unit').value = '';
         document.getElementById('product-price').value = '';
         
         renderCart();
-        if (confirmNeeded) {
-            showStatus('Đã xóa giỏ hàng, sẵn sàng cho đơn mới.', false);
-        }
+        if (confirmNeeded) showStatus('Đã xóa giỏ hàng, sẵn sàng cho đơn mới.', false);
     };
 
     if (confirmNeeded) {
-        // (SỬA) Dùng modal xác nhận
-        showConfirmModal(
-            'Xóa giỏ hàng?',
-            'Bạn có chắc muốn xóa giỏ hàng và thông tin khách hàng hiện tại?',
-            doClear
-        );
+        showConfirmModal('Xóa giỏ hàng?', 'Bạn có chắc muốn xóa giỏ hàng và thông tin khách hàng hiện tại?', doClear);
     } else {
         doClear();
     }
 }
 
-// --- 5. XUẤT FILE EXCEL (HÓA ĐƠN & BÁO CÁO) ---
-function exportInvoiceFile() {
-    if (currentCart.length === 0) return showStatus('Giỏ hàng đang trống!', true);
-    const customerInfo = getCustomerInfo();
-    if (!customerInfo.name || !customerInfo.date) return showStatus('Vui lòng nhập Tên Khách Hàng và Ngày Hóa Đơn!', true);
-    
-    // (*** MỚI ***) Xác định loại hóa đơn (Trong CSDL, Ngoài CSDL, Hỗn hợp)
-    let hasDbProduct = false;
-    let hasBypassProduct = false;
-    const dbProductNames = new Set(productDatabaseOriginal.map(p => p.name));
-    
-    for (const item of currentCart) {
-        if (dbProductNames.has(item.name)) {
-            hasDbProduct = true;
-        } else {
-            hasBypassProduct = true;
-        }
-    }
-    
-    let invoiceType = '';
-    if (hasDbProduct && hasBypassProduct) {
-        invoiceType = 'Hỗn hợp';
-    } else if (hasBypassProduct) {
-        invoiceType = 'Ngoài CSDL';
-    } else {
-        invoiceType = 'Trong CSDL';
-    }
-    // --- Kết thúc logic xác định loại
-    
-    
-    const transaction = {
-        customerInfo: customerInfo,
-        items: JSON.parse(JSON.stringify(currentCart)) // Deep copy
-    };
-    dailyTransactions.push(transaction);
-
-    const dataForExport = buildFlatInvoiceData([transaction]); // Dùng hàm phẳng
-    
-    const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
-    const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
-    
-    // (*** SỬA ***) Lưu vào log để tải lại, TRƯỚC KHI gọi writeFile
-    try {
-        const exportLogEntry = {
-            id: Date.now(),
-            customerName: customerInfo.name,
-            fileName: fileName,
-            timestamp: new Date().toISOString(),
-            dataForExport: dataForExport, // Store the data
-            worksheetName: 'HoaDon',
-            invoiceType: invoiceType // (*** MỚI ***) Thêm loại hóa đơn
-        };
-        exportedInvoicesLog.push(exportLogEntry);
-        localStorage.setItem('exportedInvoicesLog', JSON.stringify(exportedInvoicesLog));
-    } catch (e) {
-        console.error("Lỗi khi lưu log hóa đơn:", e);
-        // Không chặn việc xuất file, chỉ log lỗi
-        console.warn("Đã xuất hóa đơn, nhưng có lỗi khi lưu vào log phiên.");
-    }
-
-    // (*** SỬA ***) Kiểm tra checkbox "Chỉ lưu"
-    const saveOnly = document.getElementById('save-invoice-only-check').checked;
-    if (!saveOnly) {
-        XLSX.writeFile(workbook, fileName);
-    }
-
-    // (*** SỬA ***) Chỉ cập nhật tồn kho cho các sản phẩm "Trong CSDL"
-    let inventoryUpdated = false;
-    currentCart.forEach(item => {
-        if (dbProductNames.has(item.name)) { // Chỉ update nếu là hàng CSDL
-            updateInventory(item.name, item.quantity);
-            inventoryUpdated = true;
-        }
-    });
-    
-    // (*** SỬA ***) Cập nhật thông báo
-    let successMessage = '';
-    const actionWord = saveOnly ? 'lưu' : 'xuất';
-    if (inventoryUpdated) {
-        successMessage = `Đã ${actionWord} hóa đơn "${fileName}" và cập nhật tồn kho (hàng CSDL). Giao dịch đã được lưu lại.`;
-    } else {
-        successMessage = `Đã ${actionWord} hóa đơn (ngoài CSDL) "${fileName}". Tồn kho KHÔNG thay đổi. Giao dịch đã được lưu lại.`;
-    }
-    showStatus(successMessage, false);
-
-
-    clearCart(false); // Sẽ tự động reset checkbox
-    updateSessionStatus(); // Sẽ tự động gọi updateExportedInvoicesButtonState VÀ updateLiveTotalAccumulated
-}
-
-function exportDailySalesReport() {
-    if (dailyTransactions.length === 0) {
-        // (*** SỬA ***)
-        showStatus('Không có giao dịch nào được ghi nhận để xuất báo cáo.', false);
-        return;
-    }
-
-    const dataForExport = buildFlatInvoiceData(dailyTransactions); // Dùng hàm phẳng
-    
-    const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'TongHopBanHang');
-    const fileName = `BaoCao_BanHang_TongHop_${new Date().toISOString().slice(0,10)}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-    showStatus(`Đã xuất báo cáo bán hàng tổng hợp: "${fileName}"`);
-}
-
-
-// (*** SỬA ***) Cập nhật báo cáo tồn kho
-function exportInventory() {
-    if (productDatabaseOriginal.length === 0 && dailyTransactions.length === 0) {
-        // (*** SỬA ***)
-        return showStatus('Chưa có dữ liệu tồn kho hoặc giao dịch nào.', false);
-    }
-    
-    // (*** MỚI ***) Thêm cột "Ghi chú"
-    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày', 'Ghi chú']];
-    
-    // 1. Xử lý hàng trong CSDL
-    const dbProductNames = new Set();
-    productDatabaseOriginal.forEach(originalProduct => {
-        dbProductNames.add(originalProduct.name); // Thêm vào Set
-        const currentProduct = productDatabase.find(p => p.name === originalProduct.name);
-        const originalStock = originalProduct.stock;
-        const currentStock = currentProduct ? currentProduct.stock : originalStock;
-        inventoryData.push([
-            originalProduct.name, originalProduct.unit, originalStock,
-            originalStock - currentStock, currentStock,
-            '' // Ghi chú trống
-        ]);
-    });
-    
-    // 2. (*** MỚI ***) Xử lý hàng "Ngoài CSDL" (Bypass)
-    const bypassSales = new Map();
-    dailyTransactions.forEach(transaction => {
-        transaction.items.forEach(item => {
-            if (!dbProductNames.has(item.name)) { // Nếu không có trong CSDL
-                let entry = bypassSales.get(item.name) || { unit: item.unit, totalSold: 0 };
-                entry.totalSold += item.quantity;
-                bypassSales.set(item.name, entry);
-            }
-        });
-    });
-    
-    // Thêm hàng bypass vào báo cáo
-    bypassSales.forEach((data, name) => {
-        inventoryData.push([
-            name, 
-            data.unit, 
-            0, // Tồn đầu
-            data.totalSold, // Đã bán
-            -data.totalSold, // Tồn cuối (âm)
-            'Xuất ngoài CSDL' // Ghi chú
-        ]);
-    });
-
-    const worksheet = XLSX.utils.aoa_to_sheet(inventoryData);
-    // (*** SỬA ***) Thêm độ rộng cột Ghi chú
-    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho');
-    const fileName = `BaoCao_TonKho_${new Date().toISOString().slice(0,10)}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
-    showStatus(`Đã xuất báo cáo tồn kho: "${fileName}"`);
-}
-
-// --- TÁI CẤU TRÚC: CÁC HÀM HELPER ---
+// --- XUẤT FILE ---
 function getCustomerInfo() {
     return {
         name: document.getElementById('customer-name').value,
@@ -987,7 +704,7 @@ function getCustomerInfo() {
         mdvcqhns: document.getElementById('customer-mdvcqhns').value,
         cccd: document.getElementById('customer-cccd').value,
         passport: document.getElementById('customer-passport').value,
-        date: document.getElementById('invoice-date').value // This returns 'yyyy-mm-dd'
+        date: document.getElementById('invoice-date').value 
     };
 }
 
@@ -996,66 +713,40 @@ function updateInventory(productName, soldQuantity) {
     if (product) product.stock -= soldQuantity;
 }
 
-/**
- * Xây dựng dữ liệu Hóa đơn phẳng (theo yêu cầu A-M)
- * (SỬA ĐỔI) - Logic gộp STT cho nhiều sản phẩm
- * (*** SỬA - 2025-10-29 ***) - Áp dụng Math.round() cho giá trị tiền tệ
- * (*** SỬA - 2025-10-31 ***) - Đơn giản hóa biến (không còn pre-tax)
- */
 function buildFlatInvoiceData(transactions) {
     const data = [[
         'Số thứ tự', 'Ngày hóa đơn', 'Tên khách hàng', 'Địa chỉ', 'Mã số thuế', 'Người mua hàng', 'Email', 
         'Hình thức thanh toán', 'Tên hàng hóa/dịch vụ', 'Đơn vị tính', 'Số lượng', 'Đơn giá', 'Thành tiền'
     ]];
 
-    let sttCounter = 0; // Tăng mỗi giao dịch
+    let sttCounter = 0; 
     transactions.forEach(transaction => {
-        sttCounter++; // STT cho giao dịch này
+        sttCounter++; 
         const { customerInfo, items } = transaction;
 
-        items.forEach((item, itemIndex) => { // Lấy chỉ số của sản phẩm
-            const thanhTien = item.quantity * item.price; // Tính toán trên giá trị gốc
-            
-            // (*** SỬA ***) Áp dụng làm tròn theo yêu cầu (0 decimal places)
+        items.forEach((item, itemIndex) => { 
+            const thanhTien = item.quantity * item.price; 
             const roundedPrice = Math.round(item.price);
             const roundedThanhTien = Math.round(thanhTien);
-            
             let row;
-
             if (itemIndex === 0) {
-                // Sản phẩm ĐẦU TIÊN của giao dịch
                 row = [
-                    sttCounter,                 // A: Số thứ tự
-                    formatDateDDMMYYYY(customerInfo.date), // B: Ngày hóa đơn (SỬA)
-                    customerInfo.name,          // C: Tên khách hàng
-                    customerInfo.address,       // D: Địa chỉ
-                    customerInfo.tin,           // E: Mã số thuế
-                    customerInfo.buyerName,     // F: Người mua hàng
-                    customerInfo.email,         // G: Email
-                    customerInfo.paymentMethod, // H: Hình thức thanh toán
-                    item.name,                  // I: Tên hàng hóa/dịch vụ
-                    item.unit,                  // J: Đơn vị tính
-                    item.quantity,              // K: Số lượng
-                    roundedPrice,               // L: Đơn giá (ĐÃ LÀM TRÒN)
-                    roundedThanhTien            // M: Thành tiền (ĐÃ LÀM TRÒN)
+                    sttCounter,                 
+                    formatDateDDMMYYYY(customerInfo.date), 
+                    customerInfo.name,          
+                    customerInfo.address,       
+                    customerInfo.tin,           
+                    customerInfo.buyerName,     
+                    customerInfo.email,         
+                    customerInfo.paymentMethod, 
+                    item.name,                  
+                    item.unit,                  
+                    item.quantity,              
+                    roundedPrice,               
+                    roundedThanhTien            
                 ];
             } else {
-                // Sản phẩm THỨ HAI TRỞ ĐI của cùng giao dịch
-                row = [
-                    sttCounter,                 // A: Số thứ tự (GIỮ NGUYÊN)
-                    '',                         // B: (Trống)
-                    '',                         // C: (Trống)
-                    '',                         // D: (Trống)
-                    '',                         // E: (Trống)
-                    '',                         // F: (Trống)
-                    '',                         // G: (Trống)
-                    '',                         // H: (Trống)
-                    item.name,                  // I: Tên hàng hóa/dịch vụ
-                    item.unit,                  // J: Đơn vị tính
-                    item.quantity,              // K: Số lượng
-                    roundedPrice,               // L: Đơn giá (ĐÃ LÀM TRÒN)
-                    roundedThanhTien            // M: Thành tiền (ĐÃ LÀM TRÒN)
-                ];
+                row = [sttCounter, '', '', '', '', '', '', '', item.name, item.unit, item.quantity, roundedPrice, roundedThanhTien];
             }
             data.push(row);
         });
@@ -1063,287 +754,199 @@ function buildFlatInvoiceData(transactions) {
     return data;
 }
 
-// --- (MỚI) Đồng hồ (Tách ra) ---
-/**
- * Helper function: Formats a Date object into DD/MM/YYYY string.
- * Can optionally format for a specific timezone.
- * (This was missing from your snippet, so I've added it)
- */
-function formatClockDate(date, timeZone) {
-    const options = { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric',
-        timeZone: timeZone // If undefined, uses user's local timezone
+function exportInvoiceFile() {
+    if (currentCart.length === 0) return showStatus('Giỏ hàng đang trống!', true);
+    const customerInfo = getCustomerInfo();
+    if (!customerInfo.name || !customerInfo.date) return showStatus('Vui lòng nhập Tên Khách Hàng và Ngày Hóa Đơn!', true);
+    
+    let hasDbProduct = false;
+    let hasBypassProduct = false;
+    const dbProductNames = new Set(productDatabaseOriginal.map(p => p.name));
+    for (const item of currentCart) {
+        if (dbProductNames.has(item.name)) hasDbProduct = true;
+        else hasBypassProduct = true;
+    }
+    let invoiceType = '';
+    if (hasDbProduct && hasBypassProduct) invoiceType = 'Hỗn hợp';
+    else if (hasBypassProduct) invoiceType = 'Ngoài CSDL';
+    else invoiceType = 'Trong CSDL';
+    
+    const transaction = {
+        customerInfo: customerInfo,
+        items: JSON.parse(JSON.stringify(currentCart)) 
     };
+    dailyTransactions.push(transaction);
+
+    const dataForExport = buildFlatInvoiceData([transaction]); 
+    const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
+    const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    
+    try {
+        const exportLogEntry = {
+            id: Date.now(),
+            customerName: customerInfo.name,
+            fileName: fileName,
+            timestamp: new Date().toISOString(),
+            dataForExport: dataForExport,
+            worksheetName: 'HoaDon',
+            invoiceType: invoiceType
+        };
+        exportedInvoicesLog.push(exportLogEntry);
+        localStorage.setItem('exportedInvoicesLog', JSON.stringify(exportedInvoicesLog));
+    } catch (e) {
+        console.warn("Lỗi log hóa đơn:", e);
+    }
+
+    const saveOnly = document.getElementById('save-invoice-only-check').checked;
+    if (!saveOnly) XLSX.writeFile(workbook, fileName);
+
+    let inventoryUpdated = false;
+    currentCart.forEach(item => {
+        if (dbProductNames.has(item.name)) { 
+            updateInventory(item.name, item.quantity);
+            inventoryUpdated = true;
+        }
+    });
+    
+    let successMessage = '';
+    const actionWord = saveOnly ? 'lưu' : 'xuất';
+    if (inventoryUpdated) successMessage = `Đã ${actionWord} hóa đơn "${fileName}" và cập nhật tồn kho (hàng CSDL).`;
+    else successMessage = `Đã ${actionWord} hóa đơn (ngoài CSDL) "${fileName}". Tồn kho KHÔNG thay đổi.`;
+    
+    showStatus(successMessage, false);
+    clearCart(false); 
+    updateSessionStatus(); 
+}
+
+function exportDailySalesReport() {
+    if (dailyTransactions.length === 0) return showStatus('Không có giao dịch nào để xuất báo cáo.', false);
+    const dataForExport = buildFlatInvoiceData(dailyTransactions); 
+    const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'TongHopBanHang');
+    const fileName = `BaoCao_BanHang_TongHop_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    showStatus(`Đã xuất báo cáo bán hàng tổng hợp: "${fileName}"`);
+}
+
+function exportInventory() {
+    if (productDatabaseOriginal.length === 0 && dailyTransactions.length === 0) return showStatus('Chưa có dữ liệu tồn kho hoặc giao dịch nào.', false);
+    
+    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày', 'Ghi chú']];
+    const dbProductNames = new Set();
+    
+    productDatabaseOriginal.forEach(originalProduct => {
+        dbProductNames.add(originalProduct.name); 
+        const currentProduct = productDatabase.find(p => p.name === originalProduct.name);
+        const originalStock = originalProduct.stock;
+        const currentStock = currentProduct ? currentProduct.stock : originalStock;
+        inventoryData.push([originalProduct.name, originalProduct.unit, originalStock, originalStock - currentStock, currentStock, '']);
+    });
+    
+    const bypassSales = new Map();
+    dailyTransactions.forEach(transaction => {
+        transaction.items.forEach(item => {
+            if (!dbProductNames.has(item.name)) { 
+                let entry = bypassSales.get(item.name) || { unit: item.unit, totalSold: 0 };
+                entry.totalSold += item.quantity;
+                bypassSales.set(item.name, entry);
+            }
+        });
+    });
+    
+    bypassSales.forEach((data, name) => {
+        inventoryData.push([name, data.unit, 0, data.totalSold, -data.totalSold, 'Xuất ngoài CSDL']);
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet(inventoryData);
+    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho');
+    const fileName = `BaoCao_TonKho_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    showStatus(`Đã xuất báo cáo tồn kho: "${fileName}"`);
+}
+
+// --- CLOCK & DATE ---
+function formatClockDate(date, timeZone) {
+    const options = { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: timeZone };
     return new Intl.DateTimeFormat('vi-VN', options).format(date);
 }
 
-/**
- * Main function to start and update the clocks.
- * This REPLACES your existing startClock function.
- */
 function startClock() {
-    // Get elements for Vietnam time
     const vnContainer = document.getElementById('session-time-container');
     const vnLabel = document.getElementById('vietnam-clock-label');
     const vnTimeEl = document.getElementById('current-time-display');
     const vnDateEl = document.getElementById('current-date-display');
-
-    // Get elements for Local time
     const localContainer = document.getElementById('local-time-container');
     const localTimeEl = document.getElementById('local-time-display');
     const localDateEl = document.getElementById('local-date-display');
 
-    // Validate elements
-    if (!vnContainer || !vnLabel || !vnTimeEl || !vnDateEl || !localContainer || !localTimeEl || !localDateEl) {
-        console.error("Clock elements missing.");
-        return;
-    }
+    if (!vnContainer || !vnLabel || !vnTimeEl || !vnDateEl || !localContainer || !localTimeEl || !localDateEl) return;
 
-    // TIMEZONE CHECK
     const userTimezoneOffset = new Date().getTimezoneOffset();
-    const isGMT7 = userTimezoneOffset === -420; // GMT+7 is -420 minutes
+    const isGMT7 = userTimezoneOffset === -420; 
 
-    // TIME FORMATTERS
-    const vnTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
-        timeZone: 'Asia/Ho_Chi_Minh',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: false
-    });
+    const vnTimeFormatter = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const localTimeFormatter = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
-    const localTimeFormatter = new Intl.DateTimeFormat('vi-VN', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: false
-    });
-
-    // CONFIGURE UI
     if (isGMT7) {
-        // User is in Vietnam timezone → show only VN section
         vnLabel.textContent = "Giờ hiện tại";
         vnContainer.style.display = 'block';
         localContainer.style.display = 'none';
     } else {
-        // Different timezone → show both sections
         vnLabel.textContent = "Giờ Việt Nam (GMT +7)";
         vnContainer.style.display = 'block';
         localContainer.style.display = 'block';
     }
 
-    // UPDATE FUNCTION
     function updateClock() {
         const now = new Date();
-
         if (isGMT7) {
-            // Vietnam clock only (local time same as VN)
             vnTimeEl.textContent = localTimeFormatter.format(now);
-            vnDateEl.textContent = formatClockDate(now); // <--- CHANGED HERE
+            vnDateEl.textContent = formatClockDate(now); 
         } else {
-            // Vietnam clock (converted)
             vnTimeEl.textContent = vnTimeFormatter.format(now);
-            vnDateEl.textContent = formatClockDate(now, 'Asia/Ho_Chi_Minh'); // <--- CHANGED HERE
-
-            // Local clock
+            vnDateEl.textContent = formatClockDate(now, 'Asia/Ho_Chi_Minh'); 
             localTimeEl.textContent = localTimeFormatter.format(now);
-            localDateEl.textContent = formatClockDate(now); // <--- CHANGED HERE
+            localDateEl.textContent = formatClockDate(now); 
         }
     }
-
     updateClock();
     setInterval(updateClock, 1000);
 }
 
+// --- MODAL HELPERS ---
+function showAdvancedModal() { document.getElementById('advanced-modal').classList.remove('hidden'); }
+function hideAdvancedModal() { document.getElementById('advanced-modal').classList.add('hidden'); }
 
-
-// --- CÁC HÀM NÂNG CAO (DEVELOPER) ---
-function showAdvancedModal() {
-    document.getElementById('advanced-modal').classList.remove('hidden');
-}
-function hideAdvancedModal() {
-    document.getElementById('advanced-modal').classList.add('hidden');
-}
-
-// --- (*** SỬA ***) QUẢN LÝ MODAL HÓA ĐƠN ĐÃ XUẤT ---
 function setupExportedInvoicesModal() {
     exportedInvoicesModal = document.getElementById('exported-invoices-modal');
     exportedInvoicesList = document.getElementById('exported-invoices-list');
-    
     document.getElementById('view-exports-btn').addEventListener('click', showExportedInvoicesModal);
     document.getElementById('modal-close-btn-exports').addEventListener('click', hideExportedInvoicesModal);
     document.getElementById('modal-overlay-bg-exports').addEventListener('click', hideExportedInvoicesModal);
 }
 
-// (*** MỚI ***) QUẢN LÝ MODAL THÔNG TIN ---
-function setupInfoModal() {
-    if (!infoModal) return;
-    document.getElementById('info-mode-btn').addEventListener('click', showInfoModal);
-    document.getElementById('modal-close-btn-info').addEventListener('click', hideInfoModal);
-    document.getElementById('modal-overlay-bg-info').addEventListener('click', hideInfoModal);
-}
-
-function showInfoModal() {
-    if (infoModal) infoModal.classList.remove('hidden');
-}
-
-function hideInfoModal() {
-    if (infoModal) infoModal.classList.add('hidden');
-}
-
-// (*** MỚI ***) QUẢN LÝ MODAL KẾT THÚC PHIÊN ---
-function setupEndSessionModal() {
-    if (!endSessionModal) return;
-    
-    // (SỬA) Gán sự kiện cho các nút mới
-    endSessionModalCancelBtn.addEventListener('click', hideEndSessionModal);
-    endSessionDownloadSalesBtn.addEventListener('click', handleModalDownloadSales);
-    endSessionDownloadInventoryBtn.addEventListener('click', handleModalDownloadInventory);
-    endSessionModalConfirmBtn.addEventListener('click', handleModalConfirmEnd);
-}
-
-function handleModalDownloadSales() {
-    if (dailyTransactions.length > 0) {
-        exportDailySalesReport(); // Gọi hàm global
-        // Tùy chọn: Vô hiệu hóa nút sau khi nhấp
-        endSessionDownloadSalesBtn.disabled = true;
-        endSessionDownloadSalesBtn.textContent = 'Đã tải Báo Cáo Bán Hàng';
-    } else {
-        showStatus('Không có dữ liệu bán hàng để xuất.', false);
-    }
-}
-
-function handleModalDownloadInventory() {
-    if (productDatabaseOriginal.length > 0 || dailyTransactions.length > 0) {
-        exportInventory(); // Gọi hàm global
-        // Tùy chọn: Vô hiệu hóa nút sau khi nhấp
-        endSessionDownloadInventoryBtn.disabled = true;
-        endSessionDownloadInventoryBtn.textContent = 'Đã tải Báo Cáo Tồn Kho';
-    } else {
-        showStatus('Không có dữ liệu tồn kho để xuất.', false);
-    }
-}
-
-function handleModalConfirmEnd() {
-    hideEndSessionModal(); // Ẩn modal chọn file
-    
-    // Hiển thị modal xác nhận CUỐI CÙNG (hộp thoại màu đỏ)
-    // Đây là logic cũ từ hàm handleEndSessionContinue()
-    showConfirmModal(
-        'Xác nhận XÓA DỮ LIỆU?',
-        'Tất cả dữ liệu phiên (CSDL, Giao dịch, Log Hóa đơn) sẽ bị XÓA SẠCH. Đây là thao tác KHÔNG THỂ HỒI PHỤC. Bạn có chắc chắn muốn kết thúc?',
-        performDataDeletion // Callback là hàm xóa dữ liệu
-    );
-}
-
-function showEndSessionModal() {
-    if (!endSessionModal) return;
-
-    // (SỬA) Logic để BẬT/TẮT các nút TẢI XUỐNG
-    const hasSalesData = dailyTransactions.length > 0;
-    endSessionDownloadSalesBtn.disabled = !hasSalesData;
-    
-    const hasInventoryData = productDatabaseOriginal.length > 0 || dailyTransactions.length > 0;
-    endSessionDownloadInventoryBtn.disabled = !hasInventoryData;
-    
-    // Nút Kết thúc & Xóa luôn luôn được bật
-    endSessionModalConfirmBtn.disabled = false;
-
-    endSessionModal.classList.remove('hidden');
-}
-
-function hideEndSessionModal() {
-    if (endSessionModal) endSessionModal.classList.add('hidden');
-}
-
-// (*** MỚI ***) QUẢN LÝ MODAL XEM CSDL ---
-function setupDatabaseViewerModal() {
-    if (!databaseViewerModal) return;
-    document.getElementById('view-database-btn').addEventListener('click', showDatabaseViewerModal);
-    document.getElementById('modal-close-btn-db').addEventListener('click', hideDatabaseViewerModal);
-    document.getElementById('modal-overlay-bg-db').addEventListener('click', hideDatabaseViewerModal);
-    dbModalSearchInput.addEventListener('keyup', renderDatabaseViewerList);
-}
-
-function showDatabaseViewerModal() {
-    if (!databaseViewerModal) return;
-    renderDatabaseViewerList(); // Render với search query rỗng
-    databaseViewerModal.classList.remove('hidden');
-    dbModalSearchInput.focus();
-}
-
-function hideDatabaseViewerModal() {
-    if (databaseViewerModal) {
-        databaseViewerModal.classList.add('hidden');
-        dbModalSearchInput.value = ''; // Xóa search query khi đóng
-    }
-}
-
-function renderDatabaseViewerList() {
-    if (!databaseViewerList) return;
-    
-    const query = dbModalSearchInput.value.toLowerCase();
-    const filteredDB = productDatabase.filter(p => p.name.toLowerCase().includes(query));
-    
-    databaseViewerList.innerHTML = ''; // Xóa nội dung cũ
-    
-    if (filteredDB.length === 0) {
-        const message = productDatabase.length === 0 
-            ? 'Cơ sở dữ liệu trống.' 
-            : 'Không tìm thấy sản phẩm nào khớp.';
-        // (*** SỬA ***) Cập nhật colspan
-        databaseViewerList.innerHTML = `<tr><td colspan="5" class="text-center italic text-slate-500 dark:text-slate-400 py-6">${message}</td></tr>`;
-        return;
-    }
-    
-    filteredDB.forEach((product, index) => {
-        const row = databaseViewerList.insertRow();
-        // (*** SỬA ***) Cập nhật HTML (bỏ thuế)
-        row.innerHTML = `
-            <td class="!p-2 text-center">${index + 1}</td>
-            <td class="!p-2 font-medium">${product.name}</td>
-            <td class="!p-2">${product.unit}</td>
-            <td class="!p-2 text-right">${currencyFormatter.format(product.price)}</td>
-            <td class="!p-2 text-right font-medium">${product.stock}</td>
-        `;
-    });
-}
-
-
 function showExportedInvoicesModal() {
-    exportedInvoicesList.innerHTML = ''; // Xóa nội dung cũ
-    
+    exportedInvoicesList.innerHTML = ''; 
     if (exportedInvoicesLog.length === 0) {
-        // (*** SỬA ***) Cập nhật colspan
         exportedInvoicesList.innerHTML = '<tr><td colspan="5" class="text-center italic text-slate-500 dark:text-slate-400 py-6" data-label="">Chưa có hóa đơn nào được xuất trong phiên này.</td></tr>';
     } else {
-        // Hiển thị từ mới nhất đến cũ nhất
         exportedInvoicesLog.slice().reverse().forEach(logEntry => {
             const row = exportedInvoicesList.insertRow();
-            // (*** SỬA ***) Thêm cột "Loại"
-            row.innerHTML = `
-                <td data-label="Khách hàng" class="font-medium">${logEntry.customerName}</td>
-                <td data-label="Thời gian">${new Date(logEntry.timestamp).toLocaleString('vi-VN')}</td>
-                <td data-label="Tên file" class="text-sm italic">${logEntry.fileName}</td>
-                <td data-label="Loại" class="font-medium">${logEntry.invoiceType || 'Trong CSDL'}</td> <td class="cell-action text-center">
-                    <button class="btn-primary !py-1.5 !px-3 !text-sm w-full" onclick="reExportInvoice(${logEntry.id})">
-                        Tải lại
-                    </button>
-                </td>
-            `;
+            row.innerHTML = `<td data-label="Khách hàng" class="font-medium">${logEntry.customerName}</td><td data-label="Thời gian">${new Date(logEntry.timestamp).toLocaleString('vi-VN')}</td><td data-label="Tên file" class="text-sm italic">${logEntry.fileName}</td><td data-label="Loại" class="font-medium">${logEntry.invoiceType || 'Trong CSDL'}</td> <td class="cell-action text-center"><button class="btn-primary !py-1.5 !px-3 !text-sm w-full" onclick="reExportInvoice(${logEntry.id})">Tải lại</button></td>`;
         });
     }
     exportedInvoicesModal.classList.remove('hidden');
 }
-
-function hideExportedInvoicesModal() {
-    exportedInvoicesModal.classList.add('hidden');
-}
+function hideExportedInvoicesModal() { exportedInvoicesModal.classList.add('hidden'); }
 
 function reExportInvoice(id) {
     const logEntry = exportedInvoicesLog.find(log => log.id === id);
-    if (!logEntry) { 
-        return showStatus('Lỗi: Không tìm thấy hóa đơn để tải lại!', true); 
-    }
-    
+    if (!logEntry) return showStatus('Lỗi: Không tìm thấy hóa đơn để tải lại!', true); 
     try {
         const worksheet = XLSX.utils.aoa_to_sheet(logEntry.dataForExport);
         const workbook = XLSX.utils.book_new();
@@ -1356,26 +959,83 @@ function reExportInvoice(id) {
     }
 }
 
+function setupInfoModal() {
+    if (!infoModal) return;
+    document.getElementById('info-mode-btn').addEventListener('click', showInfoModal);
+    document.getElementById('modal-close-btn-info').addEventListener('click', hideInfoModal);
+    document.getElementById('modal-overlay-bg-info').addEventListener('click', hideInfoModal);
+}
+function showInfoModal() { if (infoModal) infoModal.classList.remove('hidden'); }
+function hideInfoModal() { if (infoModal) infoModal.classList.add('hidden'); }
 
-// (*** SỬA ***) Cập nhật logic Bật/Tắt Bypass Mode
+function setupEndSessionModal() {
+    if (!endSessionModal) return;
+    endSessionModalCancelBtn.addEventListener('click', hideEndSessionModal);
+    endSessionDownloadSalesBtn.addEventListener('click', handleModalDownloadSales);
+    endSessionDownloadInventoryBtn.addEventListener('click', handleModalDownloadInventory);
+    endSessionModalConfirmBtn.addEventListener('click', handleModalConfirmEnd);
+}
+function handleModalDownloadSales() {
+    if (dailyTransactions.length > 0) { exportDailySalesReport(); endSessionDownloadSalesBtn.disabled = true; endSessionDownloadSalesBtn.textContent = 'Đã tải Báo Cáo Bán Hàng'; }
+    else showStatus('Không có dữ liệu bán hàng để xuất.', false);
+}
+function handleModalDownloadInventory() {
+    if (productDatabaseOriginal.length > 0 || dailyTransactions.length > 0) { exportInventory(); endSessionDownloadInventoryBtn.disabled = true; endSessionDownloadInventoryBtn.textContent = 'Đã tải Báo Cáo Tồn Kho'; }
+    else showStatus('Không có dữ liệu tồn kho để xuất.', false);
+}
+function handleModalConfirmEnd() {
+    hideEndSessionModal(); 
+    showConfirmModal('Xác nhận XÓA DỮ LIỆU?', 'Tất cả dữ liệu phiên sẽ bị XÓA SẠCH. Bạn có chắc chắn muốn kết thúc?', performDataDeletion);
+}
+function showEndSessionModal() {
+    if (!endSessionModal) return;
+    const hasSalesData = dailyTransactions.length > 0;
+    endSessionDownloadSalesBtn.disabled = !hasSalesData;
+    const hasInventoryData = productDatabaseOriginal.length > 0 || dailyTransactions.length > 0;
+    endSessionDownloadInventoryBtn.disabled = !hasInventoryData;
+    endSessionModalConfirmBtn.disabled = false;
+    endSessionModal.classList.remove('hidden');
+}
+function hideEndSessionModal() { if (endSessionModal) endSessionModal.classList.add('hidden'); }
+
+function setupDatabaseViewerModal() {
+    if (!databaseViewerModal) return;
+    document.getElementById('view-database-btn').addEventListener('click', showDatabaseViewerModal);
+    document.getElementById('modal-close-btn-db').addEventListener('click', hideDatabaseViewerModal);
+    document.getElementById('modal-overlay-bg-db').addEventListener('click', hideDatabaseViewerModal);
+    dbModalSearchInput.addEventListener('keyup', renderDatabaseViewerList);
+}
+function showDatabaseViewerModal() { if (!databaseViewerModal) return; renderDatabaseViewerList(); databaseViewerModal.classList.remove('hidden'); dbModalSearchInput.focus(); }
+function hideDatabaseViewerModal() { if (databaseViewerModal) { databaseViewerModal.classList.add('hidden'); dbModalSearchInput.value = ''; } }
+function renderDatabaseViewerList() {
+    if (!databaseViewerList) return;
+    const query = dbModalSearchInput.value.toLowerCase();
+    const filteredDB = productDatabase.filter(p => p.name.toLowerCase().includes(query));
+    databaseViewerList.innerHTML = ''; 
+    if (filteredDB.length === 0) {
+        const message = productDatabase.length === 0 ? 'Cơ sở dữ liệu trống.' : 'Không tìm thấy sản phẩm nào khớp.';
+        databaseViewerList.innerHTML = `<tr><td colspan="5" class="text-center italic text-slate-500 dark:text-slate-400 py-6">${message}</td></tr>`;
+        return;
+    }
+    filteredDB.forEach((product, index) => {
+        const row = databaseViewerList.insertRow();
+        row.innerHTML = `<td class="!p-2 text-center">${index + 1}</td><td class="!p-2 font-medium">${product.name}</td><td class="!p-2">${product.unit}</td><td class="!p-2 text-right">${currencyFormatter.format(product.price)}</td><td class="!p-2 text-right font-medium">${product.stock}</td>`;
+    });
+}
+
+// --- UTILS KHÁC ---
 function toggleBypassMode() {
     devBypassMode = !devBypassMode;
     const bypassDiv = document.getElementById('bypass-inputs');
-    
-    updateBypassButtonState(); // Cập nhật trạng thái nút
-    
+    updateBypassButtonState(); 
     if (devBypassMode) {
-        bypassDiv.classList.remove('hidden'); 
-        showStatus('Chế độ Bypass CSDL đã BẬT. Giờ bạn có thể thêm sản phẩm thủ công.', false);
+        bypassDiv.classList.remove('hidden'); showStatus('Chế độ Bypass CSDL đã BẬT.', false);
     } else {
-        bypassDiv.classList.add('hidden'); 
-        showStatus('Chế độ Bypass CSDL đã TẮT.', false);
+        bypassDiv.classList.add('hidden'); showStatus('Chế độ Bypass CSDL đã TẮT.', false);
     }
-    // (*** MỚI ***) Lưu trạng thái mới vào localStorage
     saveStateToStorage();
-    
     updateSessionStatus();
-    handleProductSearch(); 
+    if(document.getElementById('product-search').value) handleProductSearch({target: document.getElementById('product-search')});
 }
 
 function exportEmptyInvoice() {
@@ -1384,21 +1044,16 @@ function exportEmptyInvoice() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon_Trong');
     XLSX.writeFile(workbook, 'Template_HoaDon_Trong.xlsx');
-    showStatus('Đã xuất template Hóa Đơn (trống) - định dạng phẳng A-M.', false);
-    hideAdvancedModal();
+    showStatus('Đã xuất template Hóa Đơn (trống).', false); hideAdvancedModal();
 }
-
 function exportEmptySalesReport() {
-    const dataForExport = buildFlatInvoiceData([]); // (SỬA) Dùng hàm phẳng
+    const dataForExport = buildFlatInvoiceData([]); 
     const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'TongHopBanHang_Trong');
     XLSX.writeFile(workbook, 'Template_BaoCao_BanHang_TongHop_Trong.xlsx');
-    showStatus('Đã xuất template Báo Cáo Bán Hàng (trống) - định dạng phẳng A-M.', false); // (SỬA)
-    hideAdvancedModal();
+    showStatus('Đã xuất template Báo Cáo Bán Hàng (trống).', false); hideAdvancedModal();
 }
-
-// (*** SỬA ***) Cập nhật template tồn kho
 function exportEmptyInventory() {
     const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày', 'Ghi chú']];
     const worksheet = XLSX.utils.aoa_to_sheet(inventoryData);
@@ -1406,30 +1061,17 @@ function exportEmptyInventory() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho_Trong');
     XLSX.writeFile(workbook, 'Template_BaoCao_TonKho_Trong.xlsx');
-    showStatus('Đã xuất template Báo Cáo Tồn Kho (trống).', false);
-    hideAdvancedModal();
+    showStatus('Đã xuất template Báo Cáo Tồn Kho (trống).', false); hideAdvancedModal();
 }
 
-// --- (*** SỬA ***) CÁC HÀM BACKUP & RESTORE
-/**
- * Xuất toàn bộ session (inventory state & logs) ra file JSON.
- * (Đã sửa để sao lưu toàn bộ trạng thái cần thiết)
- */
 function handleBackupSession() {
     try {
         const inventoryState = localStorage.getItem('inventoryState');
         const exportedInvoicesLog = localStorage.getItem('exportedInvoicesLog');
-        
-        if (!inventoryState && !exportedInvoicesLog) {
-            return showStatus('Không có dữ liệu phiên để backup.', true);
-        }
-
-        // Tải toàn bộ state (đã bao gồm devBypass)
+        if (!inventoryState && !exportedInvoicesLog) return showStatus('Không có dữ liệu phiên để backup.', true);
         const state = inventoryState ? JSON.parse(inventoryState) : null;
         const logs = exportedInvoicesLog ? JSON.parse(exportedInvoicesLog) : null;
-        
         const backupData = {
-            // (*** SỬA ***) Đổi tên key để dễ quản lý hơn, và đảm bảo mọi thứ được lưu
             fullSessionData: { 
                 productDatabase: state ? state.current : [],
                 productDatabaseOriginal: state ? state.original : [],
@@ -1437,118 +1079,43 @@ function handleBackupSession() {
                 devBypassMode: state ? state.devBypass : false,
             },
             exportedInvoicesLog: logs,
-            backupMetadata: {
-                timestamp: new Date().toISOString(),
-                version: "1.6" // Tăng version sau khi update tính năng
-            }
+            backupMetadata: { timestamp: new Date().toISOString(), version: "1.6" }
         };
-        
-        const jsonString = JSON.stringify(backupData, null, 2); // Pretty print
-        const blob = new Blob([jsonString], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        
         const a = document.createElement('a');
         const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        a.href = url;
-        a.download = `VTNN_ThanhNhan_Backup_${dateStr}_V1_6.json`;
-        
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        showStatus('Đã xuất file backup phiên thành công.', false);
-        hideAdvancedModal();
-    
-    } catch (e) {
-        console.error('Lỗi khi tạo backup:', e);
-        showStatus(`Lỗi khi tạo backup: ${e.message}`, true);
-    }
+        a.href = url; a.download = `VTNN_ThanhNhan_Backup_${dateStr}_V1_6.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        showStatus('Đã xuất file backup phiên thành công.', false); hideAdvancedModal();
+    } catch (e) { showStatus(`Lỗi khi tạo backup: ${e.message}`, true); }
 }
 
-/**
- * Xử lý file .json được chọn để khôi phục session.
- * (Đã sửa để khôi phục toàn bộ trạng thái cần thiết)
- */
 function handleRestoreSession(event) {
-    const fileInput = event.target;
-    const file = fileInput.files[0];
-    
+    const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
-        const jsonString = e.target.result;
-        
         try {
-            const backupData = JSON.parse(jsonString);
-
-            // (*** SỬA ***) Kiểm tra cấu trúc mới (fullSessionData)
+            const backupData = JSON.parse(e.target.result);
             const sessionData = backupData.fullSessionData;
             const logData = backupData.exportedInvoicesLog;
-            
-            if (sessionData && typeof sessionData.productDatabase !== 'undefined' && typeof sessionData.dailyTransactions !== 'undefined' && typeof logData !== 'undefined') {
-                
-                // Dùng modal xác nhận
-                showConfirmModal(
-                    'Xác nhận Khôi Phục Phiên?',
-                    'Hành động này sẽ XÓA SẠCH phiên làm việc hiện tại và thay thế bằng dữ liệu từ file. Bạn có chắc chắn muốn tiếp tục?',
-                    () => {
-                        try {
-                            // Tạo lại cấu trúc inventoryState để lưu vào localStorage
-                            const newInventoryState = {
-                                current: sessionData.productDatabase,
-                                original: sessionData.productDatabaseOriginal || [],
-                                transactions: sessionData.dailyTransactions,
-                                devBypass: sessionData.devBypassMode || false // Lấy trạng thái bypass
-                            };
-
-                            localStorage.setItem('inventoryState', JSON.stringify(newInventoryState));
-                            
-                            // Lưu log hóa đơn
-                            if (logData) {
-                                localStorage.setItem('exportedInvoicesLog', JSON.stringify(logData));
-                            } else {
-                                localStorage.removeItem('exportedInvoicesLog');
-                            }
-
-                            showStatus('Đã khôi phục phiên thành công! Trang sẽ tự động tải lại...', false);
-                            
-                            // Tải lại trang để load state mới
-                            setTimeout(() => {
-                                location.reload();
-                            }, 1500);
-
-                        } catch (saveError) {
-                            console.error('Lỗi khi lưu state khôi phục:', saveError);
-                            showStatus(`Lỗi khi lưu state khôi phục: ${saveError.message}`, true);
-                        }
-                    },
-                    'btn-danger' // Dùng nút đỏ cho hành động nguy hiểm
-                );
-
-            } else {
-                // (*** SỬA ***) Thêm thông báo nếu cấu trúc file cũ (inventoryState)
-                if (backupData.inventoryState) {
-                    throw new Error('File backup có vẻ là định dạng cũ. Vui lòng tải file mới nhất hoặc liên hệ hỗ trợ.');
-                }
-                throw new Error('File backup không hợp lệ hoặc thiếu dữ liệu.');
-            }
-
-        } catch (parseError) {
-            console.error('Lỗi khi đọc file backup:', parseError);
-            showStatus(`Lỗi khi đọc file backup: ${parseError.message}`, true);
-        } finally {
-            // Reset file input để có thể chọn lại file cũ (nếu fail)
-            fileInput.value = '';
-            hideAdvancedModal();
-        }
+            if (sessionData && typeof sessionData.productDatabase !== 'undefined') {
+                showConfirmModal('Xác nhận Khôi Phục Phiên?', 'Hành động này sẽ XÓA SẠCH phiên hiện tại. Tiếp tục?', () => {
+                    localStorage.setItem('inventoryState', JSON.stringify({
+                        current: sessionData.productDatabase,
+                        original: sessionData.productDatabaseOriginal || [],
+                        transactions: sessionData.dailyTransactions,
+                        devBypass: sessionData.devBypassMode || false
+                    }));
+                    if (logData) localStorage.setItem('exportedInvoicesLog', JSON.stringify(logData));
+                    else localStorage.removeItem('exportedInvoicesLog');
+                    showStatus('Đã khôi phục. Đang tải lại...', false);
+                    setTimeout(() => location.reload(), 1500);
+                }, 'btn-danger');
+            } else { throw new Error('File backup không hợp lệ.'); }
+        } catch (error) { showStatus(`Lỗi file backup: ${error.message}`, true); }
+        event.target.value = ''; hideAdvancedModal();
     };
-    
-    reader.onerror = () => {
-        showStatus('Không thể đọc file đã chọn.', true);
-        fileInput.value = '';
-    };
-    
     reader.readAsText(file);
 }
