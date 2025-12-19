@@ -514,19 +514,17 @@ function updateFinancialQuarter() {
     displayEl.textContent = displayText;
 }
 
-
-// --- 4. TÌM KIẾM & THÊM SẢN PHẨM VÀO GIỎ ---
+// --- 4. TÌM KIẾM & THÊM SẢN PHẨM VÀO GIỎ (ĐÃ NÂNG CẤP) ---
 function handleAddProduct(e) {
     e.preventDefault(); 
     
-    // Get input values immediately
+    // Lấy giá trị input ngay lập tức
     const searchInput = document.getElementById('product-search');
-    const inputValue = searchInput.value.trim();
+    const rawInput = searchInput.value || '';
     
-    // --- 1. BYPASS MODE LOGIC ---
-    // (Giữ nguyên logic nhập thủ công nếu đang bật chế độ Dev/Bypass)
+    // --- 1. BYPASS MODE LOGIC (Giữ nguyên) ---
     if (devBypassMode && !selectedProduct) {
-        const name = inputValue;
+        const name = rawInput.trim();
         const quantity = parseFloat(document.getElementById('product-quantity').value);
         
         if (!name || !quantity || quantity <= 0) {
@@ -550,43 +548,54 @@ function handleAddProduct(e) {
         }
         
         renderCart();
-        // Reset form
         searchInput.value = '';
         document.getElementById('product-quantity').value = '';
         document.getElementById('product-unit').value = '';
         document.getElementById('product-price').value = '';
-        
         clearProductSelection();
         searchInput.focus();
         showStatus(`Bypass Mode: Đã thêm/cập nhật "${name}" vào giỏ hàng.`, false);
         return;
     }
 
-    // --- 2. "LET IT SLIDE" LOGIC (TỰ ĐỘNG KHỚP) ---
-    // Nếu chưa chọn sản phẩm từ dropdown (selectedProduct == null)
-    // Nhưng trong ô tìm kiếm lại có chữ, ta sẽ thử tìm trong CSDL xem có khớp không.
-    if (!selectedProduct && inputValue.length > 0) {
-        // Chuẩn hóa chuỗi nhập vào (chữ thường, bỏ dấu thừa, chuẩn Unicode)
-        const cleanInput = inputValue.normalize('NFC').toLowerCase();
+    // --- 2. "LET IT SLIDE" LOGIC (TỰ ĐỘNG KHỚP THÔNG MINH) ---
+    // Hàm hỗ trợ chuẩn hóa chuỗi: Chữ thường + Unicode chuẩn + Xóa khoảng trắng thừa
+    const normalizeStr = (str) => {
+        if (!str) return '';
+        return str
+            .toString()
+            .normalize('NFC')       // Chuẩn hóa Unicode
+            .toLowerCase()          // Về chữ thường
+            .replace(/\s+/g, ' ')   // Biến nhiều dấu cách thành 1 dấu cách (VD: "A   B" -> "A B")
+            .trim();                // Cắt đầu đuôi
+    };
+
+    if (!selectedProduct && rawInput.length > 0) {
+        const cleanInput = normalizeStr(rawInput);
+        
+        // Debug: In ra console để kiểm tra (Nhấn F12 để xem nếu vẫn lỗi)
+        console.log(`[AutoMatch] Đang tìm: "${cleanInput}"`);
 
         // Tìm trong CSDL
         const matchedProduct = productDatabase.find(p => {
-            return p.name.normalize('NFC').trim().toLowerCase() === cleanInput;
+            const cleanName = normalizeStr(p.name);
+            return cleanName === cleanInput;
         });
 
-        // Nếu tìm thấy tên trùng khớp 100%
         if (matchedProduct) {
+            console.log("[AutoMatch] Đã tìm thấy:", matchedProduct.name);
             selectedProduct = matchedProduct;
             
-            // Cập nhật lại UI cho khớp (Optional)
+            // Cập nhật lại giao diện cho khớp
             searchInput.value = matchedProduct.name;
             searchInput.classList.add('input-selected');
-            document.getElementById('product-search-results').innerHTML = ''; // Ẩn dropdown gợi ý
+            document.getElementById('product-search-results').innerHTML = '';
+        } else {
+            console.log("[AutoMatch] Không tìm thấy khớp chính xác.");
         }
     }
 
     // --- 3. KIỂM TRA LỖI ---
-    // Nếu sau khi đã "Let it slide" mà vẫn không có sản phẩm -> Báo lỗi
     if (!selectedProduct) {
         return showStatus('Vui lòng chọn một sản phẩm từ danh sách!', true);
     }
@@ -621,7 +630,6 @@ function handleAddProduct(e) {
         document.getElementById('product-search').focus();
     };
     
-    // Cảnh báo tồn kho (Logic cũ)
     if (quantity > product.stock) {
         showConfirmModal(
             'Cảnh báo Tồn Kho',
