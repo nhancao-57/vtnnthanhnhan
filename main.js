@@ -151,15 +151,39 @@ function setupThemeToggle() {
 function updateFileNameDisplay() {
     const fileInput = document.getElementById('file-input');
     const display = document.getElementById('file-name-display');
+
     if (fileInput.files.length > 0) {
-        display.textContent = fileInput.files[0].name;
+        const file = fileInput.files[0];
+
+        // --- VALIDATION CHECK: MUST START WITH "CSDL" ---
+        if (!file.name.startsWith('CSDL')) {
+            // 1. Show Error
+            showStatus(`Lỗi: Tệp "${file.name}" không hợp lệ! Tên file phải bắt đầu bằng "CSDL".`, true);
+
+            // 2. Clear the invalid input so they can pick again
+            fileInput.value = ''; 
+
+            // 3. Reset display text
+            display.textContent = 'Chưa chọn tệp nào.';
+            display.classList.add('italic');
+            return; // Stop here, do not lock the input
+        }
+
+        // --- VALID FILE LOGIC ---
+        display.textContent = file.name;
         display.classList.remove('italic');
+
+        // Lock the input immediately so they can't change it unless they end the session
+        fileInput.disabled = true; 
+        
+        // Optional: Let them know it's good
+        showStatus('Đã chọn tệp hợp lệ. Vui lòng nhấn "Bắt đầu phiên".', false);
+
     } else {
         display.textContent = 'Chưa chọn tệp nào.';
         display.classList.add('italic');
     }
 }
-
 function showStatus(message, isError = false) {
     const container = document.getElementById('status-container');
     const statusDiv = document.createElement('div');
@@ -228,22 +252,41 @@ function updateBypassButtonState() {
 }
 
 function toggleAppControls(isSessionActive, isBypassActive = false) {
+    // Other buttons (keep existing logic)
     document.getElementById('export-inventory-btn').disabled = !isSessionActive;
     document.getElementById('export-sales-report-btn').disabled = !isSessionActive; 
     document.getElementById('end-session-btn').disabled = !isSessionActive;
     document.getElementById('view-database-btn').disabled = !isSessionActive; 
     document.getElementById('main-app-controls').disabled = !isSessionActive && !isBypassActive;
     
+    // --- MODIFIED SECTION START ---
     const loadDbBtn = document.getElementById('load-db-btn');
+    const fileInput = document.getElementById('file-input');
+
     if (isSessionActive) {
-        loadDbBtn.textContent = 'Tải lại CSDL (Phiên mới)';
-        loadDbBtn.classList.remove('btn-primary');
-        loadDbBtn.classList.add('btn-danger');
+        // LOCK MODE: Session is active, so we lock the input and button
+        loadDbBtn.textContent = 'CSDL Đang Hoạt Động (Đã khóa)';
+        
+        // Disable the button and the file input
+        loadDbBtn.disabled = true;
+        fileInput.disabled = true;
+
+        // Change styling to look "locked" (greyed out)
+        loadDbBtn.classList.remove('btn-primary', 'btn-danger');
+        loadDbBtn.classList.add('btn-secondary', 'cursor-not-allowed', 'opacity-50');
     } else {
+        // RELEASE MODE: Session is finished/empty, unlock everything
         loadDbBtn.textContent = 'Bắt đầu phiên (Tải CSDL)';
-        loadDbBtn.classList.remove('btn-danger');
+        
+        // Re-enable the button and the file input
+        loadDbBtn.disabled = false;
+        fileInput.disabled = false;
+
+        // Reset styling to primary blue
+        loadDbBtn.classList.remove('btn-secondary', 'cursor-not-allowed', 'opacity-50', 'btn-danger');
         loadDbBtn.classList.add('btn-primary');
     }
+    // --- MODIFIED SECTION END ---
 }
 
 function updateExportedInvoicesButtonState() {
