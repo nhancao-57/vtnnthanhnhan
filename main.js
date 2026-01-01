@@ -386,7 +386,7 @@ function handleFileLoad() {
                 // ID (MA) = F (Index 5)
                 // Stock (TON) = W (Index 22)
                 // Price (GIA) = Z (Index 25)
-                const COL = { TEN: 4, MA: 5, DVT: 18, TIN: 22, GIA: 25 }; 
+                const COL = { TEN: 4, MA: 5, DVT: 24, TIN: 22, GIA: 25 }; 
                 
                 // Map to handle aggregation by Product ID
                 const aggregationMap = new Map();
