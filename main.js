@@ -410,14 +410,19 @@ function handleFileLoad() {
                             // Use ID as key if available, otherwise fallback to Name to avoid collision
                             const key = productId.length > 0 ? productId : productName;
 
-                            if (aggregationMap.has(key)) {
+                                if (aggregationMap.has(key)) {
                                 // AGGREGATE STOCK
                                 const existingProduct = aggregationMap.get(key);
                                 existingProduct.stock += stock;
+
+                                // --- NEW: UPDATE TO HIGHEST PRICE ---
+                                if (price > existingProduct.price) {
+                                    existingProduct.price = price;
+                                }
                             } else {
                                 // CREATE NEW ENTRY
                                 aggregationMap.set(key, {
-                                    id: productId, // New Field
+                                    id: productId,
                                     name: productName,
                                     unit: unit,
                                     price: price,
