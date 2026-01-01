@@ -381,28 +381,61 @@ function handleFileLoad() {
                 localStorage.removeItem('exportedInvoicesLog'); 
                 devBypassMode = false; 
                 
-                const COL = {TIN: 16, TEN: 17, DVT: 18, GIA: 19};
+                // UPDATED COLUMNS MAPPING based on Request
+                // Name (TEN) = E (Index 4)
+                // ID (MA) = F (Index 5)
+                // Stock (TON) = W (Index 22)
+                // Price (GIA) = Z (Index 25)
+                const COL = { TEN: 4, MA: 5, DVT: 18, TIN: 22, GIA: 25 }; 
+                
+                // Map to handle aggregation by Product ID
+                const aggregationMap = new Map();
+
                 let productsLoaded = 0;
+                
+                // Loop through rows
                 for (let i = 3; i < jsonData.length; i++) {
                     const row = jsonData[i];
-                    if (row && row.length >= COL.GIA && row[COL.TEN]) {
-                        const productName = String(row[COL.TEN]).trim();
-                        if (productName.length > 0) {
-                            productDatabase.push({
-                                name: productName,
-                                unit: String(row[COL.DVT] || '').trim(),
-                                price: parseFloat(row[COL.GIA]) || 0,
-                                stock: parseInt(row[COL.TIN]) || 0
-                            });
-                            productsLoaded++;
+                    // Basic check: must have enough columns to cover the furthest index (Z=25)
+                    // and must have a valid Name or ID
+                    if (row && row.length > 4) {
+                        const productName = String(row[COL.TEN] || '').trim();
+                        const productId = String(row[COL.MA] || '').trim();
+                        
+                        if (productId.length > 0 || productName.length > 0) {
+                            const unit = String(row[COL.DVT] || '').trim();
+                            const price = parseFloat(row[COL.GIA]) || 0;
+                            const stock = parseInt(row[COL.TIN]) || 0;
+                            
+                            // Use ID as key if available, otherwise fallback to Name to avoid collision
+                            const key = productId.length > 0 ? productId : productName;
+
+                            if (aggregationMap.has(key)) {
+                                // AGGREGATE STOCK
+                                const existingProduct = aggregationMap.get(key);
+                                existingProduct.stock += stock;
+                            } else {
+                                // CREATE NEW ENTRY
+                                aggregationMap.set(key, {
+                                    id: productId, // New Field
+                                    name: productName,
+                                    unit: unit,
+                                    price: price,
+                                    stock: stock
+                                });
+                            }
                         }
                     }
                 }
                 
+                // Convert Map values back to Array
+                productDatabase = Array.from(aggregationMap.values());
+                productsLoaded = productDatabase.length;
+
                 productDatabaseOriginal = JSON.parse(JSON.stringify(productDatabase));
                 saveStateToStorage();
                 renderCart();
-                showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} sản phẩm.`);
+                showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} sản phẩm (đã gộp theo Mã).`);
                 fileInput.value = '';
                 updateFileNameDisplay();
                 updateSessionStatus();
@@ -536,7 +569,10 @@ function handleAddProduct(e) {
         const price = parseFloat(document.getElementById('product-price').value) || 0;
         const existing = currentCart.find(i => i.name === name);
         if(existing) { existing.quantity += quantity; existing.price = price; }
-        else { currentCart.push({name, unit, price, quantity}); }
+        else { 
+            // Bypass mode: ID is empty string
+            currentCart.push({id: '', name, unit, price, quantity}); 
+        }
         renderCart(); document.getElementById('add-product-form').reset(); clearProductSelection(); searchInput.focus();
         return showStatus(`Bypass: Đã thêm "${name}"`, false);
     }
@@ -596,7 +632,10 @@ function handleAddProduct(e) {
             existingCartItem.quantity += quantity;
         } else {
             currentCart.push({ 
-                name: product.name, unit: product.unit, price: product.price, 
+                id: product.id || '', // Include ID for Export
+                name: product.name, 
+                unit: product.unit, 
+                price: product.price, 
                 quantity: quantity 
             });
         }
@@ -757,9 +796,10 @@ function updateInventory(productName, soldQuantity) {
 }
 
 function buildFlatInvoiceData(transactions) {
+    // Add "Mã hàng" as the last column for export
     const data = [[
         'Số thứ tự', 'Ngày hóa đơn', 'Tên khách hàng', 'Địa chỉ', 'Mã số thuế', 'Người mua hàng', 'Email', 
-        'Hình thức thanh toán', 'Tên hàng hóa/dịch vụ', 'Đơn vị tính', 'Số lượng', 'Đơn giá', 'Thành tiền'
+        'Hình thức thanh toán', 'Tên hàng hóa/dịch vụ', 'Đơn vị tính', 'Số lượng', 'Đơn giá', 'Thành tiền', 'Mã hàng'
     ]];
 
     let sttCounter = 0; 
@@ -771,6 +811,8 @@ function buildFlatInvoiceData(transactions) {
             const thanhTien = item.quantity * item.price; 
             const roundedPrice = Math.round(item.price);
             const roundedThanhTien = Math.round(thanhTien);
+            const productId = item.id || ''; // Get Product ID
+            
             let row;
             if (itemIndex === 0) {
                 row = [
@@ -786,10 +828,11 @@ function buildFlatInvoiceData(transactions) {
                     item.unit,                  
                     item.quantity,              
                     roundedPrice,               
-                    roundedThanhTien            
+                    roundedThanhTien,
+                    productId // Added Product ID
                 ];
             } else {
-                row = [sttCounter, '', '', '', '', '', '', '', item.name, item.unit, item.quantity, roundedPrice, roundedThanhTien];
+                row = [sttCounter, '', '', '', '', '', '', '', item.name, item.unit, item.quantity, roundedPrice, roundedThanhTien, productId];
             }
             data.push(row);
         });
@@ -877,7 +920,8 @@ function exportDailySalesReport() {
 function exportInventory() {
     if (productDatabaseOriginal.length === 0 && dailyTransactions.length === 0) return showStatus('Chưa có dữ liệu tồn kho hoặc giao dịch nào.', false);
     
-    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày', 'Ghi chú']];
+    // Updated header with "Mã hàng" at the end
+    const inventoryData = [['Tên hàng hoá/dịch vụ', 'ĐVT', 'Tồn đầu ngày', 'Đã bán', 'Tồn cuối ngày', 'Ghi chú', 'Mã hàng']];
     const dbProductNames = new Set();
     
     productDatabaseOriginal.forEach(originalProduct => {
@@ -885,14 +929,24 @@ function exportInventory() {
         const currentProduct = productDatabase.find(p => p.name === originalProduct.name);
         const originalStock = originalProduct.stock;
         const currentStock = currentProduct ? currentProduct.stock : originalStock;
-        inventoryData.push([originalProduct.name, originalProduct.unit, originalStock, originalStock - currentStock, currentStock, '']);
+        
+        // Add ID to the export row
+        inventoryData.push([
+            originalProduct.name, 
+            originalProduct.unit, 
+            originalStock, 
+            originalStock - currentStock, 
+            currentStock, 
+            '',
+            originalProduct.id || '' // Product ID
+        ]);
     });
     
     const bypassSales = new Map();
     dailyTransactions.forEach(transaction => {
         transaction.items.forEach(item => {
             if (!dbProductNames.has(item.name)) { 
-                let entry = bypassSales.get(item.name) || { unit: item.unit, totalSold: 0 };
+                let entry = bypassSales.get(item.name) || { unit: item.unit, totalSold: 0, id: item.id };
                 entry.totalSold += item.quantity;
                 bypassSales.set(item.name, entry);
             }
@@ -900,11 +954,12 @@ function exportInventory() {
     });
     
     bypassSales.forEach((data, name) => {
-        inventoryData.push([name, data.unit, 0, data.totalSold, -data.totalSold, 'Xuất ngoài CSDL']);
+        // Add ID for bypass items (if they have one, likely empty string)
+        inventoryData.push([name, data.unit, 0, data.totalSold, -data.totalSold, 'Xuất ngoài CSDL', data.id || '']);
     });
 
     const worksheet = XLSX.utils.aoa_to_sheet(inventoryData);
-    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+    worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 }];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho');
     const fileName = `BaoCao_TonKho_${new Date().toISOString().slice(0,10)}.xlsx`;
