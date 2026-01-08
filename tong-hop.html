@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Data Tool - Hợp Nhất & Đối Chiếu</title>
+    <title>Phần mềm Tổng hợp Doanh thu - Cửa hàng VTNN Thành Nhân</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -18,7 +19,7 @@
                 extend: { 
                     colors: { 
                         slate: { 850: '#1e293b', 900: '#0f172a', 950: '#020617' },
-                        brand: { 500: '#6366f1', 600: '#4f46e5' }
+                        brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
                     } 
                 } 
             }
@@ -32,9 +33,16 @@
         let fileList = [];
         let isProcessing = false;
         
-        // Dữ liệu cho Master File
-        let masterHeader = null; // Lưu dòng tiêu đề
-        let masterRows = [];     // Lưu tất cả các dòng dữ liệu gộp lại
+        // Master Data
+        let masterHeader = null; 
+        let masterRows = [];
+        
+        // Aggregated Product Data Map (Key: ProductID)
+        let productAggregates = {};
+        
+        // Chart instances
+        let quantityChart = null;
+        let revenueChart = null;
 
         // --- THEME LOGIC ---
         function setupTheme() {
@@ -55,6 +63,7 @@
                 localStorage.setItem('theme', 'dark');
             }
             updateThemeIcon();
+            updateChartsTheme();
         }
 
         function updateThemeIcon() {
@@ -67,9 +76,40 @@
             }
         }
 
+        function updateChartsTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const color = isDark ? '#cbd5e1' : '#475569';
+            
+            [quantityChart, revenueChart].forEach(chart => {
+                if (chart) {
+                    chart.options.scales.x.ticks.color = color;
+                    chart.options.scales.y.ticks.color = color;
+                    chart.options.plugins.legend.labels.color = color;
+                    chart.update();
+                }
+            });
+        }
+
+        // --- HELPER FUNCTIONS ---
+        function parseCurrency(val) {
+            if (typeof val === 'number') return val;
+            if (typeof val === 'string') {
+                const clean = val.replace(/[^0-9.-]/g, '');
+                return clean ? parseFloat(clean) : 0;
+            }
+            return 0;
+        }
+
+        function parseQuantity(val) {
+            if (typeof val === 'number') return val;
+            if (typeof val === 'string') {
+                const clean = val.replace(/[^0-9.-]/g, '');
+                return clean ? parseFloat(clean) : 0;
+            }
+            return 0;
+        }
+
         // --- DATA PROCESSING LOGIC ---
-        
-        // Hàm đọc thủ công (Fallback)
         function manualReadSheet(worksheet) {
             const result = [];
             if (!worksheet['!ref']) return [];
@@ -96,25 +136,29 @@
             
             // Status Text
             document.getElementById('status-text').textContent = `Đã xử lý ${processedFilesCount} / ${fileList.length} tệp`;
-            document.getElementById('master-rows-count').textContent = `Tổng dòng dữ liệu: ${masterRows.length}`;
+            document.getElementById('master-rows-count').textContent = `Tổng dòng: ${masterRows.length} | Sản phẩm: ${Object.keys(productAggregates).length}`;
 
-            // Nút Export
-            const exportBtn = document.getElementById('export-master-btn');
-            if (masterRows.length > 0) {
-                exportBtn.disabled = false;
-                exportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                exportBtn.classList.add('hover:bg-brand-700', 'shadow-lg');
-            } else {
-                exportBtn.disabled = true;
-                exportBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                exportBtn.classList.remove('hover:bg-brand-700', 'shadow-lg');
-            }
+            // Buttons State
+            const exportMasterBtn = document.getElementById('export-master-btn');
+            const exportProductBtn = document.getElementById('export-product-btn');
+            const hasData = masterRows.length > 0;
 
-            // Render List
+            [exportMasterBtn, exportProductBtn].forEach(btn => {
+                if (hasData) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed', 'grayscale');
+                    btn.classList.add('hover:bg-brand-700', 'shadow-lg');
+                } else {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed', 'grayscale');
+                    btn.classList.remove('hover:bg-brand-700', 'shadow-lg');
+                }
+            });
+
+            // Render File List
             const listEl = document.getElementById('file-list-content');
             listEl.innerHTML = fileList.map((file, index) => {
                 let statusBadge = '';
-                // Logic badge trạng thái
                 if (file.status === 'processing') statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">Đang đọc...</span>`;
                 else if (file.error) statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">Lỗi</span>`;
                 else if (file.isProcessed) statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">OK</span>`;
@@ -138,18 +182,19 @@
             let startIndex = 0;
 
             if (isAccumulateMode) {
-                // Chế độ cộng dồn: Giữ nguyên masterRows và totalRevenue
                 startIndex = fileList.length;
                 const newEntries = newFiles.map(file => ({ 
                     name: file.name, file: file, isProcessed: false, error: false, status: 'pending', displayRevenue: '' 
                 }));
                 fileList = fileList.concat(newEntries);
             } else {
-                // Chế độ làm mới: Reset tất cả
                 totalAccumulatedRevenue = 0;
                 processedFilesCount = 0;
-                masterRows = []; // Reset dữ liệu Master
-                masterHeader = null; // Reset header
+                masterRows = []; 
+                masterHeader = null; 
+                productAggregates = {}; 
+                updateCharts([], []);
+                clearProductTable(); // Clear table
                 startIndex = 0;
                 fileList = newFiles.map(file => ({ 
                     name: file.name, file: file, isProcessed: false, error: false, status: 'pending', displayRevenue: '' 
@@ -165,6 +210,9 @@
         function processNextFile(index) {
             if (index >= fileList.length) {
                 isProcessing = false;
+                // Render Charts and Table after batch finishes
+                updateChartsFromAggregates(); 
+                renderProductTable();
                 return;
             }
             
@@ -188,7 +236,6 @@
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
                     
                     let rows = [];
-                    // Đọc dữ liệu
                     try {
                         if (XLSX.utils && XLSX.utils.sheet_to_aoa) {
                             rows = XLSX.utils.sheet_to_aoa(sheet, { header: 1 });
@@ -197,34 +244,47 @@
                         rows = manualReadSheet(sheet);
                     }
 
-                    // --- XỬ LÝ MASTER DATA ---
                     if (rows.length > 0) {
-                        // Nếu chưa có header (file đầu tiên), lấy dòng 0 làm header
-                        if (!masterHeader) {
-                            masterHeader = rows[0]; 
-                        }
+                        if (!masterHeader) masterHeader = rows[0]; 
                         
-                        // Lấy dữ liệu từ dòng 1 trở đi (bỏ header của file con)
-                        // Lọc bỏ các dòng hoàn toàn trống để file Master sạch đẹp
-                        const dataRows = rows.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ''));
-                        masterRows.push(...dataRows);
-                    }
-                    // ------------------------
+                        // Indices (0-based)
+                        const COL_NAME = 8;  // I
+                        const COL_UNIT = 9;  // J
+                        const COL_QTY = 10;  // K
+                        const COL_REV = 12;  // M
+                        const COL_ID = 13;   // N
 
-                    // --- XỬ LÝ DOANH THU (Cột M - Index 12) ---
-                    const COL_M_INDEX = 12;
-                    for (let i = 1; i < rows.length; i++) {
-                        const row = rows[i];
-                        if (row && row.length > COL_M_INDEX) {
-                            const val = row[COL_M_INDEX];
-                            let amt = 0;
-                            if (typeof val === 'number') amt = val;
-                            else if (typeof val === 'string') {
-                                const clean = val.replace(/[^0-9]/g, '');
-                                if (clean) amt = parseInt(clean, 10);
+                        const dataRows = rows.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && cell !== ''));
+                        
+                        masterRows.push(...dataRows);
+
+                        dataRows.forEach(row => {
+                            const revVal = row[COL_REV];
+                            const money = parseCurrency(revVal);
+                            if (money > 0) revenueFromFile += money;
+
+                            // Aggregation
+                            const rawId = row[COL_ID];
+                            if (rawId !== undefined && rawId !== null && String(rawId).trim() !== '') {
+                                const pId = String(rawId).trim();
+                                const pName = row[COL_NAME] || 'Unknown Product';
+                                const pUnit = row[COL_UNIT] || '';
+                                const pQty = parseQuantity(row[COL_QTY]);
+                                
+                                if (!productAggregates[pId]) {
+                                    productAggregates[pId] = {
+                                        id: pId,
+                                        name: pName,
+                                        unit: pUnit,
+                                        quantity: 0,
+                                        revenue: 0
+                                    };
+                                }
+                                
+                                productAggregates[pId].quantity += pQty;
+                                productAggregates[pId].revenue += money;
                             }
-                            if (amt > 0) revenueFromFile += amt;
-                        }
+                        });
                     }
 
                     totalAccumulatedRevenue += revenueFromFile;
@@ -233,7 +293,7 @@
 
                 } catch (err) {
                     fileEntry.error = true;
-                    console.error(err);
+                    console.error("Error processing file:", fileEntry.name, err);
                 } finally {
                     fileEntry.status = 'done';
                     processedFilesCount++;
@@ -244,48 +304,170 @@
             reader.readAsArrayBuffer(fileEntry.file);
         }
 
-        // --- EXPORT MASTER FILE FUNCTION ---
-        function exportMasterFile() {
-            if (masterRows.length === 0) {
-                alert("Chưa có dữ liệu để xuất!");
+        // --- PRODUCT TABLE LOGIC (UPDATED WITH SEARCH) ---
+        function clearProductTable() {
+            document.getElementById('product-list-body').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Dữ liệu sẽ hiển thị sau khi đọc file...</td></tr>';
+        }
+
+        function renderProductTable() {
+            const tbody = document.getElementById('product-list-body');
+            const searchInput = document.getElementById('product-search-input');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+            // 1. Convert to Array
+            let products = Object.values(productAggregates);
+            
+            // 2. Filter if search term exists
+            if (searchTerm) {
+                products = products.filter(p => 
+                    p.id.toLowerCase().includes(searchTerm) || 
+                    p.name.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // 3. Sort by Revenue DESC
+            products.sort((a, b) => b.revenue - a.revenue);
+            
+            // 4. Render
+            if (products.length === 0) {
+                if (Object.keys(productAggregates).length === 0) {
+                     clearProductTable();
+                } else {
+                     tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-500 italic">Không tìm thấy sản phẩm nào phù hợp.</td></tr>';
+                }
                 return;
             }
 
-            // Gộp Header + Data Rows
-            const finalData = [masterHeader || [], ...masterRows];
-
-            // Tạo Workbook mới
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(finalData);
-
-            // Tự động chỉnh độ rộng cột (Cơ bản)
-            const wscols = [
-                {wch: 5},  // A: STT
-                {wch: 12}, // B: Ngày
-                {wch: 20}, // C: Tên KH
-                {wch: 25}, // D: Địa chỉ
-                {wch: 15}, // E: MST
-                {wch: 15}, // F: Người mua
-                {wch: 20}, // G: Email
-                {wch: 15}, // H: Hình thức
-                {wch: 30}, // I: Tên hàng
-                {wch: 10}, // J: ĐVT
-                {wch: 10}, // K: SL
-                {wch: 15}, // L: Đơn giá
-                {wch: 15}  // M: Thành tiền
-            ];
-            ws['!cols'] = wscols;
-
-            XLSX.utils.book_append_sheet(wb, ws, "TongHop_Master");
-
-            // Tạo tên file có timestamp
-            const date = new Date();
-            const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
-            const fileName = `MasterData_TongHop_${dateStr}.xlsx`;
-
-            XLSX.writeFile(wb, fileName);
+            tbody.innerHTML = products.map((p, index) => `
+                <tr class="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td class="p-3 text-xs text-gray-500 font-mono">${index + 1}</td>
+                    <td class="p-3 text-xs font-semibold text-brand-600 dark:text-brand-400 font-mono">${p.id}</td>
+                    <td class="p-3 text-sm font-medium text-gray-900 dark:text-slate-200">${p.name}</td>
+                    <td class="p-3 text-xs text-center text-gray-500">${p.unit}</td>
+                    <td class="p-3 text-sm font-bold text-gray-900 dark:text-white text-right">${p.quantity.toLocaleString('vi-VN')}</td>
+                    <td class="p-3 text-sm font-bold text-emerald-600 dark:text-emerald-400 text-right font-mono">${currencyFormatter.format(p.revenue)}</td>
+                </tr>
+            `).join('');
         }
 
+        // --- CHART LOGIC ---
+        function updateChartsFromAggregates() {
+            const sortedProducts = Object.values(productAggregates).sort((a, b) => b.revenue - a.revenue);
+            const topProducts = sortedProducts.slice(0, 15);
+            
+            const labels = topProducts.map(p => p.name.length > 20 ? p.name.substring(0, 20) + '...' : p.name);
+            const quantities = topProducts.map(p => p.quantity);
+            const revenues = topProducts.map(p => p.revenue);
+
+            updateCharts(labels, quantities, revenues);
+        }
+
+        function updateCharts(labels, quantities, revenues) {
+            const ctxQty = document.getElementById('quantityChart').getContext('2d');
+            const ctxRev = document.getElementById('revenueChart').getContext('2d');
+            
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#cbd5e1' : '#475569';
+
+            if (quantityChart) quantityChart.destroy();
+            if (revenueChart) revenueChart.destroy();
+
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: textColor } }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: isDark ? '#334155' : '#e2e8f0' },
+                        ticks: { color: textColor }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: textColor, maxRotation: 45, minRotation: 45 }
+                    }
+                }
+            };
+
+            quantityChart = new Chart(ctxQty, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Số lượng bán',
+                        data: quantities,
+                        backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: commonOptions
+            });
+
+            revenueChart = new Chart(ctxRev, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: revenues,
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    plugins: {
+                        ...commonOptions.plugins,
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + currencyFormatter.format(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- EXPORT FUNCTIONS ---
+        function exportMasterFile() {
+            if (masterRows.length === 0) { alert("Chưa có dữ liệu!"); return; }
+
+            const finalData = [masterHeader || [], ...masterRows];
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(finalData);
+            ws['!cols'] = [{wch: 5}, {wch: 12}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 30}, {wch: 10}, {wch: 10}, {wch: 15}, {wch: 15}, {wch: 15}];
+            XLSX.utils.book_append_sheet(wb, ws, "Master_Gop");
+            const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+            XLSX.writeFile(wb, `MasterData_TongHop_${dateStr}.xlsx`);
+        }
+
+        function exportProductReport() {
+            const products = Object.values(productAggregates);
+            if (products.length === 0) { alert("Chưa có dữ liệu sản phẩm!"); return; }
+            products.sort((a, b) => a.id.localeCompare(b.id));
+
+            const wsData = [
+                ["Mã Sản Phẩm (ID)", "Tên Sản Phẩm", "Đơn Vị Tính", "Tổng Số Lượng", "Tổng Doanh Thu"]
+            ];
+            products.forEach(p => {
+                wsData.push([p.id, p.name, p.unit, p.quantity, p.revenue]);
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!cols'] = [{wch: 15}, {wch: 40}, {wch: 10}, {wch: 15}, {wch: 20}];
+            XLSX.utils.book_append_sheet(wb, ws, "BaoCao_SanPham");
+            const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+            XLSX.writeFile(wb, `BaoCao_SanPham_${dateStr}.xlsx`);
+        }
+
+        // --- UI TOGGLES ---
         function toggleAccumulateMode() {
             const checkbox = document.getElementById('accumulate-mode');
             const label = document.getElementById('accumulate-label');
@@ -317,11 +499,11 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="bg-brand-600 p-2 rounded-lg text-white shadow-lg shadow-brand-500/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg tracking-tight text-slate-900 dark:text-white leading-none">Master Data Tool</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Hợp nhất & Đối chiếu dữ liệu</p>
+                    <h1 class="font-bold text-lg tracking-tight text-slate-900 dark:text-white leading-none">Phần mềm Tổng hợp Doanh thu</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Cửa hàng VTNN Thành Nhân</p>
                 </div>
             </div>
             
@@ -343,24 +525,31 @@
             <div class="lg:col-span-4 space-y-6">
                 
                 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-                    <h2 class="text-sm font-bold text-slate-900 dark:text-white uppercase mb-4 tracking-wide">1. Tác vụ</h2>
+                    <h2 class="text-sm font-bold text-slate-900 dark:text-white uppercase mb-4 tracking-wide">1. Nhập liệu & Xuất</h2>
                     
-                    <div class="relative group w-full h-40 rounded-xl border-2 border-dashed border-gray-300 dark:border-slate-600 hover:border-brand-500 dark:hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-slate-700/50 transition-all flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden mb-4">
+                    <div class="relative group w-full h-32 rounded-xl border-2 border-dashed border-gray-300 dark:border-slate-600 hover:border-brand-500 dark:hover:border-brand-400 hover:bg-brand-50 dark:hover:bg-slate-700/50 transition-all flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden mb-4">
                         <input type="file" multiple accept=".xlsx, .xls" onchange="handleFileSelection(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                         <div class="p-4 group-hover:scale-105 transition-transform duration-300">
-                            <div class="w-10 h-10 mb-2 mx-auto bg-blue-50 dark:bg-slate-700 rounded-full flex items-center justify-center text-brand-600 dark:text-brand-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            <div class="w-8 h-8 mb-2 mx-auto bg-blue-50 dark:bg-slate-700 rounded-full flex items-center justify-center text-brand-600 dark:text-brand-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                             </div>
-                            <span class="text-sm font-bold text-brand-600 dark:text-brand-400">Chọn File Báo Cáo</span>
-                            <p class="text-xs text-slate-400 mt-1">Hỗ trợ Ctrl+A nhiều file</p>
+                            <span class="text-sm font-bold text-brand-600 dark:text-brand-400">Chọn File Excel</span>
                         </div>
                     </div>
 
-                    <button id="export-master-btn" onclick="exportMasterFile()" disabled class="w-full py-3 px-4 bg-brand-600 text-white rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                        Tải Master File (Gộp)
-                    </button>
-                    <p class="text-center text-xs text-slate-400 mt-2" id="master-rows-count">Tổng dòng dữ liệu: 0</p>
+                    <div class="space-y-3">
+                        <button id="export-master-btn" onclick="exportMasterFile()" disabled class="w-full py-2.5 px-4 bg-slate-700 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 opacity-50 cursor-not-allowed">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            Xuất Master File (Gộp)
+                        </button>
+
+                        <button id="export-product-btn" onclick="exportProductReport()" disabled class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 opacity-50 cursor-not-allowed shadow-lg shadow-brand-500/20">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            Xuất Báo Cáo Sản Phẩm
+                        </button>
+                    </div>
+                    
+                    <p class="text-center text-xs text-slate-400 mt-3" id="master-rows-count">Tổng dòng: 0 | Sản phẩm: 0</p>
                 </div>
 
                 <div id="accumulate-wrapper" class="p-4 rounded-xl border border-gray-200 bg-white dark:bg-slate-800 dark:border-slate-700 shadow-sm">
@@ -375,23 +564,36 @@
                         </label>
                     </div>
                     <p id="accumulate-label" class="text-sm text-slate-700 dark:text-slate-300 mb-1">Chế độ: Làm mới</p>
-                    <p class="text-xs text-slate-400">Bật để cộng dồn khi chọn thêm file.</p>
                 </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col h-[300px]">
+                    <div class="p-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 rounded-t-xl">
+                        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-xs uppercase">File đã xử lý</h3>
+                    </div>
+                    <div class="overflow-y-auto flex-1">
+                        <table class="w-full text-left">
+                            <tbody id="file-list-content" class="divide-y divide-gray-100 dark:divide-slate-700/50">
+                                <tr><td class="p-6 text-center text-xs text-slate-400">Chưa có file.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
             <div class="lg:col-span-8 space-y-6">
                 
                 <div class="bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-800/50 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700 p-6 sm:p-8 relative overflow-hidden">
                     <div class="relative z-10">
-                        <h2 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Tổng Doanh Thu Đối Chiếu</h2>
-                        <div id="total-revenue-display" class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight">0 ₫</div>
+                        <h2 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Tổng Doanh Thu</h2>
+                        <div id="total-revenue-display" class="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">0 ₫</div>
                         
-                        <div class="mt-6 flex items-center gap-4">
+                        <div class="mt-4 flex items-center gap-4">
                             <div class="flex-1">
                                 <div class="flex justify-between text-xs font-medium text-slate-500 mb-1.5">
                                     <span id="status-text">Đang chờ file...</span>
                                 </div>
-                                <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                                <div class="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
                                     <div id="progress-bar" class="bg-brand-600 dark:bg-brand-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
                                 </div>
                             </div>
@@ -399,24 +601,61 @@
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col h-[500px]">
-                    <div class="p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 flex justify-between items-center rounded-t-xl">
-                        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wide">Chi tiết file</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+                        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-brand-500"></span> Top Sản Phẩm (Số Lượng)
+                        </h3>
+                        <div class="h-56">
+                            <canvas id="quantityChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
+                        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Top Sản Phẩm (Doanh Thu)
+                        </h3>
+                        <div class="h-56">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 flex flex-col max-h-[600px] overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <h3 class="font-bold text-slate-700 dark:text-slate-200 text-sm uppercase tracking-wide">Chi tiết doanh số</h3>
+                        
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="product-search-input" 
+                                oninput="renderProductTable()"
+                                placeholder="Tìm mã hoặc tên SP..." 
+                                class="pl-9 pr-4 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-64"
+                            >
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="overflow-y-auto flex-1">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="sticky top-0 bg-white dark:bg-slate-800 z-10 shadow-sm">
+                    <div class="overflow-auto flex-1 custom-scrollbar">
+                        <table class="w-full text-left border-collapse relative">
+                            <thead class="sticky top-0 bg-white dark:bg-slate-800 z-10 shadow-sm ring-1 ring-black/5">
                                 <tr>
-                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase w-12 pl-4">#</th>
-                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase">Tên File</th>
-                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase text-right">Doanh thu</th>
-                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase text-right pr-4">TT</th>
+                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase w-12">#</th>
+                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase">Mã SP</th>
+                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase">Tên Sản Phẩm</th>
+                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase text-center">ĐVT</th>
+                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase text-right">Số Lượng</th>
+                                    <th class="p-3 text-xs font-bold text-slate-500 uppercase text-right">Doanh Thu</th>
                                 </tr>
                             </thead>
-                            <tbody id="file-list-content" class="divide-y divide-gray-100 dark:divide-slate-700/50">
+                            <tbody id="product-list-body" class="divide-y divide-gray-100 dark:divide-slate-700/50">
                                 <tr>
-                                    <td colspan="4" class="p-10 text-center text-slate-400 italic">Chưa có dữ liệu.</td>
+                                    <td colspan="6" class="p-8 text-center text-slate-400 italic">Dữ liệu sẽ hiển thị sau khi đọc file...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -426,6 +665,14 @@
             </div>
         </div>
     </main>
+
+    <footer class="mt-12 py-6 border-t border-gray-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                &copy; 2026 Cửa hàng VTNN Thành Nhân
+            </p>
+        </div>
+    </footer>
 
 </body>
 </html>
