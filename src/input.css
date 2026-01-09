@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+/* 1. SETUP DARK MODE (Class Strategy) */
+@variant dark (&:where(.dark, .dark *));
+
+/* 2. COMPONENT CLASSES */
+@layer components {
+
+  /* --- Buttons --- */
+  
+  /* FIXED: Apply shared styles to ALL buttons here using commas */
+  .btn-base, 
+  .btn-primary, 
+  .btn-secondary, 
+  .btn-success, 
+  .btn-danger, 
+  .btn-warning {
+    @apply py-2.5 px-5 rounded-lg cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900;
+  }
+
+  /* Specific Colors (Notice: I removed "btn-base" from these @apply lines) */
+  .btn-primary { 
+    @apply bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500; 
+  }
+  .btn-secondary { 
+    @apply bg-indigo-50 text-indigo-700 hover:bg-indigo-100 focus:ring-indigo-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600;
+  }
+  .btn-success { 
+    @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500; 
+  }
+  .btn-danger { 
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500; 
+  }
+  .btn-warning { 
+    @apply bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-500; 
+  }
+
+  /* --- Inputs --- */
+  .input-base {
+    @apply w-full p-3 border border-slate-300 rounded-lg box-border transition duration-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:ring-indigo-500 dark:focus:border-indigo-500;
+  }
+  .input-selected {
+    @apply bg-indigo-50 border-indigo-300 dark:bg-indigo-900/50 dark:border-indigo-700;
+  }
+  .input-quantity-cart {
+    @apply w-12 text-center p-1 border border-slate-300 rounded-md box-border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 focus:ring-indigo-500;
+  }
+  .btn-quantity-control {
+    @apply p-1 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors dark:bg-indigo-700 dark:text-indigo-100 dark:hover:bg-indigo-600;
+  }
+
+  /* --- JS Helpers --- */
+  .search-item {
+    @apply p-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-slate-700;
+  }
+  .search-item small {
+    @apply text-slate-500 ml-2 dark:text-slate-400;
+  }
+  .status-message {
+    @apply p-4 mb-5 rounded-lg font-medium;
+  }
+  .status-success {
+    @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200;
+  }
+  .status-error {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+  }
+
+  /* --- Tables --- */
+  .table-base {
+    @apply w-full border-collapse text-sm text-left min-w-[768px];
+  }
+  .table-base th, .table-base td {
+    @apply border border-slate-200 p-3 text-left dark:border-slate-700;
+  }
+  .table-base th {
+    @apply bg-slate-50 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300;
+  }
+
+  /* --- Session Status --- */
+  .status-session-active {
+    @apply bg-emerald-600 text-white transition-all duration-300;
+  }
+  .status-session-inactive {
+    @apply bg-amber-500 text-white transition-all duration-300;
+  }
+
+  /* --- Fieldsets --- */
+  fieldset:disabled {
+    @apply opacity-60 pointer-events-none;
+  }
+  fieldset:disabled .card-base {
+    @apply bg-slate-50 dark:bg-slate-800/50;
+  }
+
+  /* --- Cards --- */
+  .card-base {
+    @apply bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200 dark:bg-slate-800 dark:border-slate-700;
+  }
+  .card-title {
+    @apply text-2xl font-semibold text-gray-900 flex items-center gap-2 mb-4 dark:text-white;
+  }
+  .card-title-bar {
+    @apply inline-block w-1.5 h-6 bg-indigo-500 rounded;
+  }
+  .card-desc {
+    @apply mb-5 text-gray-600 leading-relaxed dark:text-slate-400;
+  }
+  .card-desc strong {
+    @apply font-medium text-gray-800 dark:text-slate-200;
+  }
+
+  /* --- Modals --- */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/60 dark:bg-black/70 z-[99] flex items-center justify-center p-4 transition-opacity duration-200;
+  }
+  .modal-content {
+    @apply bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-lg transform scale-100 transition-transform duration-200 dark:border dark:border-slate-700;
+  }
+  .modal-overlay.hidden {
+    @apply opacity-0 pointer-events-none;
+  }
+  .modal-overlay.hidden .modal-content {
+    @apply scale-95;
+  }
+
+  /* --- Mobile Table Optimization --- */
+  @media (max-width: 767px) {
+    .mobile-table-optimise {
+      @apply border-0;
+    }
+    .mobile-table-optimise thead {
+      @apply hidden;
+    }
+    .mobile-table-optimise tr {
+      @apply block mb-4 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden;
+    }
+    .mobile-table-optimise td {
+      @apply block text-right p-3 border-b border-slate-100 dark:border-slate-700;
+    }
+    .mobile-table-optimise td:last-child {
+      @apply border-b-0;
+    }
+    .mobile-table-optimise td::before {
+      content: attr(data-label);
+      @apply float-left font-medium text-slate-700 dark:text-slate-300 mr-4;
+    }
+    .mobile-table-optimise td.cell-action {
+      @apply text-center p-0;
+    }
+    .mobile-table-optimise td.cell-action button {
+      @apply w-full rounded-none rounded-b-lg m-0;
+    }
+    .mobile-table-optimise td.cell-action::before {
+      @apply hidden;
+    }
+  }
+}
