@@ -6,24 +6,12 @@
     <title>Phần mềm Tổng hợp Doanh thu - Cửa hàng VTNN Thành Nhân</title>
     
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/src/output.css" rel="stylesheet">
+    <link href="/dist/output.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <script>
-        tailwind.config = { 
-            darkMode: 'class',
-            theme: { 
-                fontFamily: { sans: ['Inter', 'sans-serif'] },
-                extend: { 
-                    colors: { 
-                        slate: { 850: '#1e293b', 900: '#0f172a', 950: '#020617' },
-                        brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
-                    } 
-                } 
-            }
-        };
-        
+    <script> 
         const currencyFormatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
         
         // --- GLOBAL VARIABLES ---
