@@ -17,9 +17,14 @@
   "bugs": {
     "url": "https://github.com/nhancao-57/vtnnthanhnhan/issues"
   },
+  "scripts": {
+    "tailwind:watch": "npx @tailwindcss/cli -i ./src/input.css -o ./dist/output.css --watch"
+  },
   "homepage": "https://github.com/nhancao-57/vtnnthanhnhan#readme",
   "dependencies": {
     "@tailwindcss/cli": "^4.1.18",
     "tailwindcss": "^4.1.18"
   }
 }
+
+
