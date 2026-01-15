@@ -381,23 +381,15 @@ function handleFileLoad() {
                 localStorage.removeItem('exportedInvoicesLog'); 
                 devBypassMode = false; 
                 
-                // UPDATED COLUMNS MAPPING based on Request
-                // Name (TEN) = E (Index 4)
-                // ID (MA) = F (Index 5)
-                // Stock (TON) = W (Index 22)
-                // Price (GIA) = Z (Index 25)
+                // Column Mapping
                 const COL = { TEN: 4, MA: 5, DVT: 24, TIN: 22, GIA: 25 }; 
                 
-                // Map to handle aggregation by Product ID
                 const aggregationMap = new Map();
-
                 let productsLoaded = 0;
                 
                 // Loop through rows
                 for (let i = 3; i < jsonData.length; i++) {
                     const row = jsonData[i];
-                    // Basic check: must have enough columns to cover the furthest index (Z=25)
-                    // and must have a valid Name or ID
                     if (row && row.length > 4) {
                         const productName = String(row[COL.TEN] || '').trim();
                         const productId = String(row[COL.MA] || '').trim();
@@ -407,45 +399,54 @@ function handleFileLoad() {
                             const price = parseFloat(row[COL.GIA]) || 0;
                             const stock = parseInt(row[COL.TIN]) || 0;
                             
-                            // Use ID as key if available, otherwise fallback to Name to avoid collision
+                            // Key priority: ID -> Name
                             const key = productId.length > 0 ? productId : productName;
 
-                                if (aggregationMap.has(key)) {
-                                // AGGREGATE STOCK
-                                const existingProduct = aggregationMap.get(key);
-                                existingProduct.stock += stock;
+                            // Create the Batch Object
+                            const batchEntry = {
+                                price: price,
+                                stock: stock,
+                                originalStock: stock // Keep track of initial import
+                            };
 
-                                // --- NEW: UPDATE TO HIGHEST PRICE ---
-                                if (price > existingProduct.price) {
-                                    existingProduct.price = price;
-                                }
+                            if (aggregationMap.has(key)) {
+                                // EXISTING PRODUCT: Add to stock, Add new Batch
+                                const existingProduct = aggregationMap.get(key);
+                                existingProduct.stock += stock; // Total global stock
+                                existingProduct.batches.push(batchEntry); // Add batch to end of array (Newest)
                             } else {
-                                // CREATE NEW ENTRY
+                                // NEW PRODUCT
                                 aggregationMap.set(key, {
                                     id: productId,
                                     name: productName,
                                     unit: unit,
-                                    price: price,
-                                    stock: stock
+                                    stock: stock, // Total global stock
+                                    price: price, // Default price (will be updated dynamically)
+                                    batches: [batchEntry] // Initialize batch array
                                 });
                             }
                         }
                     }
                 }
                 
-                // Convert Map values back to Array
-                productDatabase = Array.from(aggregationMap.values());
-                productsLoaded = productDatabase.length;
+                // Finalize Products: Set the "Main" price to the current valid FIFO price
+                productDatabase = Array.from(aggregationMap.values()).map(p => {
+                    p.price = getCurrentActivePrice(p);
+                    return p;
+                });
 
+                productsLoaded = productDatabase.length;
                 productDatabaseOriginal = JSON.parse(JSON.stringify(productDatabase));
+                
                 saveStateToStorage();
                 renderCart();
-                showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} sản phẩm (đã gộp theo Mã).`);
+                showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} mã sản phẩm (Quản lý theo lô nhập).`);
                 fileInput.value = '';
                 updateFileNameDisplay();
                 updateSessionStatus();
 
             } catch (error) { 
+                console.error(error);
                 showStatus(`Lỗi khi đọc tệp Excel: ${error.message}`, true); 
                 updateSessionStatus();
             }
@@ -564,7 +565,7 @@ function handleAddProduct(e) {
     const searchInput = document.getElementById('product-search');
     const rawInput = searchInput.value || '';
     
-    // --- 1. BYPASS MODE LOGIC ---
+    // --- 1. BYPASS MODE LOGIC (Unchanged) ---
     if (devBypassMode && !selectedProduct) {
         const name = rawInput.trim();
         const quantity = parseFloat(document.getElementById('product-quantity').value);
@@ -574,52 +575,39 @@ function handleAddProduct(e) {
         const price = parseFloat(document.getElementById('product-price').value) || 0;
         const existing = currentCart.find(i => i.name === name);
         if(existing) { existing.quantity += quantity; existing.price = price; }
-        else { 
-            // Bypass mode: ID is empty string
-            currentCart.push({id: '', name, unit, price, quantity}); 
-        }
+        else { currentCart.push({id: '', name, unit, price, quantity}); }
         renderCart(); document.getElementById('add-product-form').reset(); clearProductSelection(); searchInput.focus();
         return showStatus(`Bypass: Đã thêm "${name}"`, false);
     }
 
-    // --- 2. LOGIC TỰ ĐỘNG KHỚP (SIÊU MẠNH - NUCLEAR OPTION) ---
+    // --- 2. LOGIC TỰ ĐỘNG KHỚP (Unchanged) ---
     const skeletonString = (str) => {
         if (!str) return '';
         return str.toString()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Bỏ dấu
-            .replace(/đ/g, "d").replace(/Đ/g, "D")
-            .toLowerCase()
-            .replace(/\s+/g, ''); // Xóa sạch khoảng trắng
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().replace(/\s+/g, '');
     };
 
     if (!selectedProduct && rawInput.length > 0) {
         const inputSkeleton = skeletonString(rawInput);
-        
-        console.log(`[AutoMatch] Input gốc: "${rawInput}"`);
-        console.log(`[AutoMatch] Input xương: "${inputSkeleton}"`);
-
         const matchedProduct = productDatabase.find(p => {
             const dbSkeleton = skeletonString(p.name);
             return dbSkeleton === inputSkeleton;
         });
 
         if (matchedProduct) {
-            console.log(`[AutoMatch] ĐÃ KHỚP: "${matchedProduct.name}"`);
             selectedProduct = matchedProduct;
             searchInput.value = matchedProduct.name;
             searchInput.classList.add('input-selected');
             document.getElementById('product-search-results').innerHTML = '';
-        } else {
-            console.log("[AutoMatch] Không tìm thấy.");
         }
     }
 
-    // --- 3. KIỂM TRA LỖI ---
+    // --- 3. CHECK ERRORS ---
     if (!selectedProduct) {
         return showStatus(`Không tìm thấy SP nào khớp với "${rawInput}". Vui lòng chọn từ danh sách!`, true);
     }
 
-    // --- 4. THÊM VÀO GIỎ ---
+    // --- 4. ADD TO CART WITH FIFO PRICE ---
     const name = selectedProduct.name;
     const quantityInput = document.getElementById('product-quantity');
     const quantity = parseFloat(quantityInput.value);
@@ -629,18 +617,24 @@ function handleAddProduct(e) {
         return showStatus(`Đã khớp "${name}". Vui lòng nhập số lượng!`, false);
     }
     
-    const product = selectedProduct; 
+    // !!! HERE IS THE CHANGE: GET DYNAMIC PRICE !!!
+    // We update the selectedProduct price property to ensure it's fresh
+    const fifoPrice = getCurrentActivePrice(selectedProduct);
     
     const doAdd = () => {
         const existingCartItem = currentCart.find(item => item.name === name);
         if (existingCartItem) {
             existingCartItem.quantity += quantity;
+            // Note: We don't update price of existing cart item to avoid confusion 
+            // if they added item, then changed batch, then added more. 
+            // But usually, it updates to latest. Let's keep existing behavior or update:
+            existingCartItem.price = fifoPrice; 
         } else {
             currentCart.push({ 
-                id: product.id || '', // Include ID for Export
-                name: product.name, 
-                unit: product.unit, 
-                price: product.price, 
+                id: selectedProduct.id || '', 
+                name: selectedProduct.name, 
+                unit: selectedProduct.unit, 
+                price: fifoPrice, // Use the FIFO Price
                 quantity: quantity 
             });
         }
@@ -651,11 +645,27 @@ function handleAddProduct(e) {
         document.getElementById('product-search').focus();
     };
     
-    if (quantity > product.stock) {
-        showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${name}" chỉ còn ${product.stock}. Bạn có chắc chắn muốn bán lố không?`, doAdd, 'btn-warning');
+    // Check Total Stock
+    if (quantity > selectedProduct.stock) {
+        showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${name}" chỉ còn tổng cộng ${selectedProduct.stock}. Bạn có chắc chắn muốn bán lố không?`, doAdd, 'btn-warning');
     } else {
         doAdd(); 
     }
+}
+
+function getCurrentActivePrice(product) {
+    // If no batches (legacy data or bypass), return the static price
+    if (!product.batches || product.batches.length === 0) return product.price;
+
+    // Look from TOP (Index 0) to BOTTOM
+    for (const batch of product.batches) {
+        if (batch.stock > 0) {
+            return batch.price; // Return price of the first batch with stock
+        }
+    }
+    
+    // If all batches are 0, return the price of the last batch (newest)
+    return product.batches[product.batches.length - 1].price;
 }
 
 // --- GIỎ HÀNG ---
@@ -797,7 +807,37 @@ function getCustomerInfo() {
 
 function updateInventory(productName, soldQuantity) {
     const product = productDatabase.find(p => p.name === productName);
-    if (product) product.stock -= soldQuantity;
+    if (!product) return;
+
+    // 1. Deduct from Total Stock (Legacy visual aid)
+    product.stock -= soldQuantity;
+
+    // 2. Deduct from Batches (FIFO Logic)
+    if (product.batches && product.batches.length > 0) {
+        let quantityToDeduct = soldQuantity;
+
+        // Iterate Batches from Top (Oldest) to Bottom (Newest)
+        for (let i = 0; i < product.batches.length; i++) {
+            if (quantityToDeduct <= 0) break;
+
+            let batch = product.batches[i];
+            
+            if (batch.stock > 0) {
+                if (batch.stock >= quantityToDeduct) {
+                    // This batch can fulfill the remaining order
+                    batch.stock -= quantityToDeduct;
+                    quantityToDeduct = 0;
+                } else {
+                    // This batch is not enough, take all of it and move to next
+                    quantityToDeduct -= batch.stock;
+                    batch.stock = 0;
+                }
+            }
+        }
+    }
+    
+    // 3. Update the main display price for next time (in case batch ran out)
+    product.price = getCurrentActivePrice(product);
 }
 
 function buildFlatInvoiceData(transactions) {
