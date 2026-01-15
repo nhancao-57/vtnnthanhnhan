@@ -394,6 +394,85 @@ function loadStateFromStorage() {
 }
 
 // --- XỬ LÝ DATABASE ---
+
+// --- HÀM KIỂM TRA TỒN KHO ÂM (MỚI) ---
+function validateAndWarnNegativeStock(onContinueCallback) {
+    const violations = [];
+
+    // Quét toàn bộ database đã nạp
+    productDatabase.forEach(product => {
+        let hasIssue = false;
+        let issueDetails = [];
+
+        // 1. Kiểm tra tổng tồn kho
+        if (product.stock < 0) {
+            hasIssue = true;
+            issueDetails.push(`Tổng tồn kho âm (${product.stock})`);
+        }
+
+        // 2. Kiểm tra từng dòng (lô) nhập trong file Excel
+        if (product.batches && product.batches.length > 0) {
+            product.batches.forEach((batch, idx) => {
+                if (batch.stock < 0) {
+                    hasIssue = true;
+                    // idx không nhất thiết khớp dòng Excel nhưng thể hiện thứ tự nạp
+                    issueDetails.push(`Dòng/Lô nhập có giá trị âm (${batch.stock})`);
+                }
+            });
+        }
+
+        if (hasIssue) {
+            // Lọc trùng lặp thông báo
+            const uniqueDetails = [...new Set(issueDetails)];
+            violations.push({
+                name: product.name,
+                id: product.id,
+                details: uniqueDetails.join(', ')
+            });
+        }
+    });
+
+    // TRƯỜNG HỢP 1: Dữ liệu sạch -> Chạy tiếp ngay lập tức
+    if (violations.length === 0) {
+        onContinueCallback();
+        return;
+    }
+
+    // TRƯỜNG HỢP 2: Có lỗi -> Hiện Modal Cảnh Báo
+    const modal = document.getElementById('critical-warning-modal');
+    const listContainer = document.getElementById('critical-warning-list');
+    const continueBtn = document.getElementById('critical-warning-continue-btn');
+
+    // Tạo danh sách lỗi
+    if (listContainer) {
+        listContainer.innerHTML = violations.map((v, i) => `
+            <li class="border-b border-red-100 last:border-0 py-2">
+                <div class="font-bold text-red-700">${i + 1}. ${v.name} <span class="text-xs font-normal text-gray-500">(${v.id})</span></div>
+                <div class="text-sm text-red-600 pl-4">• ${v.details}</div>
+            </li>
+        `).join('');
+    }
+
+    // Hiển thị Modal
+    if (modal) modal.classList.remove('hidden');
+
+    // Xử lý nút "Tiếp tục làm việc" (Bỏ qua cảnh báo)
+    if (continueBtn) {
+        // Clone nút để xóa các event listener cũ (tránh bị double click)
+        const newBtn = continueBtn.cloneNode(true);
+        continueBtn.parentNode.replaceChild(newBtn, continueBtn);
+        
+        newBtn.addEventListener('click', () => {
+            if (modal) modal.classList.add('hidden');
+            onContinueCallback(); // Chạy hàm thành công sau khi user xác nhận
+        });
+    } else {
+        // Fallback nếu chưa có HTML
+        alert(`CẢNH BÁO: Có ${violations.length} sản phẩm bị âm kho. Vui lòng kiểm tra.`);
+        onContinueCallback();
+    }
+}
+
 function handleFileLoad() {
     const fileInput = document.getElementById('file-input');
     if (fileInput.files.length === 0) return showStatus('Vui lòng chọn Cơ sở dữ liệu!', true);
@@ -410,6 +489,7 @@ function handleFileLoad() {
                 const worksheet = workbook.Sheets[sheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
+                // Reset dữ liệu
                 productDatabase = [];
                 productDatabaseOriginal = [];
                 dailyTransactions = [];
@@ -418,7 +498,7 @@ function handleFileLoad() {
                 localStorage.removeItem('exportedInvoicesLog'); 
                 devBypassMode = false; 
                 
-                // Column Mapping
+                // Cấu hình cột Excel
                 const COL = { TEN: 4, MA: 5, DVT: 24, TIN: 22, GIA: 25 }; 
                 
                 const aggregationMap = new Map();
@@ -443,30 +523,30 @@ function handleFileLoad() {
                             const batchEntry = {
                                 price: price,
                                 stock: stock,
-                                originalStock: stock // Keep track of initial import
+                                originalStock: stock 
                             };
 
                             if (aggregationMap.has(key)) {
-                                // EXISTING PRODUCT: Add to stock, Add new Batch
+                                // SẢN PHẨM ĐÃ CÓ: Cộng dồn tồn kho, Thêm Batch
                                 const existingProduct = aggregationMap.get(key);
-                                existingProduct.stock += stock; // Total global stock
-                                existingProduct.batches.push(batchEntry); // Add batch to end of array (Newest)
+                                existingProduct.stock += stock; 
+                                existingProduct.batches.push(batchEntry); 
                             } else {
-                                // NEW PRODUCT
+                                // SẢN PHẨM MỚI
                                 aggregationMap.set(key, {
                                     id: productId,
                                     name: productName,
                                     unit: unit,
-                                    stock: stock, // Total global stock
-                                    price: price, // Default price (will be updated dynamically)
-                                    batches: [batchEntry] // Initialize batch array
+                                    stock: stock, 
+                                    price: price, 
+                                    batches: [batchEntry] 
                                 });
                             }
                         }
                     }
                 }
                 
-                // Finalize Products: Set the "Main" price to the current valid FIFO price
+                // Finalize Products: Set Price
                 productDatabase = Array.from(aggregationMap.values()).map(p => {
                     p.price = getCurrentActivePrice(p);
                     return p;
@@ -475,12 +555,20 @@ function handleFileLoad() {
                 productsLoaded = productDatabase.length;
                 productDatabaseOriginal = JSON.parse(JSON.stringify(productDatabase));
                 
-                saveStateToStorage();
-                renderCart();
-                showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} mã sản phẩm (Quản lý theo lô nhập).`);
-                fileInput.value = '';
-                updateFileNameDisplay();
-                updateSessionStatus();
+                // --- THAY ĐỔI MỚI TẠI ĐÂY ---
+                // Định nghĩa hàm sẽ chạy khi mọi thứ OK (Callback)
+                const onValidationSuccess = () => {
+                    saveStateToStorage();
+                    renderCart();
+                    showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} mã sản phẩm (Quản lý theo lô nhập).`);
+                    fileInput.value = '';
+                    updateFileNameDisplay();
+                    updateSessionStatus();
+                };
+
+                // Chạy hàm kiểm tra lỗi trước
+                validateAndWarnNegativeStock(onValidationSuccess);
+                // ----------------------------
 
             } catch (error) { 
                 console.error(error);
