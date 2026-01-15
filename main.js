@@ -69,6 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Khởi tạo
     document.getElementById('invoice-date').valueAsDate = new Date();
     loadStateFromStorage(); 
+    checkNegativeStock();
+    setupNegativeStockModal();
     setupThemeToggle(); 
     setupExportedInvoicesModal(); 
     setupInfoModal(); 
@@ -215,6 +217,41 @@ function formatDateDDMMYYYY(dateInput) {
     const month = String(dateObj.getMonth() + 1).padStart(2, '0'); 
     const year = dateObj.getFullYear();
     return `${day}/${month}/${year}`;
+}
+
+// --- NEW FUNCTION: Check for Negative Stock ---
+function checkNegativeStock() {
+    // 1. Filter products with stock < 0
+    const negativeProducts = productDatabase.filter(p => p.stock < 0);
+
+    // 2. If no issues, stop here
+    if (negativeProducts.length === 0) return;
+
+    // 3. Populate the list in the modal
+    const listContainer = document.getElementById('negative-stock-list');
+    listContainer.innerHTML = ''; // Clear old alerts
+
+    negativeProducts.forEach(p => {
+        const li = document.createElement('li');
+        // Displays: "Product Name (Stock: -5)"
+        li.textContent = `• ${p.name} (Kho: ${p.stock})`; 
+        listContainer.appendChild(li);
+    });
+
+    // 4. Show the modal
+    document.getElementById('negative-stock-modal').classList.remove('hidden');
+}
+
+// --- NEW FUNCTION: Setup Modal Event Listener ---
+function setupNegativeStockModal() {
+    const closeBtn = document.getElementById('negative-modal-close');
+    const modal = document.getElementById('negative-stock-modal');
+    
+    if(closeBtn && modal) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
 }
 
 // --- QUẢN LÝ TRẠNG THÁI PHIÊN ---
