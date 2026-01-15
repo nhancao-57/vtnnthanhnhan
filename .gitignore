@@ -1,0 +1,33 @@
+# =====================
+# Node.js
+# =====================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =====================
+# Tailwind / Build output
+# =====================
+src/output.css
+src/output.css.map
+
+# If you later move compiled CSS elsewhere, ignore that folder instead
+# dist/
+# build/
+
+# =====================
+# OS / Editor
+# =====================
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# =====================
+# Environment files
+# =====================
+.env
+.env.*
