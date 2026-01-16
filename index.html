@@ -228,10 +228,22 @@
                     </h2>
 
                     <form id="customer-info-form" class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-                        <div class="col-span-1 sm:col-span-2">
-                            <label for="customer-name" class="font-semibold text-gray-700 dark:text-slate-300 block mb-1 text-sm">Tên khách hàng <span class="text-red-500">*</span></label>
-                            <input type="text" id="customer-name" required class="input-base" placeholder="Nhập tên khách hàng/Công ty" />
+                    <div class="col-span-1 sm:col-span-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="customer-name" class="font-semibold text-gray-700 dark:text-slate-300 block text-sm">
+                                Tên khách hàng <span class="text-red-500">*</span>
+                            </label>
+                            
+                            <label class="inline-flex items-center cursor-pointer group">
+                                <input type="checkbox" id="retail-customer-check" 
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 transition-colors">
+                                <span class="ml-2 text-xs font-medium text-gray-500 group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-indigo-400 transition-colors">
+                                    Khách lẻ không lấy hoá đơn
+                                </span>
+                            </label>
                         </div>
+                        <input type="text" id="customer-name" required class="input-base" placeholder="Nhập tên khách hàng/Công ty" />
+                    </div>
                         <div>
                             <label for="customer-buyer-name" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Người mua hàng</label>
                             <input type="text" id="customer-buyer-name" class="input-base" />

@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('invoice-date').valueAsDate = new Date();
     loadStateFromStorage(); 
     checkNegativeStock();
+    initRetailCustomerCheckbox();
     setupNegativeStockModal();
     setupThemeToggle(); 
     setupExportedInvoicesModal(); 
@@ -1386,4 +1387,38 @@ function handleRestoreSession(event) {
         event.target.value = ''; hideAdvancedModal();
     };
     reader.readAsText(file);
+}
+
+function initRetailCustomerCheckbox() {
+    const checkbox = document.getElementById('retail-customer-check');
+    const nameInput = document.getElementById('customer-name');
+    const AUTOFILL_TEXT = "Khách lẻ không lấy hoá đơn";
+
+    if (!checkbox || !nameInput) return;
+
+    // 1. Handle Checkbox Change
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            nameInput.value = AUTOFILL_TEXT;
+            // Trigger input event so any validation logic knows the field changed
+            nameInput.dispatchEvent(new Event('input'));
+        } else {
+            // Only clear the input if it currently equals the autofill text
+            // (Don't delete if the user typed something else)
+            if (nameInput.value === AUTOFILL_TEXT) {
+                nameInput.value = "";
+            }
+        }
+    });
+
+    // 2. Handle Manual Typing
+    // If user manually changes the text, uncheck the box automatically
+    nameInput.addEventListener('input', function() {
+        if (this.value !== AUTOFILL_TEXT) {
+            checkbox.checked = false;
+        } else {
+            // If they manually typed the exact phrase, check the box
+            checkbox.checked = true;
+        }
+    });
 }
