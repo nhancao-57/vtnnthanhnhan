@@ -395,29 +395,28 @@ function loadStateFromStorage() {
 }
 
 // --- XỬ LÝ DATABASE ---
-
-// --- HÀM KIỂM TRA TỒN KHO ÂM (MỚI) ---
+//  ---
+// --- HÀM KIỂM TRA TỒN KHO ÂM (REVISED & ROBUST) ---
 function validateAndWarnNegativeStock(onContinueCallback) {
     const violations = [];
 
-    // Quét toàn bộ database đã nạp
+    // 1. Quét toàn bộ database để tìm lỗi âm kho
     productDatabase.forEach(product => {
         let hasIssue = false;
         let issueDetails = [];
 
-        // 1. Kiểm tra tổng tồn kho
+        // Kiểm tra tổng tồn kho
         if (product.stock < 0) {
             hasIssue = true;
             issueDetails.push(`Tổng tồn kho âm (${product.stock})`);
         }
 
-        // 2. Kiểm tra từng dòng (lô) nhập trong file Excel
+        // Kiểm tra từng dòng (lô) nhập
         if (product.batches && product.batches.length > 0) {
-            product.batches.forEach((batch, idx) => {
+            product.batches.forEach(batch => {
                 if (batch.stock < 0) {
                     hasIssue = true;
-                    // idx không nhất thiết khớp dòng Excel nhưng thể hiện thứ tự nạp
-                    issueDetails.push(`Dòng/Lô nhập có giá trị âm (${batch.stock})`);
+                    issueDetails.push(`Lô nhập giá trị âm (${batch.stock})`);
                 }
             });
         }
@@ -439,39 +438,40 @@ function validateAndWarnNegativeStock(onContinueCallback) {
         return;
     }
 
-    // TRƯỜNG HỢP 2: Có lỗi -> Hiện Modal Cảnh Báo
+    // TRƯỜNG HỢP 2: Có lỗi -> Cố gắng hiển thị Modal
     const modal = document.getElementById('critical-warning-modal');
     const listContainer = document.getElementById('critical-warning-list');
     const continueBtn = document.getElementById('critical-warning-continue-btn');
 
-    // Tạo danh sách lỗi
-    if (listContainer) {
-        listContainer.innerHTML = violations.map((v, i) => `
-            <li class="border-b border-red-100 last:border-0 py-2">
-                <div class="font-bold text-red-700">${i + 1}. ${v.name} <span class="text-xs font-normal text-gray-500">(${v.id})</span></div>
-                <div class="text-sm text-red-600 pl-4">• ${v.details}</div>
-            </li>
-        `).join('');
+    // --- SAFETY CHECK (SỬA LỖI TREO APP) ---
+    // Nếu không tìm thấy Modal trong HTML, dùng Alert thường để App không bị đứng
+    if (!modal || !listContainer || !continueBtn) {
+        console.warn("Không tìm thấy HTML của Modal cảnh báo. Chuyển sang chế độ Alert.");
+        alert(`CẢNH BÁO DỮ LIỆU: Phát hiện ${violations.length} sản phẩm có tồn kho ÂM.\nVui lòng kiểm tra lại file Excel.`);
+        // Vẫn cho phép tiếp tục để không mất dữ liệu
+        onContinueCallback();
+        return;
     }
+
+    // Nếu tìm thấy Modal, hiển thị danh sách chi tiết
+    listContainer.innerHTML = violations.map((v, i) => `
+        <li class="border-b border-red-100 last:border-0 py-2">
+            <div class="font-bold text-red-700">${i + 1}. ${v.name} <span class="text-xs font-normal text-gray-500">(${v.id})</span></div>
+            <div class="text-sm text-red-600 pl-4">• ${v.details}</div>
+        </li>
+    `).join('');
 
     // Hiển thị Modal
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 
-    // Xử lý nút "Tiếp tục làm việc" (Bỏ qua cảnh báo)
-    if (continueBtn) {
-        // Clone nút để xóa các event listener cũ (tránh bị double click)
-        const newBtn = continueBtn.cloneNode(true);
-        continueBtn.parentNode.replaceChild(newBtn, continueBtn);
-        
-        newBtn.addEventListener('click', () => {
-            if (modal) modal.classList.add('hidden');
-            onContinueCallback(); // Chạy hàm thành công sau khi user xác nhận
-        });
-    } else {
-        // Fallback nếu chưa có HTML
-        alert(`CẢNH BÁO: Có ${violations.length} sản phẩm bị âm kho. Vui lòng kiểm tra.`);
-        onContinueCallback();
-    }
+    // Xử lý nút "Tiếp tục" (Reset event listener để tránh lỗi lặp)
+    const newBtn = continueBtn.cloneNode(true);
+    continueBtn.parentNode.replaceChild(newBtn, continueBtn);
+    
+    newBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        onContinueCallback(); // Chạy hàm thành công sau khi user xác nhận
+    });
 }
 
 function handleFileLoad() {
@@ -1392,7 +1392,7 @@ function handleRestoreSession(event) {
 function initRetailCustomerCheckbox() {
     const checkbox = document.getElementById('retail-customer-check');
     const nameInput = document.getElementById('customer-name');
-    const AUTOFILL_TEXT = "Khách lẻ không lấy hoá đơn";
+    const AUTOFILL_TEXT = "Khách lẻ";
 
     if (!checkbox || !nameInput) return;
 
