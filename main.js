@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- CÁC HÀM UI CƠ BẢN ---
 function showConfirmModal(title, message, onConfirm, confirmBtnClass = 'btn-danger') {
     confirmModalTitle.textContent = title;
-    confirmModalMessage.textContent = message;
+    confirmModalMessage.innerHTML = message;
     onConfirmCallback = onConfirm;
     confirmModalConfirmBtn.className = ''; 
     confirmModalConfirmBtn.classList.add('btn-base', confirmBtnClass); 
@@ -314,7 +314,7 @@ function toggleAppControls(isSessionActive, isBypassActive = false) {
         loadDbBtn.classList.add('btn-secondary', 'cursor-not-allowed', 'opacity-50');
     } else {
         // RELEASE MODE: Session is finished/empty, unlock everything
-        loadDbBtn.textContent = 'Bắt đầu phiên (Tải CSDL)';
+        loadDbBtn.textContent = 'Bắt đầu phiên';
         
         // Re-enable the button and the file input
         loadDbBtn.disabled = false;
@@ -395,84 +395,6 @@ function loadStateFromStorage() {
 }
 
 // --- XỬ LÝ DATABASE ---
-//  ---
-// --- HÀM KIỂM TRA TỒN KHO ÂM (REVISED & ROBUST) ---
-function validateAndWarnNegativeStock(onContinueCallback) {
-    const violations = [];
-
-    // 1. Quét toàn bộ database để tìm lỗi âm kho
-    productDatabase.forEach(product => {
-        let hasIssue = false;
-        let issueDetails = [];
-
-        // Kiểm tra tổng tồn kho
-        if (product.stock < 0) {
-            hasIssue = true;
-            issueDetails.push(`Tổng tồn kho âm (${product.stock})`);
-        }
-
-        // Kiểm tra từng dòng (lô) nhập
-        if (product.batches && product.batches.length > 0) {
-            product.batches.forEach(batch => {
-                if (batch.stock < 0) {
-                    hasIssue = true;
-                    issueDetails.push(`Lô nhập giá trị âm (${batch.stock})`);
-                }
-            });
-        }
-
-        if (hasIssue) {
-            // Lọc trùng lặp thông báo
-            const uniqueDetails = [...new Set(issueDetails)];
-            violations.push({
-                name: product.name,
-                id: product.id,
-                details: uniqueDetails.join(', ')
-            });
-        }
-    });
-
-    // TRƯỜNG HỢP 1: Dữ liệu sạch -> Chạy tiếp ngay lập tức
-    if (violations.length === 0) {
-        onContinueCallback();
-        return;
-    }
-
-    // TRƯỜNG HỢP 2: Có lỗi -> Cố gắng hiển thị Modal
-    const modal = document.getElementById('critical-warning-modal');
-    const listContainer = document.getElementById('critical-warning-list');
-    const continueBtn = document.getElementById('critical-warning-continue-btn');
-
-    // --- SAFETY CHECK (SỬA LỖI TREO APP) ---
-    // Nếu không tìm thấy Modal trong HTML, dùng Alert thường để App không bị đứng
-    if (!modal || !listContainer || !continueBtn) {
-        console.warn("Không tìm thấy HTML của Modal cảnh báo. Chuyển sang chế độ Alert.");
-        alert(`CẢNH BÁO DỮ LIỆU: Phát hiện ${violations.length} sản phẩm có tồn kho ÂM.\nVui lòng kiểm tra lại file Excel.`);
-        // Vẫn cho phép tiếp tục để không mất dữ liệu
-        onContinueCallback();
-        return;
-    }
-
-    // Nếu tìm thấy Modal, hiển thị danh sách chi tiết
-    listContainer.innerHTML = violations.map((v, i) => `
-        <li class="border-b border-red-100 last:border-0 py-2">
-            <div class="font-bold text-red-700">${i + 1}. ${v.name} <span class="text-xs font-normal text-gray-500">(${v.id})</span></div>
-            <div class="text-sm text-red-600 pl-4">• ${v.details}</div>
-        </li>
-    `).join('');
-
-    // Hiển thị Modal
-    modal.classList.remove('hidden');
-
-    // Xử lý nút "Tiếp tục" (Reset event listener để tránh lỗi lặp)
-    const newBtn = continueBtn.cloneNode(true);
-    continueBtn.parentNode.replaceChild(newBtn, continueBtn);
-    
-    newBtn.addEventListener('click', () => {
-        modal.classList.add('hidden');
-        onContinueCallback(); // Chạy hàm thành công sau khi user xác nhận
-    });
-}
 
 function handleFileLoad() {
     const fileInput = document.getElementById('file-input');
@@ -561,7 +483,7 @@ function handleFileLoad() {
                 const onValidationSuccess = () => {
                     saveStateToStorage();
                     renderCart();
-                    showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} mã sản phẩm (Quản lý theo lô nhập).`);
+                    showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} sản phẩm.`);
                     fileInput.value = '';
                     updateFileNameDisplay();
                     updateSessionStatus();
@@ -585,6 +507,96 @@ function handleFileLoad() {
         showConfirmModal('Bắt đầu phiên mới?', 'Bạn có chắc chắn muốn bắt đầu lại phiên làm việc? TẤT CẢ giao dịch và log hóa đơn đã lưu sẽ bị XÓA.', startLoad);
     } else {
         startLoad(); 
+    }
+}
+
+function validateAndWarnNegativeStock(onSuccessCallback) {
+    let errorItems = [];
+    
+    // 1. Quét dữ liệu để tìm lỗi
+    productDatabase.forEach(product => {
+        // Lỗi 1: Tổng tồn kho âm
+        if (product.stock < 0) {
+            errorItems.push({
+                name: product.name,
+                stock: product.stock,
+                issue: 'Tổng tồn kho âm'
+            });
+        } 
+        // Lỗi 2: Có lô nhập (batch) âm
+        else if (product.batches && product.batches.length > 0) {
+            const hasNegativeBatch = product.batches.some(batch => batch.stock < 0);
+            if (hasNegativeBatch) {
+                errorItems.push({
+                    name: product.name,
+                    stock: product.stock,
+                    issue: 'Có lô nhập có giá trị âm'
+                });
+            }
+        }
+    });
+
+    // 2. Nếu có lỗi, dựng HTML bảng cảnh báo
+    if (errorItems.length > 0) {
+        // Giới hạn hiển thị 5 dòng để modal không quá dài
+        const displayItems = errorItems.slice(0, 5);
+        const remaining = errorItems.length - 5;
+
+        let tableRows = displayItems.map(item => `
+            <tr class="border-b border-gray-100 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20">
+                <td class="p-2 text-left font-medium text-gray-700 dark:text-gray-300">${item.name}</td>
+                <td class="p-2 text-center font-bold text-red-600">${item.stock}</td>
+                <td class="p-2 text-right text-sm text-gray-500 italic">${item.issue}</td>
+            </tr>
+        `).join('');
+
+        // Thêm dòng "... và X lỗi khác" nếu danh sách quá dài
+        if (remaining > 0) {
+            tableRows += `
+                <tr>
+                    <td colspan="3" class="p-2 text-center text-sm text-gray-500 font-medium">
+                        ... và còn ${remaining} sản phẩm lỗi khác ...
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Tạo cấu trúc HTML hoàn chỉnh cho Modal
+        const messageHtml = `
+            <div class="space-y-3">
+                <div class="bg-red-100 text-red-700 p-3 rounded-md text-sm font-medium flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Phát hiện dữ liệu bất thường trong file Excel!
+                </div>
+                
+                <div class="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-md">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
+                            <tr>
+                                <th class="p-2 text-left">Tên sản phẩm</th>
+                                <th class="p-2 text-center">Tồn kho</th>
+                                <th class="p-2 text-right">Vấn đề</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    Tiếp tục nạp dữ liệu này có thể dẫn đến sai lệch khi trừ kho hoặc tính doanh thu. 
+                    <br><b>Bạn có chắc chắn muốn tiếp tục?</b>
+                </p>
+            </div>
+        `;
+
+        showConfirmModal('CẢNH BÁO DỮ LIỆU', messageHtml, onSuccessCallback, 'btn-danger');
+    } else {
+        // Không có lỗi, chạy tiếp bình thường
+        onSuccessCallback();
     }
 }
 
@@ -792,6 +804,97 @@ function getCurrentActivePrice(product) {
     
     // If all batches are 0, return the price of the last batch (newest)
     return product.batches[product.batches.length - 1].price;
+}
+
+
+function validateAndWarnNegativeStock(onSuccessCallback) {
+    let errorItems = [];
+    
+    // 1. Quét dữ liệu để tìm lỗi
+    productDatabase.forEach(product => {
+        // Lỗi 1: Tổng tồn kho âm
+        if (product.stock < 0) {
+            errorItems.push({
+                name: product.name,
+                stock: product.stock,
+                issue: 'Tổng tồn kho bị âm'
+            });
+        } 
+        // Lỗi 2: Có lô nhập (batch) âm
+        else if (product.batches && product.batches.length > 0) {
+            const hasNegativeBatch = product.batches.some(batch => batch.stock < 0);
+            if (hasNegativeBatch) {
+                errorItems.push({
+                    name: product.name,
+                    stock: product.stock,
+                    issue: 'Có lô nhập có giá trị âm'
+                });
+            }
+        }
+    });
+
+    // 2. Nếu có lỗi, dựng HTML bảng cảnh báo
+    if (errorItems.length > 0) {
+        // Giới hạn hiển thị 5 dòng để modal không quá dài
+        const displayItems = errorItems.slice(0, 5);
+        const remaining = errorItems.length - 5;
+
+        let tableRows = displayItems.map(item => `
+            <tr class="border-b border-gray-100 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20">
+                <td class="p-2 text-left font-medium text-gray-700 dark:text-gray-300">${item.name}</td>
+                <td class="p-2 text-center font-bold text-red-600">${item.stock}</td>
+                <td class="p-2 text-right text-sm text-gray-500 italic">${item.issue}</td>
+            </tr>
+        `).join('');
+
+        // Thêm dòng "... và X lỗi khác" nếu danh sách quá dài
+        if (remaining > 0) {
+            tableRows += `
+                <tr>
+                    <td colspan="3" class="p-2 text-center text-sm text-gray-500 font-medium">
+                        ... và còn ${remaining} sản phẩm lỗi khác ...
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Tạo cấu trúc HTML hoàn chỉnh cho Modal
+        const messageHtml = `
+            <div class="space-y-3">
+                <div class="bg-red-100 text-red-700 p-3 rounded-md text-sm font-medium flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Phát hiện dữ liệu bất thường trong Cơ sở dữ Liệu
+                </div>
+                
+                <div class="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-md">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
+                            <tr>
+                                <th class="p-2 text-left">Tên sản phẩm</th>
+                                <th class="p-2 text-center">Tồn kho</th>
+                                <th class="p-2 text-right">Vấn đề</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    Tiếp tục có thể dẫn đến dữ liệu bị sai. Vui lòng chụp màn hình và thông báo đến người hỗ trợ của bạn.
+                    <br><b>Bạn có chắc chắn muốn tiếp tục?</b>
+                </p>
+            </div>
+        `;
+
+        showConfirmModal('CẢNH BÁO DỮ LIỆU', messageHtml, onSuccessCallback, 'btn-danger');
+    } else {
+        // Không có lỗi, chạy tiếp bình thường
+        onSuccessCallback();
+    }
 }
 
 // --- GIỎ HÀNG ---
