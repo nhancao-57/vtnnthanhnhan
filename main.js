@@ -260,10 +260,30 @@ function updateSessionStatus() {
     const statusBar = document.getElementById('session-status-bar');
     const isSessionActive = productDatabase.length > 0;
 
+    // Kiểm tra nhanh xem có dữ liệu nào bị âm không
+    const hasDataErrors = productDatabase.some(p => 
+        p.stock < 0 || (p.batches && p.batches.some(b => b.stock < 0))
+    );
+
     if (isSessionActive) {
-        statusBar.textContent = `Phiên làm việc đang diễn ra. CSDL: ${productDatabase.length} SP. Giao dịch: ${dailyTransactions.length}.`;
-        statusBar.className = 'text-center p-3 font-medium status-session-active sticky top-[73px] z-40';
+        if (hasDataErrors) {
+            // TRƯỜNG HỢP: Đang hoạt động NHƯNG có lỗi (Màu Đỏ)
+            statusBar.className = 'text-center p-3 font-medium bg-red-100 text-red-800 border-b border-red-200 sticky top-[73px] z-40 flex justify-center items-center';
+            
+            // Dùng innerHTML để chèn nút bấm
+            statusBar.innerHTML = `
+                <span>Phiên làm việc đang diễn ra. <span class="font-bold">Có dữ liệu bất thường.</span></span>
+                <button onclick="showDatabaseErrors()" class="ml-3 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors shadow-sm font-bold">
+                    Xem lỗi
+                </button>
+            `;
+        } else {
+            // TRƯỜNG HỢP: Hoạt động bình thường (Màu Xanh - Giữ nguyên logic cũ)
+            statusBar.textContent = `Phiên làm việc đang diễn ra. CSDL: ${productDatabase.length} SP. Giao dịch: ${dailyTransactions.length}.`;
+            statusBar.className = 'text-center p-3 font-medium status-session-active sticky top-[73px] z-40';
+        }
     } else {
+        // TRƯỜNG HỢP: Chưa bắt đầu
         statusBar.textContent = 'Chưa có phiên làm việc. Vui lòng tải Cơ sở dữ liệu để bắt đầu.';
         statusBar.className = 'text-center p-3 font-medium status-session-inactive sticky top-[73px] z-40';
     }
@@ -598,6 +618,13 @@ function validateAndWarnNegativeStock(onSuccessCallback) {
         // Không có lỗi, chạy tiếp bình thường
         onSuccessCallback();
     }
+}
+
+function showDatabaseErrors() {
+    // Tái sử dụng hàm validateAndWarnNegativeStock để hiện bảng lỗi.
+    // Tham số callback là hideConfirmModal: nghĩa là khi bấm "Đồng ý" hoặc "Đóng", 
+    // nó chỉ tắt modal đi chứ không làm gì thêm (vì phiên đã chạy rồi).
+    validateAndWarnNegativeStock(hideConfirmModal);
 }
 
 function startEndSessionProcess() {
