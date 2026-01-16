@@ -4,32 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phần mềm Quản lý bán hàng - Cửa hàng VTNN Thành Nhân</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script>
-    tailwind.config = {
-        darkMode: 'class'
-    }
-    </script>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <link href="/src/output.css" rel="stylesheet">
-
     <link rel="manifest" href="/manifest.json">
 
     <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('/service-worker.js')
-      .then((registration) => {
-        console.log('Service Worker registered with scope:', registration.scope);
-      })
-      .catch((error) => {
-        console.log('Service Worker registration failed:', error);
-      });
-  }
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'], // Apply the new font
+                    }
+                }
+            }
+        }
     </script>
-
-
-    <meta name="theme-color" content="#4f46e5"> <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -38,550 +33,559 @@
             document.documentElement.classList.remove('dark');
         }
     </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Smooth scrolling */
+        html { scroll-behavior: smooth; }
+    </style>
 </head>
 
-<body class="bg-slate-100 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-200 leading-relaxed transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-200 leading-relaxed transition-colors duration-200 selection:bg-indigo-500 selection:text-white">
 
-<header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
-  
-  <div class="flex items-center gap-3">
-    <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </div>
-    <div>
-      <h1 class="text-lg md:text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
-        Phần mềm Quản lý bán hàng
-      </h1>
-      <p class="text-sm text-gray-500 dark:text-slate-400 hidden sm:block">Cửa hàng VTNN Thành Nhân</p>
-    </div>
-  </div>
-
-  <div class="flex items-start gap-3 md:gap-6">
-    
-    <a href="/tong-hop.html" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:text-indigo-300 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors border border-indigo-100 dark:border-slate-600 mt-1 shadow-sm">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-      </svg>
-      <span class="hidden sm:inline">Tổng hợp</span>
-    </a>
-
-    <div id="session-time-container" class="hidden md:flex flex-col text-right">
-      <div id="vietnam-clock-label" class="text-sm font-medium text-blue-600 dark:text-blue-400">...</div>
-      <div class="text-lg font-semibold text-gray-800 dark:text-slate-200" id="current-time-display">--:--:--</div>
-      <div class="text-sm text-gray-500 dark:text-slate-400" id="current-date-display">--/--/----</div>
-    </div>
-
-    <div id="local-time-container" class="hidden md:flex flex-col text-right">
-      <div class="text-sm font-medium text-blue-600 dark:text-blue-400">Giờ của bạn:</div>
-      <div class="text-lg font-semibold text-gray-800 dark:text-slate-200" id="local-time-display">--:--:--</div>
-      <div class="text-sm text-gray-500 dark:text-slate-400" id="local-date-display">--/--/----</div>
-    </div>
-    
-    <button id="theme-toggle-btn" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-1" aria-label="Toggle dark mode">
-      <svg id="theme-icon-sun" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
-      <svg id="theme-icon-moon" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-      </svg>
-    </button>
-  </div>
-  
-</header>
-
-<div id="session-status-bar" class="text-center p-3 font-medium status-session-inactive sticky top-[73px] z-40" role="status">
-    Đang tải...
-</div>
-
-<div class="max-w-7xl mx-auto p-4 md:p-6 pt-8">
-
-    <div class="hidden md:flex flex-col text-right">
-      <div class="text-sm font-medium text-emerald-600 dark:text-emerald-400">Kỳ Kế Toán:</div>
-      <div class="text-lg font-semibold text-gray-800 dark:text-slate-200" id="financial-quarter-display">Đang tải...</div>
-      <div class="text-sm text-gray-500 dark:text-slate-400">&nbsp;</div> </div>
-
-    <div id="session-time-container" ...>
-
-    <div id="status-container" class="sticky top-[125px] z-30"></div>
-
-    <!-- START: LIVE ACCUMULATED TOTAL FEATURE -->
-    <div id="accumulated-total-card" class="card-base mb-6 p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 border-indigo-500 border-l-4 shadow-lg">
-        <div class="mb-2 sm:mb-0">
-            <p class="text-sm font-medium text-indigo-600 dark:text-indigo-400">Tổng Doanh Thu (Phiên làm việc)</p>
-            <h3 id="accumulated-total-display" class="text-3xl font-extrabold text-gray-900 dark:text-white">
-                0 VNĐ
-            </h3>
-        </div>
-        <div class="text-right text-sm text-gray-500 dark:text-slate-400">
-            <p id="total-transactions-count">Đã ghi nhận: 0 giao dịch</p>
-            <p class="mt-1">Số liệu trực tiếp từ các hóa đơn đã xuất.</p>
-        </div>
-    </div>
-    <!-- END: LIVE ACCUMULATED TOTAL FEATURE -->
-</div>
-    
-    <div class="card-base md:col-span-2 mb-6">
-        <h2 class="card-title">
-            <span class="card-title-bar"></span>
-            Phiên Làm Việc
-        </h2>
-
-        <p class="card-desc">
-            Bắt đầu bằng cách tải <strong>Cơ sở dữ liệu</strong>.  
-            Kết thúc phiên sẽ <span class="text-indigo-600 dark:text-indigo-400 font-medium">xuất tất cả báo cáo</span> và <span class="text-red-500 font-medium">xóa dữ liệu</span>.
-        </p>
-
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-            <input 
-                type="file" 
-                id="file-input" 
-                accept=".xlsx, .xls, .csv" 
-                class="hidden" 
-            >
-            <label for="file-input" class="btn-secondary !py-2.5 !px-5 shrink-0 cursor-pointer text-center">
-                Chọn tệp CSDL...
-            </label>
-            <span id="file-name-display" class="text-sm text-slate-500 dark:text-slate-400 italic truncate">
-                Chưa chọn tệp nào.
-            </span>
-        </div>
-
-        <div class="flex flex-wrap gap-3">
-            <button id="load-db-btn" class="btn-primary flex-grow sm:flex-grow-0">
-                Bắt đầu phiên (Tải CSDL)
-            </button>
-            <button id="view-database-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
-                Xem CSDL
-            </button>
-            <button id="export-inventory-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
-                Xuất Tồn Kho
-            </button>
-            <button id="export-sales-report-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
-                Xuất BC Bán Hàng
-            </button>
-            <button id="view-exports-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
-                Xem HĐ đã xuất
-            </button>
-            <button id="end-session-btn" disabled class="btn-danger flex-grow sm:flex-grow-0">
-                Kết thúc phiên
-            </button>
-        </div>
-    </div>
-
-
-    <fieldset id="main-app-controls" disabled>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <div class="card-base">
-                <h2 class="card-title">
-                    <span class="card-title-bar"></span>
-                    1. Tạo Đơn Hàng
-                </h2>
-
-                <form id="add-product-form" class="space-y-4">
-                    <div>
-                        <label for="product-search" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Tìm kiếm sản phẩm:</label>
-                        <input type="text" id="product-search" placeholder="Nhập tên sản phẩm..." class="input-base" />
-                    </div>
-
-                    <div id="bypass-inputs" class="hidden space-y-4 pt-2">
-                        <p class="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                          Chế độ Bypass: Nhập thông tin sản phẩm thủ công
-                        </p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label for="product-unit" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">ĐVT:</label>
-                                <input type="text" id="product-unit" placeholder="Cái, Chai, Bao..." class="input-base !py-2.5 !text-sm" />
-                            </div>
-                            <div>
-                                <label for="product-price" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Đơn giá:</label>
-                                <input type="number" id="product-price" placeholder="0" min="0" class="input-base !py-2.5 !text-sm" />
-                            </div>
-                        </div>
-                        <div class="h-px bg-slate-200 dark:bg-slate-700"></div> </div>
-                    <div id="product-search-results"
-                        class="max-h-52 overflow-y-auto border border-gray-300 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-600 shadow-inner mb-2">
-                    </div>
-
-                    <div>
-                        <label for="product-quantity" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Số lượng:</label>
-                        <input type="number" id="product-quantity" placeholder="Nhập số lượng" min="0" class="input-base" />
-                    </div>
-
-                    <button type="submit" class="btn-success w-full !py-3">
-                        Thêm vào giỏ hàng
-                    </button>
-                </form>
+    <header class="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 dark:from-slate-800 dark:to-slate-900 border-b border-indigo-500/30 shadow-md px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        
+        <div class="flex items-center gap-4">
+            <div class="bg-white/10 backdrop-blur-sm border border-white/20 text-white p-2.5 rounded-xl shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
             </div>
-
-            <div class="card-base">
-                <h2 class="card-title">
-                    <span class="card-title-bar"></span>
-                    2. Thông Tin Khách Hàng
-                </h2>
-
-                <form id="customer-info-form" class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-                    <div>
-                        <label for="customer-name" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Tên khách hàng:</label>
-                        <input type="text" id="customer-name" required class="input-base" />
-                    </div>
-                    <div>
-                        <label for="customer-buyer-name" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Người mua hàng:</label>
-                        <input type="text" id="customer-buyer-name" class="input-base" />
-                    </div>
-                    <div>
-                        <label for="customer-address" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Địa chỉ:</label>
-                        <input type="text" id="customer-address" class="input-base" />
-                    </div>
-                    <div>
-                        <label for="customer-tin" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Mã số thuế:</label>
-                        <input type="text" id="customer-tin" class="input-base" />
-                    </div>
-                    <div>
-                        <label for="customer-email" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Email:</label>
-                        <input type="email" id="customer-email" class="input-base" />
-                    </div>
-                    <div>
-                        <label for="customer-payment-method" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Hình thức thanh toán:</label>
-                        <input type="text" id="customer-payment-method" value="Tiền mặt" class="input-base" />
-                    </div>
-                    <div>
-                        <label for="customer-mdvcqhns" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">MDVCQHVNS:</label>
-                        <input type="text" id="customer-mdvcqhns" class="input-base" />
-                    </div>
-                    <div>
-                        <label for="customer-cccd" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Số CCCD:</label>
-                        <input type="text" id="customer-cccd" class="input-base" />
-                    </div>
-                    <div>
-                        <label for="customer-passport" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Số hộ chiếu:</label>
-                        <input type="text" id="customer-passport" class="input-base" />
-                    </div>
-                    <div>
-                        <label for="invoice-date" class="font-medium text-gray-700 dark:text-slate-300 block mb-1">Ngày hóa đơn:</label>
-                        <input type="date" id="invoice-date" class="input-base [color-scheme:light] dark:[color-scheme:dark]" />
-                    </div>
-                </form>
+            <div>
+                <h1 class="text-lg md:text-2xl font-bold text-white tracking-tight drop-shadow-sm">
+                    Phần mềm Quản lý bán hàng
+                </h1>
+                <p class="text-sm text-indigo-100/80 dark:text-slate-400 font-medium hidden sm:block">
+                    Cửa hàng VTNN Thành Nhân
+                </p>
             </div>
         </div>
 
-        <div class="card-base md:col-span-2 mt-6">
-            <h2 class="card-title">
-                <span class="card-title-bar"></span>
-                3. Giỏ Hàng Hiện Tại
-            </h2>
+        <div class="flex items-start gap-3 md:gap-6">
+            
+            <a href="/tong-hop.html" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all shadow-sm backdrop-blur-sm mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span class="hidden sm:inline">Tổng hợp</span>
+            </a>
 
-            <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
-                <table id="cart-table" class="table-base mobile-table-optimise">
-                    <thead class="bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 uppercase text-xs tracking-wider">
-                        <tr>
-                            <th class="px-4 py-3">STT</th>
-                            <th class="px-4 py-3">Tên hàng hóa/dịch vụ</th>
-                            <th class="px-4 py-3">ĐVT</th>
-                            <th class="px-4 py-3">Số lượng</th>
-                            <th class="px-4 py-3">Đơn giá</th>
-                            <th class="px-4 py-3">Thành tiền</th>
-                            <th class="px-4 py-3 text-center">Xóa</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cart-body" class="divide-y divide-gray-200 dark:divide-slate-700">
-                        </tbody>
-                </table>
+            <div id="session-time-container" class="hidden md:flex flex-col text-right">
+                <div id="vietnam-clock-label" class="text-xs uppercase tracking-wider font-semibold text-indigo-200 dark:text-blue-400">...</div>
+                <div class="text-xl font-bold text-white dark:text-slate-200 tabular-nums leading-none mt-0.5" id="current-time-display">--:--:--</div>
+                <div class="text-xs text-indigo-100/70 dark:text-slate-400 font-medium" id="current-date-display">--/--/----</div>
             </div>
 
-            <div id="cart-total-container" class="text-right mt-6 space-y-2">
-                <div id="cart-total-posttax" class="text-3xl font-bold text-red-600 dark:text-red-500">
-                    Tổng cộng: 0 VNĐ
+            <div id="local-time-container" class="hidden md:flex flex-col text-right">
+                <div class="text-xs uppercase tracking-wider font-semibold text-indigo-200 dark:text-blue-400">Giờ của bạn</div>
+                <div class="text-lg font-semibold text-white dark:text-slate-200 tabular-nums leading-none mt-0.5" id="local-time-display">--:--:--</div>
+                <div class="text-xs text-indigo-100/70 dark:text-slate-400 font-medium" id="local-date-display">--/--/----</div>
+            </div>
+            
+            <button id="theme-toggle-btn" class="p-2 rounded-lg text-indigo-100 hover:bg-white/10 dark:text-slate-400 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-white/50 mt-1 transition-colors" aria-label="Toggle dark mode">
+                <svg id="theme-icon-sun" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg id="theme-icon-moon" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <div id="session-status-bar" class="text-center py-2 px-3 font-semibold text-sm shadow-md status-session-inactive sticky top-[73px] z-40 backdrop-blur-md bg-opacity-95" role="status">
+        Đang tải...
+    </div>
+
+    <div class="max-w-7xl mx-auto p-4 md:p-6 pt-8">
+
+        <div class="hidden md:flex flex-col text-right mb-4">
+            <div class="text-xs uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-400">Kỳ Kế Toán</div>
+            <div class="text-2xl font-bold text-gray-800 dark:text-slate-200" id="financial-quarter-display">Đang tải...</div>
+        </div>
+
+        <div id="status-container" class="sticky top-[125px] z-30 pointer-events-none"></div>
+
+        <div id="accumulated-total-card" class="card-base mb-8 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 border-l-4 border-indigo-600 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <div class="mb-2 sm:mb-0">
+                <p class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">Doanh Thu Phiên Hiện Tại</p>
+                <h3 id="accumulated-total-display" class="text-4xl font-extrabold text-gray-900 dark:text-white mt-1">
+                    0 VNĐ
+                </h3>
+            </div>
+            <div class="text-right text-sm text-gray-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg border border-slate-100 dark:border-slate-700">
+                <p id="total-transactions-count" class="font-medium text-gray-700 dark:text-slate-300">Đã ghi nhận: <span class="font-bold">0</span> giao dịch</p>
+                <p class="mt-1 text-xs">Số liệu trực tiếp từ các hóa đơn đã xuất.</p>
+            </div>
+        </div>
+
+        <div class="card-base md:col-span-2 mb-8 shadow-md">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 bg-indigo-50 dark:bg-slate-700 rounded-lg text-indigo-600 dark:text-indigo-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
                 </div>
+                <h2 class="card-title !mb-0 text-xl">Quản Lý Phiên Làm Việc</h2>
             </div>
 
-            <div class="mt-6 border-t border-gray-200 dark:border-slate-700 pt-6 flex flex-wrap gap-x-4 gap-y-3 justify-end items-center">
-                <label class="flex items-center text-sm text-gray-600 dark:text-slate-400 mr-auto sm:mr-0 cursor-pointer order-last sm:order-first">
-                    <input type="checkbox" id="save-invoice-only-check" class="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:checked:bg-indigo-600">
-                    <span class="ml-2">Chỉ lưu, không tải file</span>
+            <p class="card-desc mb-6 text-gray-600 dark:text-slate-400">
+                Bắt đầu bằng cách tải <strong class="text-gray-900 dark:text-white">Cơ sở dữ liệu</strong>.  
+                Kết thúc phiên sẽ <span class="text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded">xuất tất cả báo cáo</span> và <span class="text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded">xóa dữ liệu</span>.
+            </p>
+
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                <input type="file" id="file-input" accept=".xlsx, .xls, .csv" class="hidden">
+                <label for="file-input" class="btn-secondary !py-2.5 !px-5 shrink-0 cursor-pointer text-center font-medium hover:text-indigo-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    Chọn tệp CSDL...
                 </label>
-                <button id="export-invoice-btn" class="btn-primary flex-grow sm:flex-grow-0">
-                    Xuất Hóa Đơn Này
+                <span id="file-name-display" class="text-sm text-slate-500 dark:text-slate-400 italic truncate font-medium">
+                    Chưa chọn tệp nào.
+                </span>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                <button id="load-db-btn" class="btn-primary flex-grow sm:flex-grow-0 shadow-sm">
+                    Bắt đầu phiên (Tải CSDL)
                 </button>
-                <button id="clear-cart-btn" class="btn-secondary flex-grow sm:flex-grow-0">
-                    Tạo Đơn Hàng Mới
+                <div class="w-px h-8 bg-gray-300 dark:bg-slate-600 hidden sm:block mx-1"></div>
+                <button id="view-database-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
+                    Xem CSDL
+                </button>
+                <button id="export-inventory-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
+                    Xuất Tồn Kho
+                </button>
+                <button id="export-sales-report-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
+                    Xuất BC Bán Hàng
+                </button>
+                <button id="view-exports-btn" disabled class="btn-secondary flex-grow sm:flex-grow-0">
+                    Xem HĐ đã xuất
+                </button>
+                <div class="flex-grow"></div>
+                <button id="end-session-btn" disabled class="btn-danger flex-grow sm:flex-grow-0 shadow-sm">
+                    Kết thúc phiên
                 </button>
             </div>
         </div>
-    </fieldset>
-</div> 
-<div id="info-modal" class="modal-overlay hidden" aria-labelledby="info-modal-title" role="dialog" aria-modal="true">
-    <div id="modal-overlay-bg-info" class="fixed inset-0"></div>
-    <div class="modal-content relative">
-        <div class="flex justify-between items-center mb-4">
-            <h3 id="info-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
-                Thông tin phần mềm
-            </h3>
-            <button id="modal-close-btn-info" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <div class="space-y-3 text-gray-600 dark:text-slate-300">
-            <p><strong>Tên phần mềm:</strong> Phần mềm Quản lý bán hàng - Cửa hàng VTNN Thành Nhân</p>
-            <p><strong>Phát triển bởi:</strong> Cửa hàng VTNN Thành Nhân</p>
-            <p><strong>Phiên bản:</strong> <span class="font-semibold text-indigo-600 dark:text-indigo-400">1.5</span></p>
-            <p class="mt-4 pt-4 border-t dark:border-slate-700 text-sm">Phần mềm này giúp quản lý việc xuất hóa đơn bán hàng và theo dõi tồn kho trong ngày.</p>
-        </div>
-    </div>
-</div>
 
-<div id="end-session-modal" class="modal-overlay hidden" aria-labelledby="end-session-modal-title" role="dialog" aria-modal="true">
-    <div class="fixed inset-0"></div>
-    <div class="modal-content relative">
-        <h3 id="end-session-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            Kết thúc phiên làm việc
-        </h3>
-        <p class="text-gray-600 dark:text-slate-300 mb-6">
-            Bạn có thể tải xuống các báo cáo riêng lẻ. Nhấn "Kết thúc" sẽ xóa tất cả dữ liệu phiên.
-        </p>
-        
-        <div class="space-y-4 mb-6">
-            <button id="end-session-download-sales" class="btn-primary w-full !py-3">
-                Tải Báo Cáo Bán Hàng
-            </button>
-            <button id="end-session-download-inventory" class="btn-primary w-full !py-3">
-                Tải Báo Cáo Tồn Kho
-            </button>
-        </div>
+        <fieldset id="main-app-controls" disabled class="transition-opacity duration-300 disabled:opacity-60">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <div class="h-px bg-slate-200 dark:bg-slate-700 my-6"></div>
+                <div class="card-base shadow-md h-full">
+                    <h2 class="card-title text-lg flex items-center gap-2 border-b border-gray-100 dark:border-slate-700 pb-3 mb-4">
+                        <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</span>
+                        Tạo Đơn Hàng
+                    </h2>
 
-        <div class="flex flex-wrap gap-3 justify-end">
-            <button id="end-session-modal-cancel-btn" class="btn-secondary">
-                Hủy bỏ (Vẫn giữ phiên)
-            </button>
-            <button id="end-session-modal-confirm-btn" class="btn-danger">
-                Kết thúc phiên & Xóa dữ liệu
-            </button>
-        </div>
-    </div>
-</div>
+                    <form id="add-product-form" class="space-y-5">
+                        <div class="relative">
+                            <label for="product-search" class="font-semibold text-gray-700 dark:text-slate-300 block mb-1.5 text-sm">Tìm kiếm sản phẩm</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                </span>
+                                <input type="text" id="product-search" placeholder="Nhập tên sản phẩm..." class="input-base pl-10" />
+                            </div>
+                        </div>
 
-<div id="advanced-modal" class="modal-overlay hidden" aria-labelledby="advanced-modal-title" role="dialog" aria-modal="true">
-    <div id="modal-overlay-bg-adv" class="fixed inset-0"></div>
-    <div class="modal-content relative">
-        <div class="flex justify-between items-center mb-4">
-            <h3 id="advanced-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
-                Chế độ Nâng cao (Developer)
-            </h3>
-            <button id="modal-close-btn-adv" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-
-        <div class="space-y-5">
-            <div>
-                <h4 class="font-medium text-gray-800 dark:text-slate-300 mb-2">Kiểm thử Hóa đơn</h4>
-                <button id="dev-bypass-btn" class="btn-warning w-full text-left !py-2 !px-4">
-                    Bypass Nhập CSDL: <span class="font-bold">[TẮT]</span>
-                </button>
-                <p class="text-sm text-gray-500 dark:text-slate-400 mt-1 px-1">
-                    Cho phép nhập sản phẩm thủ công (tên, giá) vào giỏ hàng.
-                </p>
-            </div>
-            
-            <div>
-                <h4 class="font-medium text-gray-800 dark:text-slate-300 mb-2">Xuất Template (Trống)</h4>
-                <div class="flex flex-wrap gap-2">
-                    <button id="export-empty-invoice-btn" class="btn-secondary !py-2 !px-4 flex-1">Hóa Đơn</button>
-                    <button id="export-empty-sales-btn" class="btn-secondary !py-2 !px-4 flex-1">Báo Cáo Bán Hàng</button>
-                    <button id="export-empty-inventory-btn" class="btn-secondary !py-2 !px-4 flex-1">Báo Cáo Tồn Kho</button>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-slate-400 mt-1 px-1">
-                    Xuất các file mẫu (chỉ có tiêu đề) để kiểm tra định dạng.
-                </p>
-            </div>
-            
-            <div>
-                <h4 class="font-medium text-gray-800 dark:text-slate-300 mb-2">Quản lý Phiên (Backup/Restore)</h4>
-                <p class="text-sm text-gray-500 dark:text-slate-400 mb-2 px-1">
-                    Dùng để chuyển/khôi phục dữ liệu phiên (CSDL, Giao dịch, Log Hóa đơn) giữa các thiết bị.
-                </p>
-                <div class="flex flex-wrap gap-2">
-                    <button id="backup-session-btn" class="btn-primary !py-2 !px-4 flex-1">
-                        Xuất file Backup (.json)
-                    </button>
-                    
-                    <input type="file" id="restore-file-input" class="hidden" accept=".json">
-                    <label for="restore-file-input" class="btn-danger !py-2 !px-4 flex-1 cursor-pointer text-center">
-                        Nhập file Restore (.json)
-                    </label>
-                </div>
-                <p class="text-sm text-gray-500 dark:text-slate-400 mt-1 px-1">
-                    <span class="font-bold text-red-600 dark:text-red-400">CẢNH BÁO:</span> Thao tác 'Nhập' sẽ <span class="font-bold">xóa sạch</span> phiên hiện tại.
-                </p>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<div id="confirm-modal" class="modal-overlay hidden" aria-labelledby="confirm-modal-title" role="dialog" aria-modal="true">
-    <div class="fixed inset-0"></div>
-    <div class="modal-content relative">
-        <h3 id="confirm-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            Xác nhận
-        </h3>
-        <p id="confirm-modal-message" class="text-gray-600 dark:text-slate-300 mb-6">
-            Bạn có chắc chắn muốn thực hiện hành động này?
-        </p>
-        <div class="flex flex-wrap gap-3 justify-end">
-            <button id="confirm-modal-cancel-btn" class="btn-secondary">
-                Hủy bỏ
-            </button>
-            <button id="confirm-modal-confirm-btn" class="btn-danger">
-                Xác nhận
-            </button>
-        </div>
-    </div>
-</div>
-
-<div id="exported-invoices-modal" class="modal-overlay hidden" aria-labelledby="exported-invoices-modal-title" role="dialog" aria-modal="true">
-    <div id="modal-overlay-bg-exports" class="fixed inset-0"></div>
-    <div class="modal-content relative !max-w-4xl"> <div class="flex justify-between items-center mb-4">
-            <h3 id="exported-invoices-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
-                Hóa đơn đã xuất (Phiên này)
-            </h3>
-            <button id="modal-close-btn-exports" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-
-        <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">
-            Đây là danh sách các hóa đơn đã được tạo và xuất file trong phiên làm việc này. Bạn có thể tải lại nếu lỡ hủy hộp thoại tải về.
-        </p>
-
-        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 max-h-[60vh] overflow-y-auto">
-            <table class="table-base !min-w-full mobile-table-optimise">
-                <thead>
-                    <tr>
-                        <th>Tên khách hàng</th>
-                        <th>Thời gian xuất</th>
-                        <th>Tên file</th>
-                        <th>Loại</th> <th class="text-center">Tải lại</th>
-                    </tr>
-                </thead>
-                <tbody id="exported-invoices-list" class="divide-y divide-gray-200 dark:divide-slate-700">
-                    </tbody>
-            </table>
-        </div>
-
-    </div>
-</div>
-
-<div id="database-viewer-modal" class="modal-overlay hidden" aria-labelledby="database-viewer-modal-title" role="dialog" aria-modal="true">
-    <div id="modal-overlay-bg-db" class="fixed inset-0"></div>
-    <div class="modal-content relative !max-w-6xl"> <div class="flex justify-between items-center mb-4">
-            <h3 id="database-viewer-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
-                Cơ sở dữ liệu Sản phẩm
-            </h3>
-            <button id="modal-close-btn-db" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-
-        <div class="mb-4">
-            <input type="text" id="db-modal-search-input" placeholder="Tìm kiếm theo tên sản phẩm..." class="input-base">
-        </div>
-
-        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 max-h-[60vh] overflow-y-auto">
-            <table class="table-base !min-w-full">
-                <thead>
-                    <tr>
-                        <th class="!p-2 !text-center">STT</th>
-                        <th class="!p-2">Tên sản phẩm</th>
-                        <th class="!p-2">ĐVT</th>
-                        <th class="!p-2 !text-right">Đơn giá</th>
-                        <th class="!p-2 !text-right">Tồn kho</th>
-                    </tr>
-                </thead>
-                <tbody id="database-viewer-list" class="divide-y divide-gray-200 dark:divide-slate-700">
-                    </tbody>
-            </table>
-        </div>
-
-
-
-    </div>
-</div>
-    </div>
-</div>
-
-    
-<footer class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 py-6 px-4 text-center text-sm text-gray-500 dark:text-slate-400">
-  <p>
-    © 2026 <span class="font-medium text-gray-700 dark:text-slate-300">Cửa hàng VTNN Thành Nhân</span> — Phiên bản <span class="font-semibold">1.5</span>
-  </p>
-  <p class="mt-2">
-    <button id="advanced-mode-btn" class="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors">
-      Chế độ nâng cao
-    </button>
-    <button id="info-mode-btn" class="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors ml-4">
-      Thông tin phần mềm
-    </button>
-  </p>
-</footer>
-
-<script src="/main.js"></script>
-
-<div id="critical-warning-modal" class="fixed inset-0 hidden overflow-y-auto" style="z-index: 9999;" aria-labelledby="critical-warning-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        
-        <div class="fixed inset-0 bg-gray-900 bg-opacity-80 transition-opacity" aria-hidden="true"></div>
-
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-        <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border-t-4 border-red-600">
-            
-            <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="critical-warning-title">
-                            CẢNH BÁO DỮ LIỆU ĐẦU VÀO
-                        </h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500 dark:text-slate-400">
-                                Hệ thống phát hiện file CSDL vừa tải lên có chứa <strong>giá trị tồn kho ÂM</strong>.
+                        <div id="bypass-inputs" class="hidden space-y-4 pt-4 bg-orange-50 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-100 dark:border-orange-900/30">
+                            <p class="text-sm font-bold text-orange-600 dark:text-orange-400 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                Chế độ Bypass: Nhập thủ công
                             </p>
-                            
-                            <div class="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-md p-4 max-h-64 overflow-y-auto">
-                                <ul id="critical-warning-list" class="space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="product-unit" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-xs uppercase">ĐVT</label>
+                                    <input type="text" id="product-unit" placeholder="Cái, Chai..." class="input-base !py-2 !text-sm" />
+                                </div>
+                                <div>
+                                    <label for="product-price" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-xs uppercase">Đơn giá</label>
+                                    <input type="number" id="product-price" placeholder="0" min="0" class="input-base !py-2 !text-sm" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="product-search-results" class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-600 shadow-lg mb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-600">
+                        </div>
+
+                        <div>
+                            <label for="product-quantity" class="font-semibold text-gray-700 dark:text-slate-300 block mb-1.5 text-sm">Số lượng</label>
+                            <input type="number" id="product-quantity" placeholder="Nhập số lượng" min="0" class="input-base" />
+                        </div>
+
+                        <button type="submit" class="btn-success w-full !py-3 font-bold shadow-md hover:shadow-lg transition-all transform active:scale-95">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                            Thêm vào giỏ hàng
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card-base shadow-md h-full">
+                    <h2 class="card-title text-lg flex items-center gap-2 border-b border-gray-100 dark:border-slate-700 pb-3 mb-4">
+                        <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">2</span>
+                        Thông Tin Khách Hàng
+                    </h2>
+
+                    <form id="customer-info-form" class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+                        <div class="col-span-1 sm:col-span-2">
+                            <label for="customer-name" class="font-semibold text-gray-700 dark:text-slate-300 block mb-1 text-sm">Tên khách hàng <span class="text-red-500">*</span></label>
+                            <input type="text" id="customer-name" required class="input-base" placeholder="Nhập tên khách hàng/Công ty" />
+                        </div>
+                        <div>
+                            <label for="customer-buyer-name" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Người mua hàng</label>
+                            <input type="text" id="customer-buyer-name" class="input-base" />
+                        </div>
+                        <div>
+                            <label for="customer-address" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Địa chỉ</label>
+                            <input type="text" id="customer-address" class="input-base" />
+                        </div>
+                        <div>
+                            <label for="customer-tin" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Mã số thuế</label>
+                            <input type="text" id="customer-tin" class="input-base" />
+                        </div>
+                        <div>
+                            <label for="customer-email" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Email</label>
+                            <input type="email" id="customer-email" class="input-base" />
+                        </div>
+                        <div>
+                            <label for="customer-payment-method" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Hình thức TT</label>
+                            <input type="text" id="customer-payment-method" value="Tiền mặt" class="input-base" />
+                        </div>
+                        <div>
+                            <label for="customer-mdvcqhns" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">MDVCQHVNS</label>
+                            <input type="text" id="customer-mdvcqhns" class="input-base" />
+                        </div>
+                        <div>
+                            <label for="customer-cccd" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Số CCCD</label>
+                            <input type="text" id="customer-cccd" class="input-base" />
+                        </div>
+                        <div>
+                            <label for="customer-passport" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Số hộ chiếu</label>
+                            <input type="text" id="customer-passport" class="input-base" />
+                        </div>
+                        <div class="col-span-1 sm:col-span-2 mt-2">
+                            <label for="invoice-date" class="font-semibold text-gray-700 dark:text-slate-300 block mb-1 text-sm">Ngày hóa đơn</label>
+                            <input type="date" id="invoice-date" class="input-base [color-scheme:light] dark:[color-scheme:dark]" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-base md:col-span-2 mt-8 shadow-lg ring-1 ring-black/5 dark:ring-white/5">
+                <h2 class="card-title text-lg flex items-center gap-2 border-b border-gray-100 dark:border-slate-700 pb-3 mb-4">
+                    <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</span>
+                    Giỏ Hàng Hiện Tại
+                </h2>
+
+                <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+                    <table id="cart-table" class="table-base mobile-table-optimise w-full">
+                        <thead class="bg-gray-50 dark:bg-slate-700/50 text-gray-600 dark:text-slate-300 uppercase text-xs font-bold tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3">STT</th>
+                                <th class="px-4 py-3">Tên hàng hóa/dịch vụ</th>
+                                <th class="px-4 py-3">ĐVT</th>
+                                <th class="px-4 py-3">Số lượng</th>
+                                <th class="px-4 py-3">Đơn giá</th>
+                                <th class="px-4 py-3">Thành tiền</th>
+                                <th class="px-4 py-3 text-center">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-body" class="divide-y divide-gray-100 dark:divide-slate-700">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div id="cart-total-container" class="flex flex-col items-end mt-6 space-y-2 p-4 bg-gray-50 dark:bg-slate-900/50 rounded-lg border border-gray-100 dark:border-slate-700">
+                    <div class="text-sm text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Tổng tiền thanh toán</div>
+                    <div id="cart-total-posttax" class="text-4xl font-extrabold text-red-600 dark:text-red-500 tracking-tight">
+                        0 VNĐ
+                    </div>
+                </div>
+
+                <div class="mt-6 border-t border-gray-100 dark:border-slate-700 pt-6 flex flex-wrap gap-x-4 gap-y-3 justify-end items-center">
+                    <label class="flex items-center text-sm font-medium text-gray-600 dark:text-slate-400 mr-auto sm:mr-0 cursor-pointer order-last sm:order-first select-none p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors">
+                        <input type="checkbox" id="save-invoice-only-check" class="h-4 w-4 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:checked:bg-indigo-600">
+                        <span class="ml-2">Chỉ lưu, không tải file</span>
+                    </label>
+                    <button id="clear-cart-btn" class="btn-secondary flex-grow sm:flex-grow-0">
+                        Tạo Đơn Hàng Mới
+                    </button>
+                    <button id="export-invoice-btn" class="btn-primary flex-grow sm:flex-grow-0 shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        Xuất Hóa Đơn Này
+                    </button>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+
+    <footer class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 py-8 px-4 text-center text-sm text-gray-500 dark:text-slate-400 mt-12">
+        <p>
+            © 2026 <span class="font-bold text-gray-700 dark:text-slate-300">Cửa hàng VTNN Thành Nhân</span> — Phiên bản <span class="font-mono bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs">1.5</span>
+        </p>
+        <p class="mt-3 flex justify-center gap-6">
+            <button id="advanced-mode-btn" class="text-xs font-medium text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase tracking-wide">
+                Chế độ nâng cao
+            </button>
+            <button id="info-mode-btn" class="text-xs font-medium text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase tracking-wide">
+                Thông tin phần mềm
+            </button>
+        </p>
+    </footer>
+
+    <div id="info-modal" class="modal-overlay hidden" aria-labelledby="info-modal-title" role="dialog" aria-modal="true">
+        <div id="modal-overlay-bg-info" class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
+        <div class="modal-content relative shadow-2xl">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-slate-700 pb-3">
+                <h3 id="info-modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
+                    Thông tin phần mềm
+                </h3>
+                <button id="modal-close-btn-info" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="space-y-3 text-gray-600 dark:text-slate-300">
+                <p><strong>Tên phần mềm:</strong> Quản lý bán hàng</p>
+                <p><strong>Đơn vị:</strong> Cửa hàng VTNN Thành Nhân</p>
+                <p><strong>Phiên bản:</strong> <span class="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded">1.5</span></p>
+                <p class="mt-4 pt-4 border-t dark:border-slate-700 text-sm italic text-gray-500">
+                    Hỗ trợ quản lý xuất hóa đơn bán hàng, theo dõi doanh thu và kiểm soát tồn kho trong phiên làm việc.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div id="end-session-modal" class="modal-overlay hidden" aria-labelledby="end-session-modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
+        <div class="modal-content relative shadow-2xl border-t-4 border-red-500">
+            <h3 id="end-session-modal-title" class="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                Kết thúc phiên làm việc
+            </h3>
+            <p class="text-gray-600 dark:text-slate-300 mb-6">
+                Bạn có thể tải xuống các báo cáo riêng lẻ bên dưới. <br>
+                <span class="text-red-600 dark:text-red-400 font-bold">Lưu ý:</span> Nhấn "Kết thúc" sẽ xóa tất cả dữ liệu của phiên này.
+            </p>
+            
+            <div class="space-y-4 mb-6">
+                <button id="end-session-download-sales" class="btn-secondary w-full !py-3 font-medium border-indigo-200 hover:border-indigo-400 text-indigo-700 dark:text-indigo-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Tải Báo Cáo Bán Hàng
+                </button>
+                <button id="end-session-download-inventory" class="btn-secondary w-full !py-3 font-medium border-indigo-200 hover:border-indigo-400 text-indigo-700 dark:text-indigo-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Tải Báo Cáo Tồn Kho
+                </button>
+            </div>
+
+            <div class="h-px bg-slate-200 dark:bg-slate-700 my-6"></div>
+
+            <div class="flex flex-wrap gap-3 justify-end">
+                <button id="end-session-modal-cancel-btn" class="btn-secondary">
+                    Hủy bỏ
+                </button>
+                <button id="end-session-modal-confirm-btn" class="btn-danger shadow-md">
+                    Kết thúc phiên & Xóa dữ liệu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="advanced-modal" class="modal-overlay hidden" aria-labelledby="advanced-modal-title" role="dialog" aria-modal="true">
+        <div id="modal-overlay-bg-adv" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="modal-content relative shadow-2xl !max-w-2xl">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-slate-700 pb-3">
+                <h3 id="advanced-modal-title" class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    Chế độ Nâng cao (Developer)
+                </h3>
+                <button id="modal-close-btn-adv" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-gray-50 dark:bg-slate-700/30 p-4 rounded-lg border border-gray-100 dark:border-slate-700">
+                    <h4 class="font-bold text-gray-800 dark:text-slate-300 mb-3 text-sm uppercase tracking-wide">Kiểm thử Hóa đơn</h4>
+                    <button id="dev-bypass-btn" class="btn-warning w-full text-left !py-3 !px-4 flex justify-between items-center shadow-sm">
+                        <span>Bypass Nhập CSDL</span>
+                        <span class="font-bold bg-white/20 px-2 py-0.5 rounded text-sm">[TẮT]</span>
+                    </button>
+                    <p class="text-xs text-gray-500 dark:text-slate-400 mt-2">
+                        Cho phép nhập sản phẩm thủ công (tên, giá) vào giỏ hàng mà không cần load file Excel.
+                    </p>
+                </div>
+                
+                <div class="bg-gray-50 dark:bg-slate-700/30 p-4 rounded-lg border border-gray-100 dark:border-slate-700">
+                    <h4 class="font-bold text-gray-800 dark:text-slate-300 mb-3 text-sm uppercase tracking-wide">Xuất Template (Trống)</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="export-empty-invoice-btn" class="btn-secondary !py-2 !px-3 flex-1 text-sm">Hóa Đơn</button>
+                        <button id="export-empty-sales-btn" class="btn-secondary !py-2 !px-3 flex-1 text-sm">BC Bán Hàng</button>
+                        <button id="export-empty-inventory-btn" class="btn-secondary !py-2 !px-3 flex-1 text-sm">BC Tồn Kho</button>
+                    </div>
+                </div>
+                
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-100 dark:border-indigo-900/40">
+                    <h4 class="font-bold text-indigo-800 dark:text-indigo-300 mb-3 text-sm uppercase tracking-wide">Backup & Restore Phiên</h4>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="backup-session-btn" class="btn-primary !py-2 !px-4 flex-1 text-sm">
+                            Xuất Backup (.json)
+                        </button>
+                        
+                        <input type="file" id="restore-file-input" class="hidden" accept=".json">
+                        <label for="restore-file-input" class="btn-danger !py-2 !px-4 flex-1 cursor-pointer text-center text-sm">
+                            Nhập Restore (.json)
+                        </label>
+                    </div>
+                    <p class="text-xs text-indigo-800/70 dark:text-indigo-300/70 mt-2">
+                        <span class="font-bold text-red-600 dark:text-red-400">CẢNH BÁO:</span> Hành động 'Nhập' sẽ ghi đè toàn bộ dữ liệu phiên hiện tại.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-overlay hidden" aria-labelledby="confirm-modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="modal-content relative shadow-2xl">
+            <h3 id="confirm-modal-title" class="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                Xác nhận hành động
+            </h3>
+            <p id="confirm-modal-message" class="text-gray-600 dark:text-slate-300 mb-6">
+                Bạn có chắc chắn muốn thực hiện hành động này?
+            </p>
+            <div class="flex flex-wrap gap-3 justify-end">
+                <button id="confirm-modal-cancel-btn" class="btn-secondary">
+                    Hủy bỏ
+                </button>
+                <button id="confirm-modal-confirm-btn" class="btn-danger shadow-md">
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="exported-invoices-modal" class="modal-overlay hidden" aria-labelledby="exported-invoices-modal-title" role="dialog" aria-modal="true">
+        <div id="modal-overlay-bg-exports" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="modal-content relative !max-w-4xl shadow-2xl h-[80vh] flex flex-col"> 
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 id="exported-invoices-modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
+                    Hóa đơn đã xuất (Phiên này)
+                </h3>
+                <button id="modal-close-btn-exports" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <p class="text-sm text-gray-500 dark:text-slate-400 mb-4 shrink-0">
+                Lịch sử các hóa đơn đã được tạo và xuất file trong phiên làm việc hiện tại.
+            </p>
+
+            <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 flex-grow relative">
+                <div class="absolute inset-0 overflow-y-auto">
+                    <table class="table-base !min-w-full mobile-table-optimise">
+                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800 shadow-sm">
+                            <tr>
+                                <th>Tên khách hàng</th>
+                                <th>Thời gian xuất</th>
+                                <th>Tên file</th>
+                                <th>Loại</th> 
+                                <th class="text-center">Tải lại</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exported-invoices-list" class="divide-y divide-gray-200 dark:divide-slate-700">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="database-viewer-modal" class="modal-overlay hidden" aria-labelledby="database-viewer-modal-title" role="dialog" aria-modal="true">
+        <div id="modal-overlay-bg-db" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="modal-content relative !max-w-6xl shadow-2xl h-[85vh] flex flex-col"> 
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 id="database-viewer-modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
+                    Cơ sở dữ liệu Sản phẩm
+                </h3>
+                <button id="modal-close-btn-db" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="mb-4 shrink-0 relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </span>
+                <input type="text" id="db-modal-search-input" placeholder="Tìm kiếm theo tên sản phẩm..." class="input-base pl-10 shadow-sm">
+            </div>
+
+            <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 flex-grow relative">
+                <div class="absolute inset-0 overflow-y-auto">
+                    <table class="table-base !min-w-full">
+                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800 shadow-sm">
+                            <tr>
+                                <th class="!p-3 !text-center w-16">STT</th>
+                                <th class="!p-3">Tên sản phẩm</th>
+                                <th class="!p-3 w-24">ĐVT</th>
+                                <th class="!p-3 !text-right w-32">Đơn giá</th>
+                                <th class="!p-3 !text-right w-32">Tồn kho</th>
+                            </tr>
+                        </thead>
+                        <tbody id="database-viewer-list" class="divide-y divide-gray-200 dark:divide-slate-700">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="critical-warning-modal" class="fixed inset-0 hidden overflow-y-auto" style="z-index: 9999;" aria-labelledby="critical-warning-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-900 bg-opacity-80 transition-opacity backdrop-blur-sm" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border-t-8 border-red-600">
+                <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-bold text-gray-900 dark:text-white uppercase tracking-wide" id="critical-warning-title">
+                                Cảnh báo dữ liệu đầu vào
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">
+                                    Hệ thống phát hiện file CSDL vừa tải lên có chứa <strong>giá trị tồn kho ÂM</strong>.
+                                </p>
+                                <div class="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-800 rounded-md p-4 max-h-64 overflow-y-auto shadow-inner">
+                                    <ul id="critical-warning-list" class="space-y-2 text-sm text-red-700 dark:text-red-300">
                                     </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="bg-gray-50 dark:bg-slate-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button id="critical-warning-continue-btn" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                    Tôi đã hiểu - Tiếp tục làm việc
-                </button>
+                <div class="bg-gray-50 dark:bg-slate-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button id="critical-warning-continue-btn" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Tôi đã hiểu - Tiếp tục làm việc
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-  </body>
-  
+    <script src="/main.js"></script>
+
+</body>
 </html>
