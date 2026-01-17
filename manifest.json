@@ -1,7 +1,7 @@
 {
-  "name": "Phần mềm Quản lý bán hàng",
-  "short_name": "Quản lý bán hàng",
-  "description": "Ứng dụng quản lý bán hàng cho cửa hàng VTNN Thành Nhân",
+  "name": "Công cụ Quản lý bán hàng",
+  "short_name": "Bán hàng",
+  "description": "Công cụ quản lý bán hàng cho cửa hàng VTNN Thành Nhân",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
