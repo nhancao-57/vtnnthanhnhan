@@ -508,6 +508,50 @@
         </div>
     </div>
 
+    <div id="database-viewer-modal" class="modal-overlay hidden" aria-labelledby="db-modal-title" role="dialog" aria-modal="true">
+    <div id="modal-overlay-bg-db" class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+    <div class="modal-content relative !max-w-4xl shadow-2xl h-[80vh] flex flex-col">
+        
+        <div class="flex justify-between items-center mb-4 shrink-0 border-b border-gray-100 dark:border-slate-700 pb-3">
+            <h3 id="db-modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
+                Tra cứu Cơ sở dữ liệu
+            </h3>
+            <button id="modal-close-btn-db" class="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="mb-4 shrink-0">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </span>
+                <input type="text" id="db-modal-search-input" placeholder="Nhập tên sản phẩm để tìm nhanh..." class="input-base pl-10" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 flex-grow relative bg-white dark:bg-slate-800">
+             <div class="absolute inset-0 overflow-y-auto">
+                <table class="table-base !min-w-full mobile-table-optimise">
+                    <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-slate-700/80 backdrop-blur-sm shadow-sm text-gray-700 dark:text-slate-300">
+                        <tr>
+                            <th class="w-16 text-center">STT</th>
+                            <th class="text-left">Tên sản phẩm</th>
+                            <th class="w-24 text-center">ĐVT</th>
+                            <th class="w-32 text-right">Đơn giá</th>
+                            <th class="w-24 text-right">Tồn kho</th>
+                        </tr>
+                    </thead>
+                    <tbody id="database-viewer-list" class="divide-y divide-gray-100 dark:divide-slate-700">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
     <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm p-4 transition-opacity">
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl max-w-md w-full overflow-hidden transform transition-all scale-100">
             
