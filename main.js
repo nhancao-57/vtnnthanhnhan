@@ -504,6 +504,7 @@ function handleFileLoad() {
                 const onValidationSuccess = () => {
                     saveStateToStorage();
                     renderCart();
+                    syncTrueDate();
                     showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} sản phẩm.`);
                     fileInput.value = '';
                     updateFileNameDisplay();
