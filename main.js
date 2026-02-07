@@ -1031,7 +1031,7 @@ function clearCart(confirmNeeded = true) {
     const doClear = () => {
         currentCart = [];
         document.getElementById('customer-info-form').reset();
-        // document.getElementById('invoice-date').valueAsDate = new Date();
+        document.getElementById('invoice-date').valueAsDate = new Date();
         document.getElementById('save-invoice-only-check').checked = false; 
         document.getElementById('product-unit').value = '';
         document.getElementById('product-price').value = '';
