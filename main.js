@@ -82,6 +82,16 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFinancialQuarter(); 
     updateLiveTotalAccumulated(); 
 
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            syncTrueDate();
+        }
+    });
+
+    window.addEventListener('focus', () => {
+        syncTrueDate();
+    });
+
     // Gán sự kiện cho các nút
     document.getElementById('load-db-btn').addEventListener('click', handleFileLoad);
     document.getElementById('export-inventory-btn').addEventListener('click', exportInventory);
@@ -1555,49 +1565,73 @@ function initRetailCustomerCheckbox() {
     });
 }
 
-// --- HÀM ĐỒNG BỘ THỜI GIAN THỰC (FIX LỖI PIN CMOS) ---
+// --- HÀM ĐỒNG BỘ THỜI GIAN THỰC (FIX LỖI PIN CMOS & PWA SLEEP) ---
+let lastSyncTime = 0; // Biến lưu thời gian lần cuối gọi API
+
 async function syncTrueDate() {
     const dateInput = document.getElementById('invoice-date');
+    const localDate = new Date();
     
-    // 1. Cấu hình timeout (để không bị treo nếu mạng chậm)
-    const fetchWithTimeout = (url, ms) => {
+    // 1. Luôn cập nhật ngay bằng giờ máy tính để xử lý lúc laptop vừa thức dậy
+    dateInput.valueAsDate = localDate;
+
+    // 2. Chống spam API: Chỉ gọi Internet 5 phút/lần (300,000 ms)
+    const now = Date.now();
+    if (now - lastSyncTime < 300000) return; 
+    
+    // Hàm fetch có Timeout và TẮT CACHE (rất quan trọng cho PWA)
+    const fetchWithTimeout = async (url, ms) => {
         const controller = new AbortController();
-        const promise = fetch(url, { signal: controller.signal });
         const timeout = setTimeout(() => controller.abort(), ms);
-        return promise.finally(() => clearTimeout(timeout));
+        try {
+            const response = await fetch(url, { 
+                signal: controller.signal,
+                cache: 'no-store', // Bắt buộc bỏ qua bộ nhớ đệm của PWA
+                headers: { 'Cache-Control': 'no-cache' }
+            });
+            clearTimeout(timeout);
+            return response;
+        } catch (error) {
+            clearTimeout(timeout);
+            throw error;
+        }
     };
 
+    let trueDate = null;
+    let isOffline = false;
+
     try {
-        // 2. Thử lấy giờ chuẩn Việt Nam từ Server (Timeout 4 giây)
-        // Dùng API miễn phí worldtimeapi.org
-        const response = await fetchWithTimeout('https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh', 4000);
-        
-        if (!response.ok) throw new Error('Server Time Error');
-        
-        const data = await response.json();
-        const trueDate = new Date(data.datetime);
+        lastSyncTime = now; // Cập nhật mốc thời gian gọi
+        // CÁCH 1: Dùng worldtimeapi kèm query string chống cache (?cb=...)
+        const cb = new Date().getTime();
+        const res1 = await fetchWithTimeout(`https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh?cb=${cb}`, 3500);
+        if (!res1.ok) throw new Error('API 1 lỗi');
+        const data1 = await res1.json();
+        trueDate = new Date(data1.datetime);
+    } catch (err1) {
+        console.warn("WorldTimeAPI thất bại, thử server dự phòng...", err1);
+        try {
+            // CÁCH 2: Dùng TimeAPI làm dự phòng nếu API 1 bị sập/chặn
+            const cb = new Date().getTime();
+            const res2 = await fetchWithTimeout(`https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh&cb=${cb}`, 3500);
+            if (!res2.ok) throw new Error('API 2 lỗi');
+            const data2 = await res2.json();
+            trueDate = new Date(data2.dateTime);
+        } catch (err2) {
+            console.warn("Không lấy được giờ từ Internet. Chuyển sang giờ máy tính.", err2);
+            isOffline = true;
+            trueDate = localDate;
+        }
+    }
 
-        // 3. Cập nhật vào ô input
+    // 3. Cập nhật lại giao diện bằng giờ chuẩn xác từ Internet
+    if (trueDate && !isNaN(trueDate.getTime())) {
         dateInput.valueAsDate = trueDate;
-        
-        // (Tùy chọn) Thông báo nhẹ để biết đã lấy giờ mạng thành công
-        // console.log("Đã đồng bộ thời gian thực từ Internet: " + trueDate.toLocaleString());
 
-    } catch (error) {
-        console.warn("Không lấy được giờ Internet, dùng giờ máy:", error);
-        
-        // 4. Fallback: Nếu mất mạng, buộc dùng giờ máy
-        const localDate = new Date();
-        dateInput.valueAsDate = localDate;
-
-        // 5. KIỂM TRA LỖI CMOS (Nếu năm < 2025 thì chắc chắn giờ máy sai)
-        if (localDate.getFullYear() < 2025) {
+        // 4. KIỂM TRA LỖI CMOS (Năm < năm hiện tại)
+        if (trueDate.getFullYear() < 2025) {
             showStatus('CẢNH BÁO: Pin CMOS hỏng & Mất mạng. Ngày hóa đơn đang sai!', true);
-            // Mở modal nhắc người dùng chỉnh tay ngay
             alert("MÁY TÍNH ĐANG SAI NGÀY (DO HẾT PIN CMOS)!\n\nVui lòng kiểm tra lại 'Ngày Hóa Đơn' trước khi xuất.");
-        } else {
-            // Nếu mất mạng nhưng năm vẫn đúng, chỉ cảnh báo nhẹ
-            showStatus('Đang dùng ngày giờ của máy tính (Offline).', false);
         }
     }
 }
