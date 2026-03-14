@@ -1041,7 +1041,7 @@ function clearCart(confirmNeeded = true) {
     const doClear = () => {
         currentCart = [];
         document.getElementById('customer-info-form').reset();
-        document.getElementById('invoice-date').valueAsDate = new Date();
+        syncTrueDate(); // Đã sửa: Gọi hàm lấy giờ chuẩn thay vì giờ máy tính
         document.getElementById('save-invoice-only-check').checked = false; 
         document.getElementById('product-unit').value = '';
         document.getElementById('product-price').value = '';
@@ -1567,17 +1567,25 @@ function initRetailCustomerCheckbox() {
 
 // --- HÀM ĐỒNG BỘ THỜI GIAN THỰC (FIX LỖI PIN CMOS & PWA SLEEP) ---
 let lastSyncTime = 0; // Biến lưu thời gian lần cuối gọi API
+let lastKnownTrueDate = null; // Ghi nhớ ngày đúng để không bị đè bởi giờ máy tính sai
 
 async function syncTrueDate() {
     const dateInput = document.getElementById('invoice-date');
     const localDate = new Date();
-    
-    // 1. Luôn cập nhật ngay bằng giờ máy tính để xử lý lúc laptop vừa thức dậy
-    dateInput.valueAsDate = localDate;
-
-    // 2. Chống spam API: Chỉ gọi Internet 5 phút/lần (300,000 ms)
     const now = Date.now();
-    if (now - lastSyncTime < 300000) return; 
+    
+    // 1. Nếu chưa có ngày chuẩn nào, tạm dùng giờ máy tính
+    if (!lastKnownTrueDate) {
+        dateInput.valueAsDate = localDate;
+    }
+
+    // 2. Chống spam API (5 phút) HOẶC sửa lỗi CMOS (thời gian lùi về quá khứ)
+    // Nếu vừa gọi API < 5 phút VÀ thời gian không bị lùi:
+    if (lastKnownTrueDate && now >= lastSyncTime && (now - lastSyncTime < 300000)) {
+        // Đảm bảo không bị mất ngày đúng khi clearCart hoặc focus lại
+        dateInput.valueAsDate = lastKnownTrueDate;
+        return; 
+    }
     
     // Hàm fetch có Timeout và TẮT CACHE (rất quan trọng cho PWA)
     const fetchWithTimeout = async (url, ms) => {
@@ -1625,8 +1633,9 @@ async function syncTrueDate() {
     }
 
     // 3. Cập nhật lại giao diện bằng giờ chuẩn xác từ Internet
-    if (trueDate && !isNaN(trueDate.getTime())) {
-        dateInput.valueAsDate = trueDate;
+        if (trueDate && !isNaN(trueDate.getTime())) {
+            lastKnownTrueDate = trueDate; // Ghi nhớ lại ngày chuẩn
+            dateInput.valueAsDate = trueDate;
 
         // 4. KIỂM TRA LỖI CMOS (Năm < năm hiện tại)
         if (trueDate.getFullYear() < 2025) {
