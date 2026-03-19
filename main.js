@@ -1180,7 +1180,7 @@ function exportInvoiceFile() {
     const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
-    const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${customerInfo.date}.xlsx`;
     
     try {
         const exportLogEntry = {
@@ -1225,7 +1225,8 @@ function exportDailySalesReport() {
     const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'TongHopBanHang');
-    const fileName = `BaoCao_BanHang_TongHop_${new Date().toISOString().slice(0,10)}.xlsx`;
+    const currentDateStr = document.getElementById('invoice-date').value || new Date().toISOString().slice(0,10);
+    const fileName = `BaoCao_BanHang_TongHop_${currentDateStr}.xlsx`;
     XLSX.writeFile(workbook, fileName);
     showStatus(`Đã xuất báo cáo bán hàng tổng hợp: "${fileName}"`);
 }
@@ -1275,7 +1276,8 @@ function exportInventory() {
     worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 }];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho');
-    const fileName = `BaoCao_TonKho_${new Date().toISOString().slice(0,10)}.xlsx`;
+    const currentDateStr = document.getElementById('invoice-date').value || new Date().toISOString().slice(0,10);
+    const fileName = `BaoCao_TonKho_${currentDateStr}.xlsx`;
     XLSX.writeFile(workbook, fileName);
     showStatus(`Đã xuất báo cáo tồn kho: "${fileName}"`);
 }
@@ -1495,7 +1497,8 @@ function handleBackupSession() {
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const currentDateStr = document.getElementById('invoice-date').value || new Date().toISOString().slice(0, 10);
+        const dateStr = currentDateStr.replace(/-/g, '');
         a.href = url; a.download = `VTNN_ThanhNhan_Backup_${dateStr}_V1_6.json`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         showStatus('Đã xuất file backup phiên thành công.', false); hideAdvancedModal();
