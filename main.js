@@ -453,7 +453,7 @@ function handleFileLoad() {
                 devBypassMode = false; 
                 
                 // Cấu hình cột Excel
-                const COL = { TEN: 4, MA: 5, DVT: 24, TIN: 22, GIA: 25 }; 
+                const COL = { TEN: 4, MA: 5, DVT: 27, TIN: 25, GIA: 28 }; 
                 
                 const aggregationMap = new Map();
                 let productsLoaded = 0;
