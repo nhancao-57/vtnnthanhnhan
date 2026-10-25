@@ -18,7 +18,7 @@ function worker() {
         self: { registration: { scope: 'https://example.test/shop/' }, addEventListener: (name, callback) => { handlers[name] = callback; } },
         caches: {
             open: async () => cache,
-            keys: async () => ['invoice-app-v2', 'invoice-app-v3', 'another-app-v1'],
+            keys: async () => ['invoice-app-v2', 'invoice-app-v3', 'invoice-app-v4', 'another-app-v1'],
             delete: async name => deleted.push(name)
         },
         fetch: async () => new Response('latest')
@@ -34,7 +34,7 @@ test('worker installs app shell including compiled CSS and only removes its own 
     assert.ok(w.written.includes('./src/output.css'));
     assert.ok(w.written.includes('./ui.js'));
     w.handlers.activate({ waitUntil: promise => { pending = promise; } }); await pending;
-    assert.deepEqual(w.deleted, ['invoice-app-v2']);
+    assert.deepEqual(w.deleted, ['invoice-app-v2', 'invoice-app-v3']);
 });
 
 test('worker leaves external resources, unrelated routes, and POST requests alone', () => {

@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="./src/output.css" rel="stylesheet">
     <link rel="manifest" href="./manifest.json">
+    <script src="./vietnam-time.js"></script>
 
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -66,7 +67,7 @@
             </div>
 
             <div id="local-time-container" class="hidden md:flex flex-col text-right">
-                <div class="text-xs uppercase tracking-wider font-semibold text-indigo-200 dark:text-blue-400">Giờ của bạn</div>
+                <div class="text-xs uppercase tracking-wider font-semibold text-indigo-200 dark:text-blue-400">Giờ nơi bạn (Internet)</div>
                 <div class="text-lg font-semibold text-white dark:text-slate-200 tabular-nums leading-none mt-0.5" id="local-time-display">--:--:--</div>
                 <div class="text-xs text-indigo-100/70 dark:text-slate-400 font-medium" id="local-date-display">--/--/----</div>
             </div>
@@ -79,6 +80,10 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
             </button>
+        </div>
+        <div class="time-status-bar">
+            <span id="time-sync-status" role="status" aria-live="polite" data-state="waiting">Đang chờ xác minh giờ Việt Nam qua Internet…</span>
+            <button id="time-sync-retry" type="button" class="time-sync-button">Đồng bộ lại</button>
         </div>
     </header>
 
@@ -268,7 +273,8 @@
                         </div>
                         <div class="col-span-1 sm:col-span-2 mt-2">
                             <label for="invoice-date" class="font-semibold text-gray-700 dark:text-slate-300 block mb-1 text-sm">Ngày hóa đơn</label>
-                            <input type="date" id="invoice-date" class="input-base [color-scheme:light] dark:[color-scheme:dark]" />
+                            <input type="date" id="invoice-date" readonly aria-describedby="invoice-date-help" class="input-base [color-scheme:light] dark:[color-scheme:dark]" />
+                            <p id="invoice-date-help" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tự động theo ngày Việt Nam (GMT+7) từ Internet. Mỗi hóa đơn sẽ xác minh lại trước khi lưu / xuất.</p>
                         </div>
                     </form>
                 </div>

@@ -6,6 +6,7 @@ let dailyTransactions = [];
 let exportedInvoicesLog = []; 
 let selectedProduct = null; 
 let devBypassMode = false; 
+let invoiceExportPending = false;
 
 // Biến cho Modal
 let confirmModal = null;
@@ -68,8 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     themeIconMoon = document.getElementById('theme-icon-moon');
 
     // Khởi tạo
-    document.getElementById('invoice-date').valueAsDate = new Date();
-    syncTrueDate(); // Tự động lấy ngày chuẩn từ Internet
+    document.getElementById('invoice-date').value = '';
     loadStateFromStorage(); 
     checkNegativeStock();
     initRetailCustomerCheckbox();
@@ -82,16 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
     startClock(); 
     updateFinancialQuarter(); 
     updateLiveTotalAccumulated(); 
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            syncTrueDate();
-        }
-    });
-
-    window.addEventListener('focus', () => {
-        syncTrueDate();
-    });
 
     // Gán sự kiện cho các nút
     document.getElementById('load-db-btn').addEventListener('click', handleFileLoad);
@@ -346,7 +336,7 @@ function toggleAppControls(isSessionActive, isBypassActive = false) {
     document.getElementById('export-sales-report-btn').disabled = !hasSessionData;
     document.getElementById('end-session-btn').disabled = !hasSessionData;
     document.getElementById('view-database-btn').disabled = !isSessionActive; 
-    document.getElementById('main-app-controls').disabled = !isSessionActive && !isBypassActive;
+    document.getElementById('main-app-controls').disabled = invoiceExportPending || (!isSessionActive && !isBypassActive);
     
     // --- MODIFIED SECTION START ---
     const loadDbBtn = document.getElementById('load-db-btn');
@@ -609,7 +599,7 @@ function performDataDeletion() {
     renderCart();
     document.getElementById('customer-info-form').reset();
     document.getElementById('add-product-form').reset();
-    // document.getElementById('invoice-date').valueAsDate = new Date();
+    VietnamTime.render();
     selectedProduct = null;
     clearProductSelection();
 
@@ -617,15 +607,7 @@ function performDataDeletion() {
     updateSessionStatus();
 }
 
-function updateFinancialQuarter() {
-    const displayEl = document.getElementById('financial-quarter-display');
-    if (!displayEl) return; 
-    const now = new Date();
-    const month = now.getMonth(); 
-    const year = now.getFullYear();
-    const quarter = Math.floor(month / 3) + 1;
-    displayEl.textContent = `Quý ${quarter}, ${year}`;
-}
+function updateFinancialQuarter() { VietnamTime.render(); }
 
 // --- TÌM KIẾM & THÊM SẢN PHẨM (NUCLEAR OPTION) ---
 function handleProductSearch(e) {
@@ -929,7 +911,7 @@ function renderCart() {
     });
     
     document.getElementById('cart-total-posttax').textContent = `Tổng cộng: ${currencyFormatter.format(totalAmount)}`;
-    document.getElementById('export-invoice-btn').disabled = currentCart.length === 0;
+    document.getElementById('export-invoice-btn').disabled = invoiceExportPending || currentCart.length === 0;
 }
 
 function updateQuantity(index, delta) {
@@ -1015,7 +997,7 @@ function clearCart(confirmNeeded = true) {
 }
 
 // --- XUẤT FILE ---
-function getCustomerInfo() {
+function getCustomerInfo(verifiedDate = VietnamTime.now()) {
     return {
         name: document.getElementById('customer-name').value,
         buyerName: document.getElementById('customer-buyer-name').value || document.getElementById('customer-name').value,
@@ -1026,7 +1008,7 @@ function getCustomerInfo() {
         mdvcqhns: document.getElementById('customer-mdvcqhns').value,
         cccd: document.getElementById('customer-cccd').value,
         passport: document.getElementById('customer-passport').value,
-        date: document.getElementById('invoice-date').value 
+        date: verifiedDate ? VietnamTime.dateString(verifiedDate) : ''
     };
 }
 
@@ -1110,75 +1092,103 @@ function buildFlatInvoiceData(transactions) {
     return data;
 }
 
-function exportInvoiceFile() {
+async function exportInvoiceFile() {
+    if (invoiceExportPending) return;
     if (currentCart.length === 0) return showStatus('Giỏ hàng đang trống!', true);
-    const customerInfo = getCustomerInfo();
-    if (!customerInfo.name || !customerInfo.date) return showStatus('Vui lòng nhập Tên Khách Hàng và Ngày Hóa Đơn!', true);
-    
-    let hasDbProduct = false;
-    let hasBypassProduct = false;
-    const dbProductNames = new Set(productDatabaseOriginal.map(productKey));
-    for (const item of currentCart) {
-        if (dbProductNames.has(productKey(item))) hasDbProduct = true;
-        else hasBypassProduct = true;
-    }
-    let invoiceType = '';
-    if (hasDbProduct && hasBypassProduct) invoiceType = 'Hỗn hợp';
-    else if (hasBypassProduct) invoiceType = 'Ngoài CSDL';
-    else invoiceType = 'Trong CSDL';
-    
-    const transaction = {
-        customerInfo: customerInfo,
-        items: JSON.parse(JSON.stringify(currentCart)) 
-    };
-    const dataForExport = buildFlatInvoiceData([transaction]);
-    const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${customerInfo.date}.xlsx`;
-    const saveOnly = document.getElementById('save-invoice-only-check').checked;
-    const previousInventory = JSON.parse(JSON.stringify(productDatabase));
-    const exportLogEntry = {
-        id: exportedInvoicesLog.reduce((next, entry) => Math.max(next, entry.id + 1), Date.now()),
-        customerName: customerInfo.name, fileName,
-        timestamp: new Date().toISOString(), dataForExport,
-        worksheetName: 'HoaDon', invoiceType
-    };
-    let inventoryUpdated = false;
+    if (!document.getElementById('customer-name').value.trim()) return showStatus('Vui lòng nhập Tên Khách Hàng!', true);
+    const cartBeforeCheck = currentCart;
+    const databaseBeforeCheck = productDatabase;
+    const cartContents = JSON.stringify(currentCart);
+    invoiceExportPending = true;
+    document.getElementById('export-invoice-btn').setAttribute('aria-busy', 'true');
+    toggleAppControls(productDatabase.length > 0, devBypassMode);
+    renderCart();
     try {
-        dailyTransactions.push(transaction);
-        exportedInvoicesLog.push(exportLogEntry);
-        currentCart.forEach(item => {
-            if (dbProductNames.has(productKey(item))) {
-                updateInventory(item, item.quantity);
-                inventoryUpdated = true;
-            }
-        });
-        // Store inventory, transactions and invoice history together in a single write.
-        saveStateToStorage();
-    } catch (error) {
-        productDatabase = previousInventory;
-        dailyTransactions.pop();
-        exportedInvoicesLog.pop();
-        selectedProduct = null;
-        showStatus(`Không thể lưu hóa đơn. Giỏ hàng được giữ nguyên. ${error.message}`, true);
-        return;
-    }
-
-    clearCart(false);
-    updateSessionStatus();
-    if (!saveOnly) {
-        try {
-            const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
-            XLSX.writeFile(workbook, fileName);
-        } catch (error) {
-            showStatus('Hóa đơn đã lưu nhưng chưa tải được. Vào “Xem HĐ đã xuất” để tải lại; không tạo lại hóa đơn.', true);
+        // Every NEW invoice requires an online response, even if the header was recently synced.
+        const verifiedAt = await syncTrueDate({ force: true });
+        if (!verifiedAt || !VietnamTime.now()) {
+            showStatus('Chưa xác minh được ngày Việt Nam từ Internet. Hóa đơn chưa được lưu; giỏ hàng vẫn giữ nguyên. Hãy kiểm tra kết nối và thử lại.', true);
             return;
         }
+        if (currentCart !== cartBeforeCheck || productDatabase !== databaseBeforeCheck || JSON.stringify(currentCart) !== cartContents) {
+            showStatus('Phiên hoặc giỏ hàng đã thay đổi trong lúc xác minh giờ. Vui lòng kiểm tra và xuất lại.', true);
+            return;
+        }
+        const customerInfo = getCustomerInfo(verifiedAt);
+        customerInfo.date = VietnamTime.dateString(verifiedAt);
+        document.getElementById('invoice-date').value = customerInfo.date;
+        if (!customerInfo.name || !customerInfo.date) return showStatus('Vui lòng nhập Tên Khách Hàng và Ngày Hóa Đơn!', true);
+
+        let hasDbProduct = false;
+        let hasBypassProduct = false;
+        const dbProductNames = new Set(productDatabaseOriginal.map(productKey));
+        for (const item of currentCart) {
+            if (dbProductNames.has(productKey(item))) hasDbProduct = true;
+            else hasBypassProduct = true;
+        }
+        let invoiceType = '';
+        if (hasDbProduct && hasBypassProduct) invoiceType = 'Hỗn hợp';
+        else if (hasBypassProduct) invoiceType = 'Ngoài CSDL';
+        else invoiceType = 'Trong CSDL';
+
+        const transaction = {
+            customerInfo: customerInfo,
+            items: JSON.parse(JSON.stringify(currentCart))
+        };
+        const dataForExport = buildFlatInvoiceData([transaction]);
+        const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${customerInfo.date}.xlsx`;
+        const saveOnly = document.getElementById('save-invoice-only-check').checked;
+        const previousInventory = JSON.parse(JSON.stringify(productDatabase));
+        const exportLogEntry = {
+            id: exportedInvoicesLog.reduce((next, entry) => Math.max(next, entry.id + 1), verifiedAt.getTime()),
+            customerName: customerInfo.name, fileName,
+            timestamp: verifiedAt.toISOString(), dataForExport,
+            worksheetName: 'HoaDon', invoiceType
+        };
+        let inventoryUpdated = false;
+        try {
+            dailyTransactions.push(transaction);
+            exportedInvoicesLog.push(exportLogEntry);
+            currentCart.forEach(item => {
+                if (dbProductNames.has(productKey(item))) {
+                    updateInventory(item, item.quantity);
+                    inventoryUpdated = true;
+                }
+            });
+            // Store inventory, transactions and invoice history together in a single write.
+            saveStateToStorage();
+        } catch (error) {
+            productDatabase = previousInventory;
+            dailyTransactions.pop();
+            exportedInvoicesLog.pop();
+            selectedProduct = null;
+            showStatus(`Không thể lưu hóa đơn. Giỏ hàng được giữ nguyên. ${error.message}`, true);
+            return;
+        }
+
+        clearCart(false);
+        updateSessionStatus();
+        if (!saveOnly) {
+            try {
+                const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
+                XLSX.writeFile(workbook, fileName);
+            } catch (error) {
+                showStatus('Hóa đơn đã lưu nhưng chưa tải được. Vào “Xem HĐ đã xuất” để tải lại; không tạo lại hóa đơn.', true);
+                return;
+            }
+        }
+        const actionWord = saveOnly ? 'lưu' : 'xuất';
+        showStatus(inventoryUpdated
+            ? `Đã ${actionWord} hóa đơn "${fileName}" và cập nhật tồn kho (hàng CSDL).`
+            : `Đã ${actionWord} hóa đơn (ngoài CSDL) "${fileName}". Tồn kho KHÔNG thay đổi.`);
+    } finally {
+        invoiceExportPending = false;
+        document.getElementById('export-invoice-btn').setAttribute('aria-busy', 'false');
+        toggleAppControls(productDatabase.length > 0, devBypassMode);
+        renderCart();
     }
-    const actionWord = saveOnly ? 'lưu' : 'xuất';
-    showStatus(inventoryUpdated
-        ? `Đã ${actionWord} hóa đơn "${fileName}" và cập nhật tồn kho (hàng CSDL).`
-        : `Đã ${actionWord} hóa đơn (ngoài CSDL) "${fileName}". Tồn kho KHÔNG thay đổi.`);
 }
 
 function exportDailySalesReport() {
@@ -1187,7 +1197,7 @@ function exportDailySalesReport() {
     const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'TongHopBanHang');
-    const currentDateStr = document.getElementById('invoice-date').value || new Date().toISOString().slice(0,10);
+    const currentDateStr = VietnamTime.fileDate();
     const fileName = `BaoCao_BanHang_TongHop_${currentDateStr}.xlsx`;
     XLSX.writeFile(workbook, fileName);
     showStatus(`Đã xuất báo cáo bán hàng tổng hợp: "${fileName}"`);
@@ -1238,60 +1248,14 @@ function exportInventory() {
     worksheet['!cols'] = [{ wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 }];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'TonKho');
-    const currentDateStr = document.getElementById('invoice-date').value || new Date().toISOString().slice(0,10);
+    const currentDateStr = VietnamTime.fileDate();
     const fileName = `BaoCao_TonKho_${currentDateStr}.xlsx`;
     XLSX.writeFile(workbook, fileName);
     showStatus(`Đã xuất báo cáo tồn kho: "${fileName}"`);
 }
 
 // --- CLOCK & DATE ---
-function formatClockDate(date, timeZone) {
-    const options = { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: timeZone };
-    return new Intl.DateTimeFormat('vi-VN', options).format(date);
-}
-
-function startClock() {
-    const vnContainer = document.getElementById('session-time-container');
-    const vnLabel = document.getElementById('vietnam-clock-label');
-    const vnTimeEl = document.getElementById('current-time-display');
-    const vnDateEl = document.getElementById('current-date-display');
-    const localContainer = document.getElementById('local-time-container');
-    const localTimeEl = document.getElementById('local-time-display');
-    const localDateEl = document.getElementById('local-date-display');
-
-    if (!vnContainer || !vnLabel || !vnTimeEl || !vnDateEl || !localContainer || !localTimeEl || !localDateEl) return;
-
-    const userTimezoneOffset = new Date().getTimezoneOffset();
-    const isGMT7 = userTimezoneOffset === -420; 
-
-    const vnTimeFormatter = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    const localTimeFormatter = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-
-    if (isGMT7) {
-        vnLabel.textContent = "Giờ hiện tại";
-        vnContainer.style.display = 'block';
-        localContainer.style.display = 'none';
-    } else {
-        vnLabel.textContent = "Giờ Việt Nam (GMT +7)";
-        vnContainer.style.display = 'block';
-        localContainer.style.display = 'block';
-    }
-
-    function updateClock() {
-        const now = new Date();
-        if (isGMT7) {
-            vnTimeEl.textContent = localTimeFormatter.format(now);
-            vnDateEl.textContent = formatClockDate(now); 
-        } else {
-            vnTimeEl.textContent = vnTimeFormatter.format(now);
-            vnDateEl.textContent = formatClockDate(now, 'Asia/Ho_Chi_Minh'); 
-            localTimeEl.textContent = localTimeFormatter.format(now);
-            localDateEl.textContent = formatClockDate(now); 
-        }
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
-}
+function startClock() { VietnamTime.start(); }
 
 // --- MODAL HELPERS ---
 function showAdvancedModal() { document.getElementById('advanced-modal').classList.remove('hidden'); }
@@ -1312,7 +1276,7 @@ function showExportedInvoicesModal() {
     } else {
         exportedInvoicesLog.slice().reverse().forEach(logEntry => {
             const row = exportedInvoicesList.insertRow();
-            row.innerHTML = `<td data-label="Khách hàng" class="font-medium">${escapeHtml(logEntry.customerName)}</td><td data-label="Thời gian">${new Date(logEntry.timestamp).toLocaleString('vi-VN')}</td><td data-label="Tên file" class="text-sm italic">${escapeHtml(logEntry.fileName)}</td><td data-label="Loại" class="font-medium">${escapeHtml(logEntry.invoiceType || 'Trong CSDL')}</td> <td class="cell-action text-center"><button class="btn-primary !py-1.5 !px-3 !text-sm w-full" onclick="reExportInvoice(${logEntry.id})">Tải lại</button></td>`;
+            row.innerHTML = `<td data-label="Khách hàng" class="font-medium">${escapeHtml(logEntry.customerName)}</td><td data-label="Thời gian">${new Date(logEntry.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td><td data-label="Tên file" class="text-sm italic">${escapeHtml(logEntry.fileName)}</td><td data-label="Loại" class="font-medium">${escapeHtml(logEntry.invoiceType || 'Trong CSDL')}</td> <td class="cell-action text-center"><button class="btn-primary !py-1.5 !px-3 !text-sm w-full" onclick="reExportInvoice(${logEntry.id})">Tải lại</button></td>`;
         });
     }
     exportedInvoicesModal.classList.remove('hidden');
@@ -1454,12 +1418,12 @@ function handleBackupSession() {
                 devBypassMode: state ? state.devBypass : false,
             },
             exportedInvoicesLog: logs,
-            backupMetadata: { timestamp: new Date().toISOString(), version: "1.6" }
+            backupMetadata: { timestamp: VietnamTime.now()?.toISOString() || null, version: "1.6" }
         };
         const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const currentDateStr = document.getElementById('invoice-date').value || new Date().toISOString().slice(0, 10);
+        const currentDateStr = VietnamTime.fileDate();
         const dateStr = currentDateStr.replace(/-/g, '');
         a.href = url; a.download = `VTNN_ThanhNhan_Backup_${dateStr}_V1_6.json`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
@@ -1531,82 +1495,7 @@ function initRetailCustomerCheckbox() {
     });
 }
 
-// --- HÀM ĐỒNG BỘ THỜI GIAN THỰC (FIX LỖI PIN CMOS & PWA SLEEP) ---
-let lastSyncTime = 0; // Biến lưu thời gian lần cuối gọi API
-let lastKnownTrueDate = null; // Ghi nhớ ngày đúng để không bị đè bởi giờ máy tính sai
-
-async function syncTrueDate() {
-    const dateInput = document.getElementById('invoice-date');
-    const localDate = new Date();
-    const now = Date.now();
-    
-    // 1. Nếu chưa có ngày chuẩn nào, tạm dùng giờ máy tính
-    if (!lastKnownTrueDate) {
-        dateInput.valueAsDate = localDate;
-    }
-
-    // 2. Chống spam API (5 phút) HOẶC sửa lỗi CMOS (thời gian lùi về quá khứ)
-    // Nếu vừa gọi API < 5 phút VÀ thời gian không bị lùi:
-    if (lastKnownTrueDate && now >= lastSyncTime && (now - lastSyncTime < 300000)) {
-        // Đảm bảo không bị mất ngày đúng khi clearCart hoặc focus lại
-        dateInput.valueAsDate = lastKnownTrueDate;
-        return; 
-    }
-    
-    // Hàm fetch có Timeout và TẮT CACHE (rất quan trọng cho PWA)
-    const fetchWithTimeout = async (url, ms) => {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), ms);
-        try {
-            const response = await fetch(url, { 
-                signal: controller.signal,
-                cache: 'no-store', // Bắt buộc bỏ qua bộ nhớ đệm của PWA
-                headers: { 'Cache-Control': 'no-cache' }
-            });
-            clearTimeout(timeout);
-            return response;
-        } catch (error) {
-            clearTimeout(timeout);
-            throw error;
-        }
-    };
-
-    let trueDate = null;
-    let isOffline = false;
-
-    try {
-        lastSyncTime = now; // Cập nhật mốc thời gian gọi
-        // CÁCH 1: Dùng worldtimeapi kèm query string chống cache (?cb=...)
-        const cb = new Date().getTime();
-        const res1 = await fetchWithTimeout(`https://worldtimeapi.org/api/timezone/Asia/Ho_Chi_Minh?cb=${cb}`, 3500);
-        if (!res1.ok) throw new Error('API 1 lỗi');
-        const data1 = await res1.json();
-        trueDate = new Date(data1.datetime);
-    } catch (err1) {
-        console.warn("WorldTimeAPI thất bại, thử server dự phòng...", err1);
-        try {
-            // CÁCH 2: Dùng TimeAPI làm dự phòng nếu API 1 bị sập/chặn
-            const cb = new Date().getTime();
-            const res2 = await fetchWithTimeout(`https://timeapi.io/api/Time/current/zone?timeZone=Asia/Ho_Chi_Minh&cb=${cb}`, 3500);
-            if (!res2.ok) throw new Error('API 2 lỗi');
-            const data2 = await res2.json();
-            trueDate = new Date(data2.dateTime);
-        } catch (err2) {
-            console.warn("Không lấy được giờ từ Internet. Chuyển sang giờ máy tính.", err2);
-            isOffline = true;
-            trueDate = localDate;
-        }
-    }
-
-    // 3. Cập nhật lại giao diện bằng giờ chuẩn xác từ Internet
-        if (trueDate && !isNaN(trueDate.getTime())) {
-            lastKnownTrueDate = trueDate; // Ghi nhớ lại ngày chuẩn
-            dateInput.valueAsDate = trueDate;
-
-        // 4. KIỂM TRA LỖI CMOS (Năm < năm hiện tại)
-        if (trueDate.getFullYear() < 2025) {
-            showStatus('CẢNH BÁO: Pin CMOS hỏng & Mất mạng. Ngày hóa đơn đang sai!', true);
-            alert("MÁY TÍNH ĐANG SAI NGÀY (DO HẾT PIN CMOS)!\n\nVui lòng kiểm tra lại 'Ngày Hóa Đơn' trước khi xuất.");
-        }
-    }
+async function syncTrueDate(options = {}) {
+    try { return await VietnamTime.sync(options); }
+    catch { return null; }
 }

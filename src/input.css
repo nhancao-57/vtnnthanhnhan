@@ -180,7 +180,7 @@
 /* Shared layout refinements for the sales and reporting workspaces. */
 :root { --app-header-height: 88px; color-scheme: light; }
 :root.dark { color-scheme: dark; }
-body > header { gap: 1rem; }
+body > header { gap: 1rem; flex-wrap: wrap; }
 body > header > div { min-width: 0; }
 body > header > div:last-child { flex-shrink: 0; }
 button, input, a, label[role="button"] { -webkit-tap-highlight-color: transparent; }
@@ -205,6 +205,17 @@ input[type="file"]:disabled + label { opacity: .55; cursor: not-allowed; }
 .btn-quantity-control { min-width: 32px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
 .modal-content { max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; }
 .dialog-open { overflow: hidden; }
+.time-status-bar { flex: 1 0 100%; display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding-top: .625rem; border-top: 1px solid rgb(255 255 255 / 20%); font-size: .75rem; color: #e0e7ff; }
+#time-sync-status { display: flex; align-items: center; gap: .5rem; }
+#time-sync-status::before { content: ''; width: .5rem; height: .5rem; flex-shrink: 0; border-radius: 50%; background: #fcd34d; }
+#time-sync-status[data-state="verified"]::before { background: #6ee7b7; }
+#time-sync-status[data-state="error"]::before { background: #fda4af; }
+.time-sync-button { flex-shrink: 0; border: 1px solid rgb(255 255 255 / 30%); border-radius: .5rem; padding: .375rem .625rem; color: white; cursor: pointer; }
+.time-sync-button:hover { background: rgb(255 255 255 / 10%); }
+.time-sync-button:disabled { opacity: .5; cursor: wait; }
+#invoice-date[readonly] { cursor: default; background-color: var(--color-slate-50); }
+.dark #invoice-date[readonly] { background-color: var(--color-slate-900); }
+#export-invoice-btn[aria-busy="true"] { cursor: wait; }
 .skip-link { position: fixed; top: .5rem; left: .5rem; transform: translateY(-150%); z-index: 200; background: white; color: #312e81; padding: .75rem 1rem; border-radius: .5rem; }
 .skip-link:focus { transform: translateY(0); }
 @media (max-width: 767px) {

@@ -7,6 +7,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="./src/output.css" rel="stylesheet">
+    <script src="./vietnam-time.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 </head>
@@ -64,6 +65,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
         </button>
+    </div>
+    <div class="time-status-bar">
+        <span id="time-sync-status" role="status" aria-live="polite" data-state="waiting">Đang chờ xác minh giờ Việt Nam qua Internet…</span>
+        <button id="time-sync-retry" type="button" class="time-sync-button">Đồng bộ lại</button>
     </div>
 </header>
 
@@ -242,17 +247,7 @@
         // 2. THEME & CLOCK LOGIC
         // -------------------------
         (function initUtilities() {
-            // Clock
-            const timeDisplay = document.getElementById('current-time-display');
-            const dateDisplay = document.getElementById('current-date-display');
-            function updateTime() {
-                if (!timeDisplay || !dateDisplay) return;
-                const now = new Date();
-                timeDisplay.textContent = now.toLocaleTimeString('vi-VN', { hour12: false });
-                dateDisplay.textContent = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            }
-            setInterval(updateTime, 1000);
-            updateTime();
+            VietnamTime.start();
 
             // Theme Setup
             const themeBtn = document.getElementById('theme-toggle-btn');
@@ -608,7 +603,7 @@
             const ws = XLSX.utils.aoa_to_sheet(finalData);
             ws['!cols'] = [{wch: 5}, {wch: 12}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 15}, {wch: 30}, {wch: 10}, {wch: 10}, {wch: 15}, {wch: 15}, {wch: 15}];
             XLSX.utils.book_append_sheet(wb, ws, "Master_Gop");
-            const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+            const dateStr = VietnamTime.fileDate().replace(/-/g,'');
             XLSX.writeFile(wb, `MasterData_TongHop_${dateStr}.xlsx`);
         }
 
@@ -622,7 +617,7 @@
             const ws = XLSX.utils.aoa_to_sheet(wsData);
             ws['!cols'] = [{wch: 15}, {wch: 40}, {wch: 10}, {wch: 15}, {wch: 20}];
             XLSX.utils.book_append_sheet(wb, ws, "BaoCao_SanPham");
-            const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+            const dateStr = VietnamTime.fileDate().replace(/-/g,'');
             XLSX.writeFile(wb, `BaoCao_SanPham_${dateStr}.xlsx`);
         }
 

@@ -1,7 +1,7 @@
 const CACHE_PREFIX = 'invoice-app-';
-const CACHE_NAME = CACHE_PREFIX + 'v3';
+const CACHE_NAME = CACHE_PREFIX + 'v4';
 const CACHE_ASSETS = [
-    './', './index.html', './tong-hop.html', './main.js', './ui.js',
+    './', './index.html', './tong-hop.html', './main.js', './ui.js', './vietnam-time.js',
     './src/output.css', './manifest.json', './images/favicon.ico',
     './images/icon-192x192.png', './images/icon-512x512.png'
 ];
