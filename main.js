@@ -14,6 +14,7 @@ let confirmModalCancelBtn = null;
 let confirmModalTitle = null;
 let confirmModalMessage = null;
 let onConfirmCallback = () => {}; 
+let onCancelCallback = () => {};
 
 // Biến cho Dark Mode
 let themeToggleBtn = null;
@@ -98,7 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('export-sales-report-btn').addEventListener('click', exportDailySalesReport); 
     document.getElementById('end-session-btn').addEventListener('click', startEndSessionProcess); 
     document.getElementById('add-product-form').addEventListener('submit', handleAddProduct);
-    document.getElementById('product-search').addEventListener('keyup', handleProductSearch);
+    document.getElementById('customer-info-form').addEventListener('submit', event => event.preventDefault());
+    document.getElementById('product-search').addEventListener('input', handleProductSearch);
     document.getElementById('export-invoice-btn').addEventListener('click', exportInvoiceFile);
     document.getElementById('clear-cart-btn').addEventListener('click', () => clearCart(true)); 
     
@@ -118,26 +120,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Gán sự kiện cho Modal Xác nhận
     confirmModalConfirmBtn.addEventListener('click', () => {
-        onConfirmCallback();
-        hideConfirmModal();
+        const callback = onConfirmCallback;
+        hideConfirmModal(false);
+        callback();
     });
-    confirmModalCancelBtn.addEventListener('click', hideConfirmModal);
+    confirmModalCancelBtn.addEventListener('click', () => hideConfirmModal());
+    renderCart();
 });
 
 // --- CÁC HÀM UI CƠ BẢN ---
-function showConfirmModal(title, message, onConfirm, confirmBtnClass = 'btn-danger') {
+function showConfirmModal(title, message, onConfirm, confirmBtnClass = 'btn-danger', onCancel = () => {}) {
     confirmModalTitle.textContent = title;
     confirmModalMessage.innerHTML = message;
     onConfirmCallback = onConfirm;
+    onCancelCallback = onCancel;
     confirmModalConfirmBtn.className = ''; 
     confirmModalConfirmBtn.classList.add('btn-base', confirmBtnClass); 
     confirmModal.classList.remove('hidden');
 }
 
-function hideConfirmModal() {
+function hideConfirmModal(cancelled = true) {
     confirmModal.classList.add('hidden');
+    const callback = onCancelCallback;
     onConfirmCallback = () => {}; 
+    onCancelCallback = () => {};
+    if (cancelled) callback();
 }
+
+// Imported/user-entered text must remain text when rendered in HTML templates.
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[char]);
+}
+
+// Match the identity rule used by the Excel importer: ID first, name otherwise.
+function productKey(product) { return product.id || product.name; }
 
 function setupThemeToggle() {
     function updateIcon() {
@@ -187,8 +205,8 @@ function updateFileNameDisplay() {
         display.textContent = file.name;
         display.classList.remove('italic');
 
-        // Lock the input immediately so they can't change it unless they end the session
-        fileInput.disabled = true; 
+        // Allow another selection until loading or an active session locks the input.
+        fileInput.disabled = false;
         
         // Optional: Let them know it's good
         showStatus('Đã chọn tệp hợp lệ. Vui lòng nhấn "Bắt đầu phiên".', false);
@@ -205,7 +223,7 @@ function showStatus(message, isError = false) {
     statusDiv.textContent = message;
     container.innerHTML = ''; 
     container.appendChild(statusDiv);
-    window.scrollTo(0, 0);
+    statusDiv.setAttribute('role', isError ? 'alert' : 'status');
     setTimeout(() => { if (container.contains(statusDiv)) container.removeChild(statusDiv); }, 6000);
 }
 
@@ -303,11 +321,12 @@ function updateSessionStatus() {
     updateExportedInvoicesButtonState(); 
     updateLiveTotalAccumulated(); 
     updateBypassButtonState(); 
+    document.getElementById('bypass-inputs').classList.toggle('hidden', !devBypassMode);
 }
 
 function updateBypassButtonState() {
     const btn = document.getElementById('dev-bypass-btn');
-    const statusSpan = btn.querySelector('span');
+    const statusSpan = btn?.querySelector('span:last-child');
     if (!btn || !statusSpan) return;
     if (devBypassMode) {
         statusSpan.textContent = '[BẬT]';
@@ -322,9 +341,10 @@ function updateBypassButtonState() {
 
 function toggleAppControls(isSessionActive, isBypassActive = false) {
     // Other buttons (keep existing logic)
-    document.getElementById('export-inventory-btn').disabled = !isSessionActive;
-    document.getElementById('export-sales-report-btn').disabled = !isSessionActive; 
-    document.getElementById('end-session-btn').disabled = !isSessionActive;
+    const hasSessionData = isSessionActive || dailyTransactions.length > 0;
+    document.getElementById('export-inventory-btn').disabled = !hasSessionData;
+    document.getElementById('export-sales-report-btn').disabled = !hasSessionData;
+    document.getElementById('end-session-btn').disabled = !hasSessionData;
     document.getElementById('view-database-btn').disabled = !isSessionActive; 
     document.getElementById('main-app-controls').disabled = !isSessionActive && !isBypassActive;
     
@@ -361,8 +381,7 @@ function toggleAppControls(isSessionActive, isBypassActive = false) {
 function updateExportedInvoicesButtonState() {
     const btn = document.getElementById('view-exports-btn');
     if (!btn) return; 
-    const isSessionActive = productDatabase.length > 0;
-    btn.disabled = !(isSessionActive && exportedInvoicesLog.length > 0);
+    btn.disabled = exportedInvoicesLog.length === 0;
 }
 
 function updateLiveTotalAccumulated() {
@@ -390,12 +409,14 @@ function saveStateToStorage() {
         current: productDatabase,
         original: productDatabaseOriginal,
         transactions: dailyTransactions,
+        exportedInvoicesLog,
         devBypass: devBypassMode 
     };
     localStorage.setItem('inventoryState', JSON.stringify(state));
 }
 
 function loadStateFromStorage() {
+    let sessionLogs = null;
     const savedState = localStorage.getItem('inventoryState');
     if (savedState) {
         try {
@@ -405,6 +426,7 @@ function loadStateFromStorage() {
                 productDatabaseOriginal = state.original;
                 dailyTransactions = state.transactions || []; 
                 devBypassMode = state.devBypass || false; 
+                if (Array.isArray(state.exportedInvoicesLog)) sessionLogs = state.exportedInvoicesLog;
                 showStatus('Đã khôi phục dữ liệu từ phiên làm việc trước.', false);
             }
         } catch (e) {
@@ -412,7 +434,8 @@ function loadStateFromStorage() {
             localStorage.removeItem('inventoryState');
         }
     }
-    const savedLogs = localStorage.getItem('exportedInvoicesLog');
+    const savedLogs = sessionLogs === null ? localStorage.getItem('exportedInvoicesLog') : null;
+    if (sessionLogs !== null) exportedInvoicesLog = sessionLogs;
     if (savedLogs) {
         try {
             exportedInvoicesLog = JSON.parse(savedLogs);
@@ -429,11 +452,21 @@ function loadStateFromStorage() {
 
 function handleFileLoad() {
     const fileInput = document.getElementById('file-input');
+    if (fileInput.dataset.loading === 'true') return;
     if (fileInput.files.length === 0) return showStatus('Vui lòng chọn Cơ sở dữ liệu!', true);
 
     const startLoad = () => {
         const file = fileInput.files[0];
         const reader = new FileReader();
+        fileInput.dataset.loading = 'true';
+        fileInput.disabled = true;
+        const loadButton = document.getElementById('load-db-btn');
+        loadButton.disabled = true;
+        loadButton.textContent = 'Đang đọc CSDL…';
+        const finishLoad = () => {
+            delete fileInput.dataset.loading;
+            updateSessionStatus();
+        };
 
         reader.onload = (e) => {
             try {
@@ -441,17 +474,8 @@ function handleFileLoad() {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, range: 0 });
 
-                // Reset dữ liệu
-                productDatabase = [];
-                productDatabaseOriginal = [];
-                dailyTransactions = [];
-                currentCart = [];
-                exportedInvoicesLog = []; 
-                localStorage.removeItem('exportedInvoicesLog'); 
-                devBypassMode = false; 
-                
                 // Cấu hình cột Excel
                 
                 const COL = { TEN: 4, MA: 5, DVT: 33, TIN: 31, GIA: 34 }; 
@@ -502,37 +526,52 @@ function handleFileLoad() {
                 }
                 
                 // Finalize Products: Set Price
-                productDatabase = Array.from(aggregationMap.values()).map(p => {
+                const importedProducts = Array.from(aggregationMap.values()).map(p => {
                     p.price = getCurrentActivePrice(p);
                     return p;
                 });
 
-                productsLoaded = productDatabase.length;
-                productDatabaseOriginal = JSON.parse(JSON.stringify(productDatabase));
+                productsLoaded = importedProducts.length;
+                if (!productsLoaded) throw new Error('Không tìm thấy sản phẩm. Vui lòng kiểm tra tệp CSDL.');
                 
                 // --- THAY ĐỔI MỚI TẠI ĐÂY ---
                 // Định nghĩa hàm sẽ chạy khi mọi thứ OK (Callback)
                 const onValidationSuccess = () => {
-                    saveStateToStorage();
+                    // Commit only after parsing and confirmation; failed reads leave the session intact.
+                    const previous = [productDatabase, productDatabaseOriginal, dailyTransactions, exportedInvoicesLog, devBypassMode];
+                    productDatabase = importedProducts;
+                    productDatabaseOriginal = JSON.parse(JSON.stringify(importedProducts));
+                    dailyTransactions = [];
+                    exportedInvoicesLog = [];
+                    devBypassMode = false;
+                    try { saveStateToStorage(); }
+                    catch (error) {
+                        [productDatabase, productDatabaseOriginal, dailyTransactions, exportedInvoicesLog, devBypassMode] = previous;
+                        finishLoad();
+                        showStatus(`Không thể lưu phiên: ${error.message}`, true);
+                        return;
+                    }
+                    currentCart = [];
+                    clearProductSelection();
                     renderCart();
                     syncTrueDate();
                     showStatus(`Bắt đầu phiên làm việc thành công! Đã nạp ${productsLoaded} sản phẩm.`);
                     fileInput.value = '';
                     updateFileNameDisplay();
-                    updateSessionStatus();
+                    finishLoad();
                 };
 
                 // Chạy hàm kiểm tra lỗi trước
-                validateAndWarnNegativeStock(onValidationSuccess);
+                validateAndWarnNegativeStock(onValidationSuccess, importedProducts, finishLoad);
                 // ----------------------------
 
             } catch (error) { 
                 console.error(error);
                 showStatus(`Lỗi khi đọc tệp Excel: ${error.message}`, true); 
-                updateSessionStatus();
+                finishLoad();
             }
         };
-        reader.onerror = () => showStatus('Không thể đọc tệp. Đã xảy ra lỗi.', true);
+        reader.onerror = () => { finishLoad(); showStatus('Không thể đọc tệp. Vui lòng chọn lại.', true); };
         reader.readAsArrayBuffer(file);
     };
 
@@ -540,96 +579,6 @@ function handleFileLoad() {
         showConfirmModal('Bắt đầu phiên mới?', 'Bạn có chắc chắn muốn bắt đầu lại phiên làm việc? TẤT CẢ giao dịch và log hóa đơn đã lưu sẽ bị XÓA.', startLoad);
     } else {
         startLoad(); 
-    }
-}
-
-function validateAndWarnNegativeStock(onSuccessCallback) {
-    let errorItems = [];
-    
-    // 1. Quét dữ liệu để tìm lỗi
-    productDatabase.forEach(product => {
-        // Lỗi 1: Tổng tồn kho âm
-        if (product.stock < 0) {
-            errorItems.push({
-                name: product.name,
-                stock: product.stock,
-                issue: 'Tổng tồn kho âm'
-            });
-        } 
-        // Lỗi 2: Có lô nhập (batch) âm
-        else if (product.batches && product.batches.length > 0) {
-            const hasNegativeBatch = product.batches.some(batch => batch.stock < 0);
-            if (hasNegativeBatch) {
-                errorItems.push({
-                    name: product.name,
-                    stock: product.stock,
-                    issue: 'Có lô nhập có giá trị âm'
-                });
-            }
-        }
-    });
-
-    // 2. Nếu có lỗi, dựng HTML bảng cảnh báo
-    if (errorItems.length > 0) {
-        // Giới hạn hiển thị 5 dòng để modal không quá dài
-        const displayItems = errorItems.slice(0, 5);
-        const remaining = errorItems.length - 5;
-
-        let tableRows = displayItems.map(item => `
-            <tr class="border-b border-gray-100 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20">
-                <td class="p-2 text-left font-medium text-gray-700 dark:text-gray-300">${item.name}</td>
-                <td class="p-2 text-center font-bold text-red-600">${item.stock}</td>
-                <td class="p-2 text-right text-sm text-gray-500 italic">${item.issue}</td>
-            </tr>
-        `).join('');
-
-        // Thêm dòng "... và X lỗi khác" nếu danh sách quá dài
-        if (remaining > 0) {
-            tableRows += `
-                <tr>
-                    <td colspan="3" class="p-2 text-center text-sm text-gray-500 font-medium">
-                        ... và còn ${remaining} sản phẩm lỗi khác ...
-                    </td>
-                </tr>
-            `;
-        }
-
-        // Tạo cấu trúc HTML hoàn chỉnh cho Modal
-        const messageHtml = `
-            <div class="space-y-3">
-                <div class="bg-red-100 text-red-700 p-3 rounded-md text-sm font-medium flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    Phát hiện dữ liệu bất thường trong file Excel!
-                </div>
-                
-                <div class="overflow-x-auto border border-gray-200 dark:border-slate-700 rounded-md">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
-                            <tr>
-                                <th class="p-2 text-left">Tên sản phẩm</th>
-                                <th class="p-2 text-center">Tồn kho</th>
-                                <th class="p-2 text-right">Vấn đề</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
-                            ${tableRows}
-                        </tbody>
-                    </table>
-                </div>
-
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    Tiếp tục nạp dữ liệu này có thể dẫn đến sai lệch khi trừ kho hoặc tính doanh thu. 
-                    <br><b>Bạn có chắc chắn muốn tiếp tục?</b>
-                </p>
-            </div>
-        `;
-
-        showConfirmModal('CẢNH BÁO DỮ LIỆU', messageHtml, onSuccessCallback, 'btn-danger');
-    } else {
-        // Không có lỗi, chạy tiếp bình thường
-        onSuccessCallback();
     }
 }
 
@@ -684,6 +633,8 @@ function handleProductSearch(e) {
     const keyword = e.target.value.toLowerCase();
     const resultsDiv = document.getElementById('product-search-results');
     resultsDiv.innerHTML = '';
+    selectedProduct = null;
+    e.target.classList.remove('input-selected');
     
     // Nếu đang bypass, không cần search CSDL
     if (devBypassMode) return;
@@ -703,12 +654,13 @@ function handleProductSearch(e) {
         resultsDiv.appendChild(noResult);
     } else {
         filtered.slice(0, 10).forEach(product => {
-            const div = document.createElement('div');
-            div.className = 'search-item border-b border-gray-100 dark:border-slate-700 last:border-0';
+            const div = document.createElement('button');
+            div.type = 'button';
+            div.className = 'search-item w-full text-left border-b border-gray-100 dark:border-slate-700 last:border-0';
             div.innerHTML = `
-                <div class="font-medium text-gray-800 dark:text-slate-200">${product.name}</div>
+                <div class="font-medium text-gray-800 dark:text-slate-200">${escapeHtml(product.name)}</div>
                 <div class="text-xs text-gray-500 dark:text-slate-400 mt-0.5 flex justify-between">
-                    <span>ĐVT: ${product.unit} | Giá: ${currencyFormatter.format(product.price)}</span>
+                    <span>ĐVT: ${escapeHtml(product.unit)} | Giá: ${currencyFormatter.format(product.price)}</span>
                     <span class="${product.stock <= 5 ? 'text-red-500 font-bold' : 'text-emerald-600'}">Kho: ${product.stock}</span>
                 </div>
             `;
@@ -747,11 +699,11 @@ function handleAddProduct(e) {
     if (devBypassMode && !selectedProduct) {
         const name = rawInput.trim();
         const quantity = parseFloat(document.getElementById('product-quantity').value);
-        if (!name || !quantity || quantity <= 0) return showStatus('Bypass: Nhập tên & SL hợp lệ!', true);
+        if (!name || !Number.isFinite(quantity) || quantity <= 0) return showStatus('Bypass: Nhập tên & SL hợp lệ!', true);
         
         const unit = document.getElementById('product-unit').value.trim() || 'Cái';
         const price = parseFloat(document.getElementById('product-price').value) || 0;
-        const existing = currentCart.find(i => i.name === name);
+        const existing = currentCart.find(i => productKey(i) === name);
         if(existing) { existing.quantity += quantity; existing.price = price; }
         else { currentCart.push({id: '', name, unit, price, quantity}); }
         renderCart(); document.getElementById('add-product-form').reset(); clearProductSelection(); searchInput.focus();
@@ -790,7 +742,7 @@ function handleAddProduct(e) {
     const quantityInput = document.getElementById('product-quantity');
     const quantity = parseFloat(quantityInput.value);
 
-    if (!quantity || quantity <= 0) {
+    if (!Number.isFinite(quantity) || quantity <= 0) {
         quantityInput.focus();
         return showStatus(`Đã khớp "${name}". Vui lòng nhập số lượng!`, false);
     }
@@ -798,9 +750,10 @@ function handleAddProduct(e) {
     // !!! HERE IS THE CHANGE: GET DYNAMIC PRICE !!!
     // We update the selectedProduct price property to ensure it's fresh
     const fifoPrice = getCurrentActivePrice(selectedProduct);
+    const productToAdd = selectedProduct;
+    const existingCartItem = currentCart.find(item => productKey(item) === productKey(productToAdd));
     
     const doAdd = () => {
-        const existingCartItem = currentCart.find(item => item.name === name);
         if (existingCartItem) {
             existingCartItem.quantity += quantity;
             // Note: We don't update price of existing cart item to avoid confusion 
@@ -809,9 +762,9 @@ function handleAddProduct(e) {
             existingCartItem.price = fifoPrice; 
         } else {
             currentCart.push({ 
-                id: selectedProduct.id || '', 
-                name: selectedProduct.name, 
-                unit: selectedProduct.unit, 
+                id: productToAdd.id || '',
+                name: productToAdd.name,
+                unit: productToAdd.unit,
                 price: fifoPrice, // Use the FIFO Price
                 quantity: quantity 
             });
@@ -824,8 +777,8 @@ function handleAddProduct(e) {
     };
     
     // Check Total Stock
-    if (quantity > selectedProduct.stock) {
-        showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${name}" chỉ còn tổng cộng ${selectedProduct.stock}. Bạn có chắc chắn muốn bán lố không?`, doAdd, 'btn-warning');
+    if (quantity + (existingCartItem?.quantity || 0) > selectedProduct.stock) {
+        showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${escapeHtml(name)}" chỉ còn tổng cộng ${selectedProduct.stock}. Bạn có chắc chắn muốn bán lố không?`, doAdd, 'btn-warning');
     } else {
         doAdd(); 
     }
@@ -847,11 +800,11 @@ function getCurrentActivePrice(product) {
 }
 
 
-function validateAndWarnNegativeStock(onSuccessCallback) {
+function validateAndWarnNegativeStock(onSuccessCallback, products = productDatabase, onCancel = () => {}) {
     let errorItems = [];
     
     // 1. Quét dữ liệu để tìm lỗi
-    productDatabase.forEach(product => {
+    products.forEach(product => {
         // Lỗi 1: Tổng tồn kho âm
         if (product.stock < 0) {
             errorItems.push({
@@ -881,7 +834,7 @@ function validateAndWarnNegativeStock(onSuccessCallback) {
 
         let tableRows = displayItems.map(item => `
             <tr class="border-b border-gray-100 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20">
-                <td class="p-2 text-left font-medium text-gray-700 dark:text-gray-300">${item.name}</td>
+                <td class="p-2 text-left font-medium text-gray-700 dark:text-gray-300">${escapeHtml(item.name)}</td>
                 <td class="p-2 text-center font-bold text-red-600">${item.stock}</td>
                 <td class="p-2 text-right text-sm text-gray-500 italic">${item.issue}</td>
             </tr>
@@ -930,7 +883,7 @@ function validateAndWarnNegativeStock(onSuccessCallback) {
             </div>
         `;
 
-        showConfirmModal('CẢNH BÁO DỮ LIỆU', messageHtml, onSuccessCallback, 'btn-danger');
+        showConfirmModal('CẢNH BÁO DỮ LIỆU', messageHtml, onSuccessCallback, 'btn-danger', onCancel);
     } else {
         // Không có lỗi, chạy tiếp bình thường
         onSuccessCallback();
@@ -954,19 +907,19 @@ function renderCart() {
         const row = cartBody.insertRow();
         const quantityControlHtml = `
             <div class="flex items-center justify-center space-x-1">
-                <button class="btn-quantity-control" onclick="updateQuantity(${index}, -1)">
+                <button type="button" aria-label="Giảm số lượng" class="btn-quantity-control" onclick="updateQuantity(${index}, -1)">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" /></svg>
                 </button>
-                <input type="number" value="${item.quantity}" min="1" class="input-base input-quantity-cart" onchange="handleQuantityInput(${index}, this.value)" onkeyup="handleQuantityInput(${index}, this.value)" inputmode="numeric" pattern="[0-9]*">
-                <button class="btn-quantity-control" onclick="updateQuantity(${index}, 1)">
+                <input aria-label="Số lượng ${escapeHtml(item.name)}" type="number" value="${item.quantity}" min="1" class="input-base input-quantity-cart" onchange="handleQuantityInput(${index}, this.value)" inputmode="numeric" pattern="[0-9]*">
+                <button type="button" aria-label="Tăng số lượng" class="btn-quantity-control" onclick="updateQuantity(${index}, 1)">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
                 </button>
             </div>
         `;
 
         row.innerHTML = `<td data-label="STT">${index + 1}</td>
-                         <td data-label="Tên hàng hóa" class="font-medium">${item.name}</td>
-                         <td data-label="ĐVT">${item.unit}</td>
+                         <td data-label="Tên hàng hóa" class="font-medium">${escapeHtml(item.name)}</td>
+                         <td data-label="ĐVT">${escapeHtml(item.unit)}</td>
                          <td data-label="Số lượng" class="font-medium">${quantityControlHtml}</td> 
                          <td data-label="Đơn giá">${currencyFormatter.format(item.price)}</td>
                          <td data-label="Thành tiền" class="font-bold">${currencyFormatter.format(thanhTien)}</td>
@@ -976,6 +929,7 @@ function renderCart() {
     });
     
     document.getElementById('cart-total-posttax').textContent = `Tổng cộng: ${currencyFormatter.format(totalAmount)}`;
+    document.getElementById('export-invoice-btn').disabled = currentCart.length === 0;
 }
 
 function updateQuantity(index, delta) {
@@ -984,14 +938,14 @@ function updateQuantity(index, delta) {
     const newQuantity = currentItem.quantity + delta;
 
     if (newQuantity < 1) {
-        showConfirmModal('Xóa sản phẩm?', `Bạn có chắc muốn xóa sản phẩm "${currentItem.name}" khỏi giỏ hàng?`, () => removeCartItem(index), 'btn-danger');
+        showConfirmModal('Xóa sản phẩm?', `Bạn có chắc muốn xóa sản phẩm "${escapeHtml(currentItem.name)}" khỏi giỏ hàng?`, () => removeCartItem(index), 'btn-danger');
         return;
     }
     
     if (!devBypassMode) {
-        const dbProduct = productDatabase.find(p => p.name === currentItem.name);
+        const dbProduct = productDatabase.find(p => productKey(p) === productKey(currentItem));
         if (dbProduct && newQuantity > dbProduct.stock) {
-            showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${currentItem.name}" chỉ còn ${dbProduct.stock}. Bạn có chắc chắn muốn bán lố ${newQuantity} không?`, () => {
+            showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${escapeHtml(currentItem.name)}" chỉ còn ${dbProduct.stock}. Bạn có chắc chắn muốn bán lố ${newQuantity} không?`, () => {
                     currentItem.quantity = newQuantity;
                     renderCart();
                     showStatus(`Cập nhật số lượng cho "${currentItem.name}" (Bán lố).`);
@@ -1008,8 +962,9 @@ function handleQuantityInput(index, value) {
     if (index >= currentCart.length) return;
     let newQuantity = parseFloat(value);
     
-    if (isNaN(newQuantity) || newQuantity <= 0) {
-        showConfirmModal('Số lượng không hợp lệ', `Số lượng nhập vào không hợp lệ. Xóa "${currentCart[index].name}" khỏi giỏ hàng?`, () => removeCartItem(index), 'btn-danger');
+    if (!Number.isFinite(newQuantity) || Math.round(newQuantity) <= 0) {
+        renderCart();
+        showConfirmModal('Số lượng không hợp lệ', `Số lượng nhập vào không hợp lệ. Xóa "${escapeHtml(currentCart[index].name)}" khỏi giỏ hàng?`, () => removeCartItem(index), 'btn-danger');
         return;
     }
     
@@ -1017,9 +972,10 @@ function handleQuantityInput(index, value) {
     const currentItem = currentCart[index];
     
     if (!devBypassMode) {
-        const dbProduct = productDatabase.find(p => p.name === currentItem.name);
+        const dbProduct = productDatabase.find(p => productKey(p) === productKey(currentItem));
         if (dbProduct && newQuantity > dbProduct.stock) {
-            showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${currentItem.name}" chỉ còn ${dbProduct.stock}. Bán lố?`, () => {
+            renderCart();
+            showConfirmModal('Cảnh báo Tồn Kho', `Sản phẩm "${escapeHtml(currentItem.name)}" chỉ còn ${dbProduct.stock}. Bán lố?`, () => {
                     currentItem.quantity = newQuantity;
                     renderCart();
                     showStatus(`Cập nhật số lượng cho "${currentItem.name}" (Bán lố).`);
@@ -1074,8 +1030,8 @@ function getCustomerInfo() {
     };
 }
 
-function updateInventory(productName, soldQuantity) {
-    const product = productDatabase.find(p => p.name === productName);
+function updateInventory(item, soldQuantity) {
+    const product = productDatabase.find(p => productKey(p) === productKey(item));
     if (!product) return;
 
     // 1. Deduct from Total Stock (Legacy visual aid)
@@ -1161,9 +1117,9 @@ function exportInvoiceFile() {
     
     let hasDbProduct = false;
     let hasBypassProduct = false;
-    const dbProductNames = new Set(productDatabaseOriginal.map(p => p.name));
+    const dbProductNames = new Set(productDatabaseOriginal.map(productKey));
     for (const item of currentCart) {
-        if (dbProductNames.has(item.name)) hasDbProduct = true;
+        if (dbProductNames.has(productKey(item))) hasDbProduct = true;
         else hasBypassProduct = true;
     }
     let invoiceType = '';
@@ -1175,49 +1131,54 @@ function exportInvoiceFile() {
         customerInfo: customerInfo,
         items: JSON.parse(JSON.stringify(currentCart)) 
     };
-    dailyTransactions.push(transaction);
-
-    const dataForExport = buildFlatInvoiceData([transaction]); 
-    const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
+    const dataForExport = buildFlatInvoiceData([transaction]);
     const fileName = `HoaDon_${customerInfo.name.replace(/ /g, '_')}_${customerInfo.date}.xlsx`;
-    
+    const saveOnly = document.getElementById('save-invoice-only-check').checked;
+    const previousInventory = JSON.parse(JSON.stringify(productDatabase));
+    const exportLogEntry = {
+        id: exportedInvoicesLog.reduce((next, entry) => Math.max(next, entry.id + 1), Date.now()),
+        customerName: customerInfo.name, fileName,
+        timestamp: new Date().toISOString(), dataForExport,
+        worksheetName: 'HoaDon', invoiceType
+    };
+    let inventoryUpdated = false;
     try {
-        const exportLogEntry = {
-            id: Date.now(),
-            customerName: customerInfo.name,
-            fileName: fileName,
-            timestamp: new Date().toISOString(),
-            dataForExport: dataForExport,
-            worksheetName: 'HoaDon',
-            invoiceType: invoiceType
-        };
+        dailyTransactions.push(transaction);
         exportedInvoicesLog.push(exportLogEntry);
-        localStorage.setItem('exportedInvoicesLog', JSON.stringify(exportedInvoicesLog));
-    } catch (e) {
-        console.warn("Lỗi log hóa đơn:", e);
+        currentCart.forEach(item => {
+            if (dbProductNames.has(productKey(item))) {
+                updateInventory(item, item.quantity);
+                inventoryUpdated = true;
+            }
+        });
+        // Store inventory, transactions and invoice history together in a single write.
+        saveStateToStorage();
+    } catch (error) {
+        productDatabase = previousInventory;
+        dailyTransactions.pop();
+        exportedInvoicesLog.pop();
+        selectedProduct = null;
+        showStatus(`Không thể lưu hóa đơn. Giỏ hàng được giữ nguyên. ${error.message}`, true);
+        return;
     }
 
-    const saveOnly = document.getElementById('save-invoice-only-check').checked;
-    if (!saveOnly) XLSX.writeFile(workbook, fileName);
-
-    let inventoryUpdated = false;
-    currentCart.forEach(item => {
-        if (dbProductNames.has(item.name)) { 
-            updateInventory(item.name, item.quantity);
-            inventoryUpdated = true;
+    clearCart(false);
+    updateSessionStatus();
+    if (!saveOnly) {
+        try {
+            const worksheet = XLSX.utils.aoa_to_sheet(dataForExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'HoaDon');
+            XLSX.writeFile(workbook, fileName);
+        } catch (error) {
+            showStatus('Hóa đơn đã lưu nhưng chưa tải được. Vào “Xem HĐ đã xuất” để tải lại; không tạo lại hóa đơn.', true);
+            return;
         }
-    });
-    
-    let successMessage = '';
+    }
     const actionWord = saveOnly ? 'lưu' : 'xuất';
-    if (inventoryUpdated) successMessage = `Đã ${actionWord} hóa đơn "${fileName}" và cập nhật tồn kho (hàng CSDL).`;
-    else successMessage = `Đã ${actionWord} hóa đơn (ngoài CSDL) "${fileName}". Tồn kho KHÔNG thay đổi.`;
-    
-    showStatus(successMessage, false);
-    clearCart(false); 
-    updateSessionStatus(); 
+    showStatus(inventoryUpdated
+        ? `Đã ${actionWord} hóa đơn "${fileName}" và cập nhật tồn kho (hàng CSDL).`
+        : `Đã ${actionWord} hóa đơn (ngoài CSDL) "${fileName}". Tồn kho KHÔNG thay đổi.`);
 }
 
 function exportDailySalesReport() {
@@ -1240,8 +1201,8 @@ function exportInventory() {
     const dbProductNames = new Set();
     
     productDatabaseOriginal.forEach(originalProduct => {
-        dbProductNames.add(originalProduct.name); 
-        const currentProduct = productDatabase.find(p => p.name === originalProduct.name);
+        dbProductNames.add(productKey(originalProduct));
+        const currentProduct = productDatabase.find(p => productKey(p) === productKey(originalProduct));
         const originalStock = originalProduct.stock;
         const currentStock = currentProduct ? currentProduct.stock : originalStock;
         
@@ -1260,7 +1221,7 @@ function exportInventory() {
     const bypassSales = new Map();
     dailyTransactions.forEach(transaction => {
         transaction.items.forEach(item => {
-            if (!dbProductNames.has(item.name)) { 
+            if (!dbProductNames.has(productKey(item))) {
                 let entry = bypassSales.get(item.name) || { unit: item.unit, totalSold: 0, id: item.id };
                 entry.totalSold += item.quantity;
                 bypassSales.set(item.name, entry);
@@ -1351,7 +1312,7 @@ function showExportedInvoicesModal() {
     } else {
         exportedInvoicesLog.slice().reverse().forEach(logEntry => {
             const row = exportedInvoicesList.insertRow();
-            row.innerHTML = `<td data-label="Khách hàng" class="font-medium">${logEntry.customerName}</td><td data-label="Thời gian">${new Date(logEntry.timestamp).toLocaleString('vi-VN')}</td><td data-label="Tên file" class="text-sm italic">${logEntry.fileName}</td><td data-label="Loại" class="font-medium">${logEntry.invoiceType || 'Trong CSDL'}</td> <td class="cell-action text-center"><button class="btn-primary !py-1.5 !px-3 !text-sm w-full" onclick="reExportInvoice(${logEntry.id})">Tải lại</button></td>`;
+            row.innerHTML = `<td data-label="Khách hàng" class="font-medium">${escapeHtml(logEntry.customerName)}</td><td data-label="Thời gian">${new Date(logEntry.timestamp).toLocaleString('vi-VN')}</td><td data-label="Tên file" class="text-sm italic">${escapeHtml(logEntry.fileName)}</td><td data-label="Loại" class="font-medium">${escapeHtml(logEntry.invoiceType || 'Trong CSDL')}</td> <td class="cell-action text-center"><button class="btn-primary !py-1.5 !px-3 !text-sm w-full" onclick="reExportInvoice(${logEntry.id})">Tải lại</button></td>`;
         });
     }
     exportedInvoicesModal.classList.remove('hidden');
@@ -1433,7 +1394,7 @@ function renderDatabaseViewerList() {
     }
     filteredDB.forEach((product, index) => {
         const row = databaseViewerList.insertRow();
-        row.innerHTML = `<td class="!p-2 text-center">${index + 1}</td><td class="!p-2 font-medium">${product.name}</td><td class="!p-2">${product.unit}</td><td class="!p-2 text-right">${currencyFormatter.format(product.price)}</td><td class="!p-2 text-right font-medium">${product.stock}</td>`;
+        row.innerHTML = `<td data-label="STT" class="!p-2 text-center">${index + 1}</td><td data-label="Tên sản phẩm" class="!p-2 font-medium">${escapeHtml(product.name)}</td><td data-label="ĐVT" class="!p-2">${escapeHtml(product.unit)}</td><td data-label="Đơn giá" class="!p-2 text-right">${currencyFormatter.format(product.price)}</td><td data-label="Tồn kho" class="!p-2 text-right font-medium">${product.stock}</td>`;
     });
 }
 
@@ -1484,7 +1445,7 @@ function handleBackupSession() {
         const exportedInvoicesLog = localStorage.getItem('exportedInvoicesLog');
         if (!inventoryState && !exportedInvoicesLog) return showStatus('Không có dữ liệu phiên để backup.', true);
         const state = inventoryState ? JSON.parse(inventoryState) : null;
-        const logs = exportedInvoicesLog ? JSON.parse(exportedInvoicesLog) : null;
+        const logs = state?.exportedInvoicesLog ?? (exportedInvoicesLog ? JSON.parse(exportedInvoicesLog) : null);
         const backupData = {
             fullSessionData: { 
                 productDatabase: state ? state.current : [],
@@ -1521,7 +1482,8 @@ function handleRestoreSession(event) {
                         current: sessionData.productDatabase,
                         original: sessionData.productDatabaseOriginal || [],
                         transactions: sessionData.dailyTransactions,
-                        devBypass: sessionData.devBypassMode || false
+                        devBypass: sessionData.devBypassMode || false,
+                        exportedInvoicesLog: logData || []
                     }));
                     if (logData) localStorage.setItem('exportedInvoicesLog', JSON.stringify(logData));
                     else localStorage.removeItem('exportedInvoicesLog');

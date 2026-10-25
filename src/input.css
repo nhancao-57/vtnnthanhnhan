@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@source "../index.html";
+@source "../tong-hop.html";
+@source "../main.js";
 
 /* 1. SETUP DARK MODE (Class Strategy) */
 @variant dark (&:where(.dark, .dark *));
@@ -49,7 +52,7 @@
     @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500; 
   }
   .btn-warning { 
-    @apply bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-500; 
+    @apply bg-amber-400 text-amber-950 hover:bg-amber-500 focus:ring-amber-500;
   }
 
   /* --- Inputs --- */
@@ -99,7 +102,7 @@
     @apply bg-emerald-600 text-white transition-all duration-300;
   }
   .status-session-inactive {
-    @apply bg-amber-500 text-white transition-all duration-300;
+    @apply bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 transition-all duration-300;
   }
 
   /* --- Fieldsets --- */
@@ -144,7 +147,7 @@
   /* --- Mobile Table Optimization --- */
   @media (max-width: 767px) {
     .mobile-table-optimise {
-      @apply border-0;
+      @apply border-0 min-w-0;
     }
     .mobile-table-optimise thead {
       @apply hidden;
@@ -172,4 +175,52 @@
       @apply hidden;
     }
   }
+}
+
+/* Shared layout refinements for the sales and reporting workspaces. */
+:root { --app-header-height: 88px; color-scheme: light; }
+:root.dark { color-scheme: dark; }
+body > header { gap: 1rem; }
+body > header > div { min-width: 0; }
+body > header > div:last-child { flex-shrink: 0; }
+button, input, a, label[role="button"] { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid #818cf8; outline-offset: 3px; }
+.card-base { box-shadow: 0 2px 8px rgb(15 23 42 / 4%); }
+.card-base:hover { box-shadow: 0 2px 8px rgb(15 23 42 / 4%); }
+.input-base { min-height: 44px; }
+.input-base:disabled { cursor: not-allowed; }
+#session-status-bar { top: var(--app-header-height); font-size: .875rem; }
+#status-container { position: fixed; top: auto; bottom: 1rem; right: 1rem; width: min(28rem, calc(100vw - 2rem)); z-index: 120; }
+#status-container .status-message { margin: 0; box-shadow: 0 8px 30px rgb(15 23 42 / 15%); border: 1px solid currentColor; }
+#product-search-results:empty { display: none; }
+.search-item { display: block; }
+.search-item:focus-visible { outline-offset: -3px; background: var(--color-indigo-50); }
+.dark .search-item:focus-visible { background: var(--color-slate-700); }
+#file-name-display { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+label[for="file-input"] { border: 1px solid var(--color-indigo-200); }
+input[type="file"]:disabled + label { opacity: .55; cursor: not-allowed; }
+#accumulated-total-display, #cart-total-posttax, td[data-label="Thành tiền"] { font-variant-numeric: tabular-nums; }
+#cart-total-posttax { font-size: clamp(1.5rem, 4vw, 2.25rem); overflow-wrap: anywhere; }
+.input-quantity-cart { width: 5rem; min-height: 40px; padding: .4rem; }
+.btn-quantity-control { min-width: 32px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
+.modal-content { max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; }
+.dialog-open { overflow: hidden; }
+.skip-link { position: fixed; top: .5rem; left: .5rem; transform: translateY(-150%); z-index: 200; background: white; color: #312e81; padding: .75rem 1rem; border-radius: .5rem; }
+.skip-link:focus { transform: translateY(0); }
+@media (max-width: 767px) {
+    body > header { padding: .75rem 1rem; }
+    body > header > div:first-child { gap: .5rem; }
+    body > header > div:first-child > div:first-child { display: none; }
+    body > header h1 { font-size: 1rem; line-height: 1.4; }
+    .card-base { padding: 1.125rem; }
+    .table-base.mobile-table-optimise { min-width: 0; }
+    .mobile-table-optimise tbody { display: block; }
+    .mobile-table-optimise td { overflow-wrap: anywhere; min-height: 44px; }
+    .mobile-table-optimise td[data-label="Số lượng"] > div { justify-content: flex-end; }
+    .mobile-table-optimise td[data-label=""] { text-align: center; }
+    .mobile-table-optimise td[data-label=""]::before { display: none; }
+    #accumulated-total-display { font-size: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
