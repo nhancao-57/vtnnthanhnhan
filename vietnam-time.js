@@ -62,10 +62,13 @@ const VietnamTime = (() => {
         if (label) {
             const status = state === 'syncing' ? 'syncing' : date ? 'verified' : state === 'error' ? 'error' : 'waiting';
             label.dataset.state = status;
-            const message = status === 'syncing' ? 'Đang xác minh giờ Việt Nam qua Internet…'
-                : status === 'verified' ? `Đã xác minh giờ Việt Nam (GMT+7) · ${sample.source}`
-                : status === 'error' ? 'Chưa xác minh được giờ Internet · Chưa thể lưu / xuất hóa đơn mới'
-                : 'Cần xác minh lại giờ Internet trước khi lập hóa đơn';
+            const message = status === 'syncing' ? 'Đang xác minh giờ VN…'
+                : status === 'verified' ? `Giờ VN đã xác minh · ${sample.source}`
+                : status === 'error' ? 'Lỗi giờ Internet · Chưa thể lưu / xuất HĐ mới'
+                : 'Cần xác minh giờ trước khi lập HĐ';
+            label.title = status === 'verified' ? `Đã xác minh giờ Việt Nam (GMT+7) qua ${sample.source}`
+                : status === 'syncing' ? 'Đang xác minh giờ Việt Nam qua Internet'
+                : 'Cần xác minh giờ Internet trước khi lưu hoặc xuất hóa đơn mới';
             if (label.textContent !== message) label.textContent = message;
         }
         if (retry) retry.disabled = state === 'syncing';

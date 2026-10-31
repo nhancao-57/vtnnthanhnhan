@@ -25,7 +25,17 @@ Invoice saves now store inventory, transactions, and invoice history in one `inv
 
 Tests execute the app functions with DOM, storage, file-reader, and SheetJS adapters. They cover spreadsheet positions and output rows, FIFO updates, matching by ID, oversell confirmation, cancelled imports, storage/download failure, reload recovery, report read errors, and cache isolation. They do not replace testing actual customer workbooks or visual browser checks.
 
-The service worker caches only this app's static assets and does not cache external libraries or time APIs. Its existing registration/deployment mechanism is unchanged; the HTML pages do not register a new worker automatically.
+Both pages now register the service worker via `pwa.js` on HTTPS (or localhost). It checks for updates at launch, when the page becomes visible, when connectivity returns, and hourly while visible. Checks are coalesced and failures do not interrupt work. No update forces a reload or activates over an open session.
+
+`npm run build` compiles the stylesheet and generates a content-derived service worker revision from the app assets. Commit the resulting `src/output.css` and `service-worker.js` with source changes. The compiled CSS remains tracked for hosts that serve the repository directly. A push reaches installed apps **only after the host successfully deploys it**; this repository does not include a deployment workflow or identify the live hosting configuration.
+
+The worker revalidates static assets against the network and falls back to cached copies on failure. A new worker waits until all existing app windows/tabs close; reopening then loads the new release. Ordinary refresh also requests current assets, but can leave a replacement worker waiting while other tabs remain open. This follows the [service worker lifecycle](https://web.dev/articles/service-worker-lifecycle). Background update checks do not replace JavaScript already running in an open page. Save the current invoice and export any in-memory report work before manually refreshing.
+
+The host must serve the built files over HTTPS, serve `service-worker.js` with a JavaScript content type, and revalidate HTML, the worker, and unversioned JS/CSS (for example, `Cache-Control: no-cache`). Avoid immutable/long-lived CDN caching for these URLs; purge stale CDN responses when deploying. Publish a complete release together. The manifest's launch URL, scope, and icons resolve relative to the app directory, including subdirectory hosting.
+
+Only this app's static assets are cached; external spreadsheet/chart libraries and time APIs are not. Offline shell loading is therefore **not** a guarantee that imports, exports, charts, or new invoices work offline. Cache cleanup is scoped to the app directory so a second installation on the same origin is not cleared. Older, unscoped `invoice-app-v*` caches are left intact because their owning directory cannot be established safely.
+
+See [the refinement review](REVIEW.md) for findings and verification limits.
 
 ## Internet time and invoice dates
 

@@ -1,0 +1,31 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+
+test('release revision is deterministic, changes with assets, and requires built assets', t => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vtnn-release-'));
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+    fs.mkdirSync(path.join(root, 'scripts'));
+    fs.copyFileSync('scripts/version-assets.cjs', path.join(root, 'scripts/version-assets.cjs'));
+    const workerPath = path.join(root, 'service-worker.js');
+    const assetPath = path.join(root, 'app.css');
+    fs.writeFileSync(workerPath, "const CACHE_VERSION = 'initial';\nconst CACHE_ASSETS = ['./', './app.css'];\n");
+    fs.writeFileSync(assetPath, 'body { color: red; }\n');
+    const build = () => spawnSync(process.execPath, [path.join(root, 'scripts/version-assets.cjs')], { encoding: 'utf8' });
+    assert.equal(build().status, 0);
+    const first = fs.readFileSync(workerPath, 'utf8');
+    assert.equal(build().status, 0);
+    assert.equal(fs.readFileSync(workerPath, 'utf8'), first);
+    fs.writeFileSync(assetPath, 'body { color: red; }\r\n');
+    fs.writeFileSync(workerPath, first.replace(/\n/g, '\r\n'));
+    assert.equal(build().status, 0);
+    assert.equal(fs.readFileSync(workerPath, 'utf8'), first);
+    fs.writeFileSync(assetPath, 'body { color: blue; }\n');
+    assert.equal(build().status, 0);
+    assert.notEqual(fs.readFileSync(workerPath, 'utf8'), first);
+    fs.unlinkSync(assetPath);
+    assert.notEqual(build().status, 0);
+});

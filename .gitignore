@@ -10,7 +10,7 @@ pnpm-debug.log*
 # =====================
 # Tailwind / Build output
 # =====================
-src/output.css
+# Keep compiled CSS available to static hosts that publish this repository directly.
 src/output.css.map
 
 # If you later move compiled CSS elsewhere, ignore that folder instead
