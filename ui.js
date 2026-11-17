@@ -23,6 +23,19 @@ document.addEventListener('DOMContentLoaded', () => {
         button.setAttribute('aria-label', 'Đóng hộp thoại');
     });
 
+    const menuButton = document.getElementById('header-menu-btn');
+    const menuModal = document.getElementById('header-menu-modal');
+    const setMenuOpen = open => {
+        if (!menuModal) return;
+        menuModal.classList.toggle('hidden', !open);
+        menuButton?.setAttribute('aria-expanded', String(open));
+    };
+    menuButton?.addEventListener('click', () => setMenuOpen(true));
+    document.getElementById('modal-close-header-menu')?.addEventListener('click', () => setMenuOpen(false));
+    menuModal?.addEventListener('click', event => {
+        if (event.target === menuModal) setMenuOpen(false);
+    });
+
     let activeModal = null;
     let returnFocus = null;
     const focusable = modal => [...modal.querySelectorAll(

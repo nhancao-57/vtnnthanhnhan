@@ -12,7 +12,6 @@
     <link rel="manifest" href="./manifest.json">
     <script src="./vietnam-time.js"></script>
 
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
@@ -34,54 +33,55 @@
 
     <a class="skip-link" href="#main-content">Đến nội dung chính</a>
     <header class="bg-highlight-500 border-b border-brand-600 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        
+
         <div class="flex items-center gap-4">
-            <div class="header-logo"><img src="./images/logo.png" alt="VTNN Th?nh Nh?n" width="2172" height="724" fetchpriority="high"></div>
+            <div class="header-logo"><img src="./images/logo.png" alt="VTNN Thành Nhân" width="2172" height="724" fetchpriority="high"></div>
             <div>
                 <h1 class="text-lg md:text-2xl font-bold text-white tracking-tight ">
                     Công cụ Quản lý bán hàng
                 </h1>
                 <p class="text-sm text-slate-300 dark:text-slate-400 font-medium hidden sm:block">
-                    Cửa hàng VTNN Thành Nhân (Sử dụng nội bộ)
+                    Sử dụng nội bộ
                 </p>
             </div>
         </div>
 
         <div class="flex items-start gap-3 md:gap-6">
-            
-            <a aria-label="Mở tổng hợp doanh thu" href="./tong-hop.html" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all shadow-sm mt-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                <span class="hidden sm:inline">Tổng hợp</span>
-            </a>
 
-            <div id="session-time-container" class="hidden md:flex flex-col text-right">
+            <div class="header-vn-clock" aria-label="Giờ Việt Nam"><span class="header-vn-label">Giờ VN <span class="hidden sm:inline">(GMT+7)</span></span><span id="header-vietnam-time">--:--:--</span></div>
+            <button id="header-menu-btn" type="button" class="header-menu-button" aria-label="Menu" aria-haspopup="dialog" aria-controls="header-menu-modal" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg><span class="hidden sm:inline">Menu</span></button>
+        </div>
+    </header>
+<div id="header-menu-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="header-menu-title">
+ <div class="modal-content header-menu-content">
+  <div class="flex items-center justify-between gap-4 mb-5"><h2 id="header-menu-title" class="text-xl font-semibold">Menu</h2><button id="modal-close-header-menu" type="button" class="btn-secondary" aria-label="Đóng">Đóng</button></div>
+  <div class="menu-clocks"><div id="session-time-container" class="flex flex-col">
                 <div id="vietnam-clock-label" class="text-xs uppercase tracking-wider font-semibold text-slate-300 dark:text-slate-300">...</div>
                 <div class="text-xl font-bold text-white dark:text-slate-200 tabular-nums leading-none mt-0.5" id="current-time-display">--:--:--</div>
                 <div class="text-xs text-slate-300 dark:text-slate-400 font-medium" id="current-date-display">--/--/----</div>
             </div>
 
-            <div id="local-time-container" class="hidden md:flex flex-col text-right">
+            <div id="local-time-container" class="flex flex-col">
                 <div class="text-xs uppercase tracking-wider font-semibold text-slate-300 dark:text-slate-300">Giờ nơi bạn (Internet)</div>
                 <div class="text-lg font-semibold text-white dark:text-slate-200 tabular-nums leading-none mt-0.5" id="local-time-display">--:--:--</div>
                 <div class="text-xs text-slate-300 dark:text-slate-400 font-medium" id="local-date-display">--/--/----</div>
             </div>
-            
-            <button id="theme-toggle-btn" class="p-2 rounded-lg text-slate-200 hover:bg-white/10 dark:text-slate-400 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-white/50 mt-1 transition-colors" aria-label="Đổi giao diện sáng / tối">
+
+            </div>
+  <div class="time-status-bar">
+            <span id="time-sync-status" role="status" aria-live="polite" data-state="waiting">Đang xác minh giờ VN…</span>
+            <button id="time-sync-retry" type="button" class="time-sync-button">Đồng bộ lại</button>
+        </div>
+  <div class="menu-theme-row"><span>Giao diện sáng / tối</span><button id="theme-toggle-btn" class="menu-theme-button p-2 rounded-lg text-slate-200 hover:bg-white/10 dark:text-slate-400 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-white/50 mt-1 transition-colors" aria-label="Đổi giao diện sáng / tối">
                 <svg id="theme-icon-sun" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 <svg id="theme-icon-moon" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
-            </button>
-        </div>
-        <div class="time-status-bar">
-            <span id="time-sync-status" role="status" aria-live="polite" data-state="waiting">Đang xác minh giờ VN…</span>
-            <button id="time-sync-retry" type="button" class="time-sync-button">Đồng bộ lại</button>
-        </div>
-    </header>
+            </button></div>
+ </div>
+</div>
 
     <div id="session-status-bar" class="text-center py-2 px-3 font-semibold text-sm shadow-sm status-session-inactive sticky top-[73px] z-40 bg-opacity-95" role="status">
         Đang tải...
@@ -224,7 +224,7 @@
                             <label for="customer-name" class="font-semibold text-gray-700 dark:text-slate-300 block text-sm">
                                 Tên khách hàng <span class="text-red-500">*</span>
                             </label>
-                            
+
                             <label class="inline-flex items-center cursor-pointer group">
                                 <input type="checkbox" id="retail-customer-check" 
                                     class="rounded border-gray-300 text-brand-600 shadow-sm focus:border-brand-300 focus:ring focus:ring-brand-200 focus:ring-opacity-50 transition-colors">
@@ -325,6 +325,12 @@
     </main>
 
     <footer class="bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 py-8 px-4 text-center text-sm text-gray-500 dark:text-slate-400 mt-12">
+        <nav class="mb-5" aria-label="Công cụ"><a aria-label="Mở tổng hợp doanh thu" href="./tong-hop.html" target="_blank" rel="noopener noreferrer" class="btn-secondary inline-flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span class="">Tổng hợp</span>
+            </a></nav>
         <p>
             © 2026 <span class="font-bold text-gray-700 dark:text-slate-300">Cửa hàng VTNN Thành Nhân</span>
         </p>
@@ -372,7 +378,7 @@
                 Bạn có thể tải xuống các báo cáo riêng lẻ bên dưới. <br>
                 <span class="text-red-600 dark:text-red-400 font-bold">Lưu ý:</span> Nhấn "Kết thúc" sẽ xóa tất cả dữ liệu của phiên này.
             </p>
-            
+
             <div class="space-y-4 mb-6">
                 <button id="end-session-download-sales" class="btn-secondary w-full !py-3 font-medium border-brand-200 hover:border-brand-400 text-brand-700 dark:text-brand-300">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -423,7 +429,7 @@
                         Cho phép nhập sản phẩm thủ công (tên, giá) vào giỏ hàng mà không cần load file Excel.
                     </p>
                 </div>
-                
+
                 <div class="bg-gray-50 dark:bg-slate-700/30 p-4 rounded-lg border border-gray-100 dark:border-slate-700">
                     <h4 class="font-bold text-gray-800 dark:text-slate-300 mb-3 text-sm uppercase tracking-wide">Xuất Template (Trống)</h4>
                     <div class="flex flex-wrap gap-2">
@@ -432,14 +438,14 @@
                         <button id="export-empty-inventory-btn" class="btn-secondary !py-2 !px-3 flex-1 text-sm">BC Tồn Kho</button>
                     </div>
                 </div>
-                
+
                 <div class="bg-brand-50 dark:bg-brand-900/20 p-4 rounded-lg border border-brand-100 dark:border-brand-900/40">
                     <h4 class="font-bold text-brand-800 dark:text-brand-300 mb-3 text-sm uppercase tracking-wide">Backup & Restore Phiên</h4>
                     <div class="flex flex-wrap gap-2">
                         <button id="backup-session-btn" class="btn-primary !py-2 !px-4 flex-1 text-sm">
                             Xuất Backup (.json)
                         </button>
-                        
+
                         <input type="file" id="restore-file-input" class="hidden" accept=".json">
                         <label for="restore-file-input" class="btn-danger !py-2 !px-4 flex-1 cursor-pointer text-center text-sm">
                             Nhập Restore (.json)
@@ -514,7 +520,7 @@
     <div id="database-viewer-modal" class="modal-overlay hidden" aria-labelledby="db-modal-title" role="dialog" aria-modal="true">
     <div id="modal-overlay-bg-db" class="fixed inset-0 bg-black/50 "></div>
     <div class="modal-content relative !max-w-4xl shadow-2xl h-[80vh] flex flex-col">
-        
+
         <div class="flex justify-between items-center mb-4 shrink-0 border-b border-gray-100 dark:border-slate-700 pb-3">
             <h3 id="db-modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
                 Tra cứu Cơ sở dữ liệu
@@ -571,6 +577,5 @@
     <script src="./pwa.js"></script>
 
 </body>
-
 
 </html>

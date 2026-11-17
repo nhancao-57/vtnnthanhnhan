@@ -18,7 +18,7 @@
 <header class="bg-highlight-500 border-b border-brand-600 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-50 transition-colors duration-300">
     
     <div class="flex items-center gap-4">
-        <div class="header-logo"><img src="./images/logo.png" alt="VTNN Th?nh Nh?n" width="2172" height="724" fetchpriority="high"></div>
+        <div class="header-logo"><img src="./images/logo.png" alt="VTNN Thành Nhân" width="2172" height="724" fetchpriority="high"></div>
         <div>
             <h1 class="text-lg md:text-2xl font-bold text-white tracking-tight ">
                 Công cụ Tổng hợp Doanh thu
@@ -47,26 +47,34 @@
             </a>
         </div>
 
-        <div id="session-time-container" class="hidden md:flex flex-col text-right">
+        <div class="header-vn-clock" aria-label="Giờ Việt Nam"><span class="header-vn-label">VN <span class="hidden sm:inline">(GMT+7)</span></span><span id="header-vietnam-time">--:--:--</span></div>
+            <button id="header-menu-btn" type="button" class="header-menu-button" aria-label="Menu" aria-haspopup="dialog" aria-controls="header-menu-modal" aria-expanded="false"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg><span class="hidden sm:inline">Menu</span></button>
+        </div>
+    </header>
+<div id="header-menu-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="header-menu-title">
+ <div class="modal-content header-menu-content">
+  <div class="flex items-center justify-between gap-4 mb-5"><h2 id="header-menu-title" class="text-xl font-semibold">Menu</h2><button id="modal-close-header-menu" type="button" class="btn-secondary" aria-label="Đóng">Đóng</button></div>
+  <div class="menu-clocks"><div id="session-time-container" class="flex flex-col">
             <div id="vietnam-clock-label" class="text-xs uppercase tracking-wider font-semibold text-slate-300 dark:text-slate-300">Thời gian</div>
             <div class="text-xl font-bold text-white dark:text-white tabular-nums leading-none mt-0.5" id="current-time-display">--:--:--</div>
             <div class="text-xs text-slate-300 dark:text-slate-300 font-medium" id="current-date-display">--/--/----</div>
         </div>
         
-        <button id="theme-toggle-btn" class="p-2 rounded-lg text-slate-200 hover:bg-white/10 dark:text-slate-300 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-white/50 mt-1 transition-colors" aria-label="Đổi giao diện sáng / tối">
+        </div>
+  <div class="time-status-bar">
+        <span id="time-sync-status" role="status" aria-live="polite" data-state="waiting">Đang xác minh giờ VN…</span>
+        <button id="time-sync-retry" type="button" class="time-sync-button">Đồng bộ lại</button>
+    </div>
+  <div class="menu-theme-row"><span>Giao diện sáng / tối</span><button id="theme-toggle-btn" class="menu-theme-button p-2 rounded-lg text-slate-200 hover:bg-white/10 dark:text-slate-300 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-white/50 mt-1 transition-colors" aria-label="Đổi giao diện sáng / tối">
             <svg id="theme-icon-sun" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
             <svg id="theme-icon-moon" class="h-6 w-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
-        </button>
-    </div>
-    <div class="time-status-bar">
-        <span id="time-sync-status" role="status" aria-live="polite" data-state="waiting">Đang xác minh giờ VN…</span>
-        <button id="time-sync-retry" type="button" class="time-sync-button">Đồng bộ lại</button>
-    </div>
-</header>
+        </button></div>
+ </div>
+</div>
 
     <main id="main-content" tabindex="-1" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">

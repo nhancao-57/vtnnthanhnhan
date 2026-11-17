@@ -65,6 +65,7 @@ test('Vietnam midnight rolls over using elapsed time, independently of device da
     h.run('VietnamTime.render()');
     assert.equal(h.el('invoice-date').value, '2026-10-26');
     assert.equal(h.el('current-time-display').textContent, '00:00:01');
+    assert.equal(h.el('header-vietnam-time').textContent, '00:00:01');
     h.el('invoice-date').value = '1999-01-01';
     h.run('VietnamTime.render()');
     assert.equal(h.el('invoice-date').value, '2026-10-26');
@@ -105,6 +106,7 @@ test('failed fresh verification clears previously verified date instead of using
     assert.equal(h.run('VietnamTime.now()'), null);
     assert.equal(h.el('invoice-date').value, '');
     assert.equal(h.el('current-time-display').textContent, '--:--:--');
+    assert.equal(h.el('header-vietnam-time').textContent, '--:--:--');
     assert.equal(h.el('time-sync-status').dataset.state, 'error');
     assert.equal(h.el('time-sync-retry').disabled, false);
 });

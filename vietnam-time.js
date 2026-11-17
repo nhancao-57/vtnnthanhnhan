@@ -75,6 +75,7 @@ const VietnamTime = (() => {
         const setText = (id, text) => { const element = document.getElementById(id); if (element) element.textContent = text; };
         setText('vietnam-clock-label', 'Giờ Việt Nam (GMT+7)');
         setText('current-time-display', date ? clockFormatter.format(date) : '--:--:--');
+        setText('header-vietnam-time', date ? clockFormatter.format(date) : '--:--:--');
         setText('current-date-display', date ? date.toLocaleDateString('vi-VN', { timeZone: ZONE }) : '--/--/----');
         // The optional local display uses the same internet instant, in the user's timezone.
         setText('local-time-display', date ? date.toLocaleTimeString('vi-VN', { hour12: false }) : '--:--:--');
