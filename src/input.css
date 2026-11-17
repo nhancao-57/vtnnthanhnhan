@@ -201,7 +201,7 @@ body > header h1 + p { font-size: .75rem; }
 body > header > div:nth-child(2) { grid-column: 2; grid-row: 1 / span 2; align-items: center; gap: .875rem; }
 body > header > div:nth-child(2) > a, body > header > div:nth-child(2) > button { margin-top: 0; }
 #session-time-container, #local-time-container { font-variant-numeric: tabular-nums; }
-#vietnam-clock-label, #local-time-container > div:first-child { font-size: .625rem; letter-spacing: .025em; }
+#vietnam-clock-label, #local-time-container > div:first-child { font-size: .875rem; font-weight: 400; letter-spacing: normal; text-transform: none; }
 #current-time-display { font-size: 1.125rem; }
 #local-time-display { font-size: 1rem; }
 button, input, a, label[role="button"] { -webkit-tap-highlight-color: transparent; }
@@ -371,4 +371,10 @@ body > header h1 { overflow-wrap: anywhere; }
   body > header .header-logo { width: 6rem; }
   body > header h1 { font-size: 1rem; }
   body > header .header-menu-button { padding: .5rem .75rem; }
+}
+
+/* Quiet, readable labels for the cart on desktop and mobile. */
+#cart-table th { font-size: .875rem; font-weight: 500; letter-spacing: normal; text-transform: none; }
+@media (max-width: 767px) {
+  #cart-table td::before { font-weight: 400; letter-spacing: normal; text-transform: none; }
 }
