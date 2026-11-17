@@ -41,37 +41,37 @@
 @layer components {
 
   /* --- Buttons --- */
-  
+
   /* FIXED: Apply shared styles to ALL buttons here using commas */
-  .btn-base, 
-  .btn-primary, 
-  .btn-secondary, 
-  .btn-success, 
-  .btn-danger, 
+  .btn-base,
+  .btn-primary,
+  .btn-secondary,
+  .btn-success,
+  .btn-danger,
   .btn-warning {
-    @apply py-2.5 px-5 rounded-lg cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900;
+    @apply py-2.5 px-5 rounded-lg cursor-pointer text-sm font-medium transition-colors duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900;
   }
 
   /* Specific Colors (Notice: I removed "btn-base" from these @apply lines) */
-  .btn-primary { 
+  .btn-primary {
     @apply bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500;
   }
-  .btn-secondary { 
+  .btn-secondary {
     @apply bg-highlight-50 text-brand-700 hover:bg-highlight-100 focus:ring-brand-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600;
   }
-  .btn-success { 
-    @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500; 
+  .btn-success {
+    @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500;
   }
-  .btn-danger { 
-    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500; 
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
   }
-  .btn-warning { 
+  .btn-warning {
     @apply bg-highlight-500 text-slate-900 hover:bg-highlight-600 focus:ring-highlight-600;
   }
 
   /* --- Inputs --- */
   .input-base {
-    @apply w-full p-3 border border-slate-300 rounded-lg box-border transition duration-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:ring-brand-500 dark:focus:border-brand-500;
+    @apply w-full p-3 border border-slate-300 rounded-lg box-border transition duration-150 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:ring-brand-500 dark:focus:border-brand-500;
   }
   .input-selected {
     @apply bg-brand-50 border-brand-300 dark:bg-brand-900/50 dark:border-brand-700;
@@ -113,10 +113,10 @@
 
   /* --- Session Status --- */
   .status-session-active {
-    @apply bg-emerald-600 text-white transition-all duration-300;
+    @apply bg-emerald-600 text-white transition-colors duration-150;
   }
   .status-session-inactive {
-    @apply bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 transition-all duration-300;
+    @apply bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 transition-colors duration-150;
   }
 
   /* --- Fieldsets --- */
@@ -146,19 +146,15 @@
 
   /* --- Modals --- */
   .modal-overlay {
-    @apply fixed inset-0 bg-black/60 dark:bg-black/70 z-[99] flex items-center justify-center p-4 transition-opacity duration-200;
+    @apply fixed inset-0 bg-black/60 dark:bg-black/70 z-[99] flex items-center justify-center p-4 transition-opacity duration-150;
   }
   .modal-content {
-    @apply bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-lg transform scale-100 transition-transform duration-200 dark:border dark:border-slate-700;
+    @apply bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 w-full max-w-lg  dark:border dark:border-slate-700;
   }
   .modal-overlay.hidden {
     @apply opacity-0 pointer-events-none;
   }
-  .modal-overlay.hidden .modal-content {
-    @apply scale-95;
-  }
-
-  /* --- Mobile Table Optimization --- */
+/* --- Mobile Table Optimization --- */
   @media (max-width: 767px) {
     .mobile-table-optimise {
       @apply border-0 min-w-0;
@@ -359,3 +355,20 @@ body > header .header-menu-button { display: inline-flex; align-items: center; j
 .header-vn-label { font-size: .625rem; font-weight: 600; }
 #header-vietnam-time { font-size: .9375rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 @media (max-width: 380px) { #header-vietnam-time { font-size: .8125rem; } }
+
+/* Functional surfaces and immediate feedback across both workspaces. */
+.card-base, .card-base:hover { box-shadow: none; }
+.modal-content { box-shadow: 0 8px 24px rgb(0 0 0 / 16%); border: 1px solid var(--color-slate-200); border-radius: .5rem; }
+.dark .modal-content { border-color: var(--color-slate-700); }
+#status-container .status-message { box-shadow: 0 2px 8px rgb(0 0 0 / 12%); }
+button, a, input, select { touch-action: manipulation; }
+body > header h1 { overflow-wrap: anywhere; }
+.menu-clocks { grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr)); }
+@media (max-width: 639px) {
+  body > header { grid-template-columns: minmax(0, 1fr); row-gap: .5rem; }
+  body > header > div:first-child { grid-column: 1; grid-row: 1; }
+  body > header > div:nth-child(2) { grid-column: 1; grid-row: 2; justify-content: flex-end; flex-wrap: wrap; }
+  body > header .header-logo { width: 6rem; }
+  body > header h1 { font-size: 1rem; }
+  body > header .header-menu-button { padding: .5rem .75rem; }
+}

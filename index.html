@@ -24,12 +24,11 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; }
-        /* Smooth scrolling */
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: auto; }
     </style>
 </head>
 
-<body class="bg-slate-50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-200 leading-relaxed transition-colors duration-200 selection:bg-highlight-500 selection:text-slate-900">
+<body class="bg-slate-50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-200 leading-relaxed transition-colors duration-150 selection:bg-highlight-500 selection:text-slate-900">
 
     <a class="skip-link" href="#main-content">Đến nội dung chính</a>
     <header class="bg-highlight-500 border-b border-brand-600 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-50">
@@ -96,10 +95,10 @@
 
         <div id="status-container" class="sticky top-[125px] z-30 pointer-events-none"></div>
 
-        <div id="accumulated-total-card" class="card-base mb-8 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 border-l-4 border-highlight-500 shadow-sm transition-shadow duration-300">
+        <div id="accumulated-total-card" class="card-base mb-8 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 border-l-4 border-highlight-500 shadow-sm transition-shadow duration-150">
             <div class="mb-2 sm:mb-0">
                 <p class="text-sm font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-wide">Doanh Thu Phiên Hiện Tại</p>
-                <h3 id="accumulated-total-display" class="text-4xl font-extrabold text-gray-900 dark:text-white mt-1">
+                <h3 id="accumulated-total-display" class="text-4xl font-bold text-gray-900 dark:text-white mt-1">
                     0 VNĐ
                 </h3>
             </div>
@@ -120,11 +119,11 @@
             </div>
 
             <p class="card-desc mb-6 text-gray-600 dark:text-slate-400">
-                Bắt đầu bằng cách tải <strong class="text-gray-900 dark:text-white">Cơ sở dữ liệu (CSDL)</strong>.  
+                Bắt đầu bằng cách tải <strong class="text-gray-900 dark:text-white">Cơ sở dữ liệu (CSDL)</strong>.
                 Hãy tải các báo cáo cần lưu trước khi kết thúc phiên. Kết thúc phiên sẽ <span class="text-red-600 dark:text-red-400 font-bold bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded">xóa dữ liệu</span>.
             </p>
 
-            <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
                 <input type="file" id="file-input" accept=".xlsm" class="hidden">
                 <label for="file-input" class="btn-secondary !py-2.5 !px-5 shrink-0 cursor-pointer text-center font-medium hover:text-brand-600 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
@@ -159,7 +158,7 @@
             </div>
         </div>
 
-        <fieldset id="main-app-controls" disabled class="transition-opacity duration-300 disabled:opacity-60">
+        <fieldset id="main-app-controls" disabled class="transition-opacity duration-150 disabled:opacity-60">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 <div class="card-base shadow-sm h-full">
@@ -205,7 +204,7 @@
                             <input type="number" id="product-quantity" placeholder="Nhập số lượng" min="0" class="input-base" />
                         </div>
 
-                        <button type="submit" class="btn-success w-full !py-3 font-bold shadow-sm transition-all transform active:scale-95">
+                        <button type="submit" class="btn-success w-full !py-3 font-bold shadow-sm transition-colors transform ">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                             Thêm vào giỏ hàng
                         </button>
@@ -226,7 +225,7 @@
                             </label>
 
                             <label class="inline-flex items-center cursor-pointer group">
-                                <input type="checkbox" id="retail-customer-check" 
+                                <input type="checkbox" id="retail-customer-check"
                                     class="rounded border-gray-300 text-brand-600 shadow-sm focus:border-brand-300 focus:ring focus:ring-brand-200 focus:ring-opacity-50 transition-colors">
                                 <span class="ml-2 text-xs font-medium text-gray-500 group-hover:text-brand-600 dark:text-slate-400 dark:group-hover:text-brand-400 transition-colors">
                                     Khách lẻ
@@ -302,7 +301,7 @@
 
                 <div id="cart-total-container" class="flex flex-col items-end mt-6 space-y-2 p-4 bg-gray-50 dark:bg-slate-900/50 rounded-lg border border-gray-100 dark:border-slate-700">
                     <div class="text-sm text-gray-500 dark:text-slate-400 font-medium uppercase tracking-wide">Tổng tiền thanh toán</div>
-                    <div id="cart-total-posttax" class="text-4xl font-extrabold text-red-600 dark:text-red-500 tracking-tight">
+                    <div id="cart-total-posttax" class="text-4xl font-bold text-red-600 dark:text-red-500 tracking-tight">
                         0 VNĐ
                     </div>
                 </div>
@@ -346,7 +345,7 @@
 
     <div id="info-modal" class="modal-overlay hidden" aria-labelledby="info-modal-title" role="dialog" aria-modal="true">
         <div id="modal-overlay-bg-info" class="fixed inset-0 bg-black/50 transition-opacity"></div>
-        <div class="modal-content relative shadow-2xl">
+        <div class="modal-content relative shadow-lg">
             <div class="flex justify-between items-center mb-4 border-b border-gray-100 dark:border-slate-700 pb-3">
                 <h3 id="info-modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
                     Thông tin công cụ
@@ -370,7 +369,7 @@
 
     <div id="end-session-modal" class="modal-overlay hidden" aria-labelledby="end-session-modal-title" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-black/60 transition-opacity"></div>
-        <div class="modal-content relative shadow-2xl border-t-4 border-red-500">
+        <div class="modal-content relative shadow-lg border-t-4 border-red-500">
             <h3 id="end-session-modal-title" class="text-xl font-bold text-gray-900 dark:text-white mb-3">
                 Kết thúc phiên làm việc
             </h3>
@@ -405,7 +404,7 @@
 
     <div id="advanced-modal" class="modal-overlay hidden" aria-labelledby="advanced-modal-title" role="dialog" aria-modal="true">
         <div id="modal-overlay-bg-adv" class="fixed inset-0 bg-black/50 "></div>
-        <div class="modal-content relative shadow-2xl !max-w-2xl">
+        <div class="modal-content relative shadow-lg !max-w-2xl">
             <div class="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-slate-700 pb-3">
                 <h3 id="advanced-modal-title" class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -461,7 +460,7 @@
 
     <div id="confirm-modal" class="modal-overlay hidden" aria-labelledby="confirm-modal-title" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-black/60 "></div>
-        <div class="modal-content relative shadow-2xl">
+        <div class="modal-content relative shadow-lg">
             <h3 id="confirm-modal-title" class="text-xl font-bold text-gray-900 dark:text-white mb-3">
                 Xác nhận hành động
             </h3>
@@ -481,7 +480,7 @@
 
     <div id="exported-invoices-modal" class="modal-overlay hidden" aria-labelledby="exported-invoices-modal-title" role="dialog" aria-modal="true">
         <div id="modal-overlay-bg-exports" class="fixed inset-0 bg-black/50 "></div>
-        <div class="modal-content relative !max-w-4xl shadow-2xl h-[80vh] flex flex-col"> 
+        <div class="modal-content relative !max-w-4xl shadow-lg h-[80vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 shrink-0">
                 <h3 id="exported-invoices-modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
                     Hóa đơn đã xuất (Phiên này)
@@ -505,7 +504,7 @@
                                 <th>Tên khách hàng</th>
                                 <th>Thời gian xuất</th>
                                 <th>Tên file</th>
-                                <th>Loại</th> 
+                                <th>Loại</th>
                                 <th class="text-center">Tải lại</th>
                             </tr>
                         </thead>
@@ -519,7 +518,7 @@
 
     <div id="database-viewer-modal" class="modal-overlay hidden" aria-labelledby="db-modal-title" role="dialog" aria-modal="true">
     <div id="modal-overlay-bg-db" class="fixed inset-0 bg-black/50 "></div>
-    <div class="modal-content relative !max-w-4xl shadow-2xl h-[80vh] flex flex-col">
+    <div class="modal-content relative !max-w-4xl shadow-lg h-[80vh] flex flex-col">
 
         <div class="flex justify-between items-center mb-4 shrink-0 border-b border-gray-100 dark:border-slate-700 pb-3">
             <h3 id="db-modal-title" class="text-xl font-bold text-gray-900 dark:text-white">
