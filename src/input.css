@@ -16,10 +16,24 @@
   --color-slate-900: #0f172a;
   --color-slate-950: #020617;
 
-  /* Brand */
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
+  /* Store brand: red for actions, yellow for highlights. */
+  --color-brand-50: #fcf3f3;
+  --color-brand-100: #f7e3e3;
+  --color-brand-200: #ecc4c5;
+  --color-brand-300: #dca0a1;
+  --color-brand-400: #e9a8a9;
+  --color-brand-500: #b73335;
+  --color-brand-600: #9E1E20;
+  --color-brand-700: #81181a;
+  --color-brand-800: #681416;
+  --color-brand-900: #471012;
+  --color-brand-950: #2b0b0c;
+  --color-highlight-50: #fffbed;
+  --color-highlight-100: #fff3bf;
+  --color-highlight-300: #fbe17a;
+  --color-highlight-500: #F8CD22;
+  --color-highlight-600: #dfb30c;
+  --color-highlight-900: #604900;
 }
 
 
@@ -35,15 +49,15 @@
   .btn-success, 
   .btn-danger, 
   .btn-warning {
-    @apply py-2.5 px-5 rounded-lg cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900;
+    @apply py-2.5 px-5 rounded-lg cursor-pointer text-sm font-medium transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900;
   }
 
   /* Specific Colors (Notice: I removed "btn-base" from these @apply lines) */
   .btn-primary { 
-    @apply bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500; 
+    @apply bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500;
   }
   .btn-secondary { 
-    @apply bg-indigo-50 text-indigo-700 hover:bg-indigo-100 focus:ring-indigo-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600;
+    @apply bg-highlight-50 text-brand-700 hover:bg-highlight-100 focus:ring-brand-500 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600;
   }
   .btn-success { 
     @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500; 
@@ -52,26 +66,26 @@
     @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500; 
   }
   .btn-warning { 
-    @apply bg-amber-400 text-amber-950 hover:bg-amber-500 focus:ring-amber-500;
+    @apply bg-highlight-500 text-slate-900 hover:bg-highlight-600 focus:ring-highlight-600;
   }
 
   /* --- Inputs --- */
   .input-base {
-    @apply w-full p-3 border border-slate-300 rounded-lg box-border transition duration-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:ring-indigo-500 dark:focus:border-indigo-500;
+    @apply w-full p-3 border border-slate-300 rounded-lg box-border transition duration-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-500 dark:focus:ring-brand-500 dark:focus:border-brand-500;
   }
   .input-selected {
-    @apply bg-indigo-50 border-indigo-300 dark:bg-indigo-900/50 dark:border-indigo-700;
+    @apply bg-brand-50 border-brand-300 dark:bg-brand-900/50 dark:border-brand-700;
   }
   .input-quantity-cart {
-    @apply w-12 text-center p-1 border border-slate-300 rounded-md box-border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 focus:ring-indigo-500;
+    @apply w-12 text-center p-1 border border-slate-300 rounded-md box-border dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 focus:ring-brand-500;
   }
   .btn-quantity-control {
-    @apply p-1 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors dark:bg-indigo-700 dark:text-indigo-100 dark:hover:bg-indigo-600;
+    @apply p-1 bg-brand-100 text-brand-700 rounded-md hover:bg-brand-200 transition-colors dark:bg-brand-700 dark:text-brand-100 dark:hover:bg-brand-600;
   }
 
   /* --- JS Helpers --- */
   .search-item {
-    @apply p-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-slate-700;
+    @apply p-3 cursor-pointer hover:bg-brand-50 dark:hover:bg-slate-700;
   }
   .search-item small {
     @apply text-slate-500 ml-2 dark:text-slate-400;
@@ -115,13 +129,13 @@
 
   /* --- Cards --- */
   .card-base {
-    @apply bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border border-gray-200 dark:bg-slate-800 dark:border-slate-700;
+    @apply bg-white rounded-lg shadow-sm p-6 border border-gray-200 dark:bg-slate-800 dark:border-slate-700;
   }
   .card-title {
     @apply text-2xl font-semibold text-gray-900 flex items-center gap-2 mb-4 dark:text-white;
   }
   .card-title-bar {
-    @apply inline-block w-1.5 h-6 bg-indigo-500 rounded;
+    @apply inline-block w-1.5 h-6 bg-highlight-500 rounded;
   }
   .card-desc {
     @apply mb-5 text-gray-600 leading-relaxed dark:text-slate-400;
@@ -183,7 +197,8 @@
 body > header { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1rem; row-gap: .25rem; padding-block: .625rem; }
 body > header > div { min-width: 0; }
 body > header > div:first-child { grid-column: 1; grid-row: 1; gap: .75rem; }
-body > header > div:first-child > div:first-child { padding: .5rem; border-radius: .625rem; }
+body > header .header-logo { flex-shrink: 0; width: 10rem; }
+.header-logo img { display: block; width: 100%; height: auto; }
 body > header > div:first-child > div:last-child { min-width: 0; }
 body > header h1 { font-size: clamp(1rem, 1.6vw, 1.25rem); line-height: 1.35; }
 body > header h1 + p { font-size: .75rem; }
@@ -194,11 +209,11 @@ body > header > div:nth-child(2) > a, body > header > div:nth-child(2) > button 
 #current-time-display { font-size: 1.125rem; }
 #local-time-display { font-size: 1rem; }
 button, input, a, label[role="button"] { -webkit-tap-highlight-color: transparent; }
-:focus-visible { outline: 3px solid #818cf8; outline-offset: 3px; }
+:focus-visible { outline: 3px solid #9E1E20; outline-offset: 3px; }
 .card-base { box-shadow: 0 2px 8px rgb(15 23 42 / 4%); }
 .card-base:hover { box-shadow: 0 2px 8px rgb(15 23 42 / 4%); }
 .btn-base, .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-warning { min-height: 44px; transition-property: background-color, border-color, box-shadow, color; }
-.btn-base:hover, .btn-primary:hover, .btn-secondary:hover, .btn-success:hover, .btn-danger:hover, .btn-warning:hover { translate: none; box-shadow: 0 2px 6px rgb(15 23 42 / 10%); }
+.btn-base:hover, .btn-primary:hover, .btn-secondary:hover, .btn-success:hover, .btn-danger:hover, .btn-warning:hover { translate: none; box-shadow: none; }
 .input-base { min-height: 44px; }
 .input-base:disabled { cursor: not-allowed; }
 main .grid > *, fieldset { min-width: 0; }
@@ -207,10 +222,10 @@ main .grid > *, fieldset { min-width: 0; }
 #status-container .status-message { margin: 0; box-shadow: 0 8px 30px rgb(15 23 42 / 15%); border: 1px solid currentColor; }
 #product-search-results:empty { display: none; }
 .search-item { display: block; }
-.search-item:focus-visible { outline-offset: -3px; background: var(--color-indigo-50); }
+.search-item:focus-visible { outline-offset: -3px; background: var(--color-brand-50); }
 .dark .search-item:focus-visible { background: var(--color-slate-700); }
 #file-name-display { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
-label[for="file-input"] { border: 1px solid var(--color-indigo-200); }
+label[for="file-input"] { border: 1px solid var(--color-brand-200); }
 input[type="file"]:disabled + label { opacity: .55; cursor: not-allowed; }
 #accumulated-total-display, #cart-total-posttax, td[data-label="Thành tiền"] { font-variant-numeric: tabular-nums; }
 #cart-total-posttax { font-size: clamp(1.5rem, 4vw, 2.25rem); overflow-wrap: anywhere; }
@@ -218,7 +233,7 @@ input[type="file"]:disabled + label { opacity: .55; cursor: not-allowed; }
 .btn-quantity-control { min-width: 32px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
 .modal-content { max-height: calc(100dvh - 2rem); overflow-y: auto; overscroll-behavior: contain; }
 .dialog-open { overflow: hidden; }
-.time-status-bar { grid-column: 1; grid-row: 2; display: flex; align-items: center; gap: .5rem; font-size: .6875rem; line-height: 1.4; color: #e0e7ff; }
+.time-status-bar { grid-column: 1; grid-row: 2; display: flex; align-items: center; gap: .5rem; font-size: .6875rem; line-height: 1.4; color: #fff3bf; }
 #time-sync-status { display: flex; align-items: center; gap: .375rem; min-width: 0; overflow-wrap: anywhere; }
 #time-sync-status::before { content: ''; width: .5rem; height: .5rem; flex-shrink: 0; border-radius: 50%; background: #fcd34d; }
 #time-sync-status[data-state="verified"]::before { background: #6ee7b7; }
@@ -229,12 +244,12 @@ input[type="file"]:disabled + label { opacity: .55; cursor: not-allowed; }
 #invoice-date[readonly] { cursor: default; background-color: var(--color-slate-50); }
 .dark #invoice-date[readonly] { background-color: var(--color-slate-900); }
 #export-invoice-btn[aria-busy="true"] { cursor: wait; }
-.skip-link { position: fixed; top: .5rem; left: .5rem; transform: translateY(-150%); z-index: 200; background: white; color: #312e81; padding: .75rem 1rem; border-radius: .5rem; }
+.skip-link { position: fixed; top: .5rem; left: .5rem; transform: translateY(-150%); z-index: 200; background: white; color: #9E1E20; padding: .75rem 1rem; border-radius: .5rem; }
 .skip-link:focus { transform: translateY(0); }
 @media (max-width: 767px) {
     body > header { padding: .5rem 1rem; column-gap: .5rem; }
     body > header > div:first-child { gap: .5rem; }
-    body > header > div:first-child > div:first-child { display: none; }
+    body > header .header-logo { width: 6rem; }
     body > header h1 { font-size: .9375rem; line-height: 1.35; }
     body > header > div:nth-child(2) { grid-row: 1; gap: .375rem; }
     body > header > div:nth-child(2) > div { margin-top: 0; }
@@ -266,4 +281,55 @@ input[type="file"]:disabled + label { opacity: .55; cursor: not-allowed; }
 @media (pointer: coarse) { .time-sync-button { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+
+/* Yellow masthead with red typography and a restrained red rule. */
+body > header { border-bottom: 3px solid var(--color-brand-600); color: var(--color-brand-900); }
+body > header h1,
+body > header #current-time-display,
+body > header #local-time-display { color: var(--color-brand-600); }
+
+body > header h1 + p,
+body > header #vietnam-clock-label,
+body > header #current-date-display,
+body > header #local-date-display,
+body > header #local-time-container > div:first-child,
+body > header .time-status-bar { color: var(--color-brand-900); }
+body > header a,
+body > header button {
+  color: var(--color-brand-600);
+  background: transparent;
+  border-color: rgb(158 30 32 / 30%);
+  --tw-ring-color: var(--color-brand-600);
+}
+body > header a:hover,
+body > header button:hover { background: rgb(158 30 32 / 8%); }
+body > header #time-sync-status::before { background: #785c00; }
+body > header #time-sync-status[data-state="verified"]::before { background: #166534; }
+body > header #time-sync-status[data-state="error"]::before { background: var(--color-brand-600); }
+.dark :focus-visible { outline-color: var(--color-highlight-500); }
+body > header :focus-visible { outline-color: var(--color-brand-600); }
+::selection { background: var(--color-highlight-500); color: #2b0b0c; }
+
+/* Keep header controls readable on yellow in both themes. */
+body > header a { background: rgb(255 255 255 / 25%); box-shadow: none; }
+body > header .time-sync-button {
+  background: var(--color-brand-600);
+  color: white;
+  border: 1px solid var(--color-brand-600);
+  font-weight: 600;
+  padding-inline: .75rem;
+}
+body > header .time-sync-button:hover:not(:disabled) { background: var(--color-brand-700); border-color: var(--color-brand-700); }
+body > header .time-sync-button:disabled { opacity: .65; }
+body > header .time-status-bar { gap: .75rem; flex-wrap: wrap; }
+body > header #theme-toggle-btn { color: var(--color-brand-900); }
+@media (max-width: 767px) {
+  body > header > div:first-child { gap: .625rem; }
+  body > header .header-logo { width: 5.5rem; }
+  body > header h1 { font-size: .875rem; }
+}
+@media (max-width: 380px) {
+  body > header .header-logo { width: 4.25rem; }
+  body > header h1 { font-size: .8125rem; }
 }
