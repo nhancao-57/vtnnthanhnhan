@@ -375,6 +375,36 @@ body > header h1 { overflow-wrap: anywhere; }
 
 /* Quiet, readable labels for the cart on desktop and mobile. */
 #cart-table th { font-size: .875rem; font-weight: 500; letter-spacing: normal; text-transform: none; }
+.mobile-cart-link, #customer-details-toggle { display: none; }
+#customer-details { display: contents; }
 @media (max-width: 767px) {
   #cart-table td::before { font-weight: 400; letter-spacing: normal; text-transform: none; }
+  .mobile-cart-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .25rem .75rem;
+    margin-top: .75rem;
+  }
+  #current-cart { scroll-margin-top: 8rem; }
+  #customer-details-toggle:not([hidden]) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    grid-column: 1 / -1;
+    text-align: start;
+  }
+  #customer-details-toggle::after {
+    content: "";
+    width: .5rem;
+    height: .5rem;
+    margin-inline: .25rem;
+    border: solid currentColor;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  #customer-details-toggle[aria-expanded="true"]::after { transform: rotate(225deg); }
+  #customer-details-toggle[aria-expanded="false"] + #customer-details { display: none; }
+  #invoice-actions label { flex-basis: 100%; min-height: 44px; margin: 0; }
 }

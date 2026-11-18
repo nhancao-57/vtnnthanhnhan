@@ -209,6 +209,10 @@
                             Thêm vào giỏ hàng
                         </button>
                     </form>
+                    <a href="#current-cart" class="mobile-cart-link btn-secondary">
+                        <span>Giỏ hàng <span id="mobile-cart-count" aria-live="polite">(0 mặt hàng)</span></span>
+                        <span id="mobile-cart-total"></span>
+                    </a>
                 </div>
 
                 <div class="card-base shadow-sm h-full">
@@ -234,6 +238,10 @@
                         </div>
                         <input type="text" id="customer-name" required class="input-base" placeholder="Nhập tên khách hàng/Công ty" />
                     </div>
+                        <button type="button" id="customer-details-toggle" class="btn-secondary" aria-expanded="true" aria-controls="customer-details" hidden>
+                            Thông tin bổ sung
+                        </button>
+                        <div id="customer-details">
                         <div>
                             <label for="customer-buyer-name" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Người mua hàng</label>
                             <input type="text" id="customer-buyer-name" class="input-base" />
@@ -266,6 +274,7 @@
                             <label for="customer-passport" class="font-medium text-gray-700 dark:text-slate-300 block mb-1 text-sm">Số hộ chiếu</label>
                             <input type="text" id="customer-passport" class="input-base" />
                         </div>
+                        </div>
                         <div class="col-span-1 sm:col-span-2 mt-2">
                             <label for="invoice-date" class="font-semibold text-gray-700 dark:text-slate-300 block mb-1 text-sm">Ngày hóa đơn</label>
                             <input type="date" id="invoice-date" required aria-describedby="invoice-date-help" class="input-base [color-scheme:light] dark:[color-scheme:dark]" />
@@ -276,7 +285,7 @@
             </div>
 
             <div class="card-base md:col-span-2 mt-8 shadow-sm ring-1 ring-black/5 dark:ring-white/5">
-                <h2 class="card-title text-lg flex items-center gap-2 border-b border-gray-100 dark:border-slate-700 pb-3 mb-4">
+                <h2 id="current-cart" tabindex="-1" class="card-title text-lg flex items-center gap-2 border-b border-gray-100 dark:border-slate-700 pb-3 mb-4">
                     <span class="bg-highlight-500 text-brand-900 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</span>
                     Giỏ Hàng Hiện Tại
                 </h2>
@@ -306,8 +315,8 @@
                     </div>
                 </div>
 
-                <div class="mt-6 border-t border-gray-100 dark:border-slate-700 pt-6 flex flex-wrap gap-x-4 gap-y-3 justify-end items-center">
-                    <label class="flex items-center text-sm font-medium text-gray-600 dark:text-slate-400 mr-auto sm:mr-0 cursor-pointer order-last sm:order-first select-none p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors">
+                <div id="invoice-actions" class="mt-6 border-t border-gray-100 dark:border-slate-700 pt-6 flex flex-wrap gap-x-4 gap-y-3 justify-end items-center">
+                    <label class="flex items-center text-sm font-medium text-gray-600 dark:text-slate-400 mr-auto sm:mr-0 cursor-pointer select-none p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors">
                         <input type="checkbox" id="save-invoice-only-check" class="h-4 w-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:checked:bg-brand-600">
                         <span class="ml-2">Chỉ lưu, không tải file</span>
                     </label>

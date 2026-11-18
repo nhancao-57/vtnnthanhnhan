@@ -18,16 +18,21 @@ function harness(page = 'main.js', storage = new Map()) {
         const classes = new Set();
         const handlers = {};
         return {
-            value: '', checked: false, disabled: false, dataset: {}, style: {}, children: [], files: [],
+            value: '', defaultValue: '', checked: false, disabled: false, dataset: {}, style: {}, children: [], files: [],
             textContent: '', innerHTML: '',
             classList: { add: (...v) => v.forEach(x => classes.add(x)), remove: (...v) => v.forEach(x => classes.delete(x)), contains: v => classes.has(v), toggle(v, force) { if (force) classes.add(v); else classes.delete(v); } },
-            addEventListener(type, fn) { handlers[type] = fn; },
-            dispatchEvent(event) { handlers[event.type]?.(event); },
-            setAttribute(k, v) { this[k] = v; }, focus() {}, reset() { this.dispatchEvent({ type: 'reset' }); },
+            addEventListener(type, fn) { (handlers[type] ??= []).push(fn); },
+            dispatchEvent(event) { handlers[event.type]?.forEach(handler => handler(event)); },
+            setAttribute(k, v) { this[k] = v; }, getAttribute(k) { return this[k] ?? null; },
+            focus() {}, reset() { this.dispatchEvent({ type: 'reset' }); },
             appendChild(child) { this.children.push(child); }, contains(child) { return this.children.includes(child); },
             removeChild(child) { this.children = this.children.filter(x => x !== child); },
             insertRow() { const row = element(); this.children.push(row); return row; },
-            querySelector() { return element(); }, getContext() { return null; }
+            querySelector() { return element(); },
+            querySelectorAll(selector) {
+                return selector === 'input' ? this.children : [];
+            },
+            getContext() { return null; }
         };
     }
     const document = {
@@ -37,7 +42,7 @@ function harness(page = 'main.js', storage = new Map()) {
     };
     const context = vm.createContext({
         document, console: { log() {}, warn() {}, error() {} }, Intl, Date, Uint8Array,
-        setTimeout: cb => timers.push(cb), clearTimeout() {}, setInterval() {},
+        setTimeout: cb => timers.push(cb), clearTimeout() {}, setInterval() {}, queueMicrotask,
         window: { matchMedia: () => ({ matches: false }), addEventListener() {} },
         VietnamTime: {
             start() {}, render() {},

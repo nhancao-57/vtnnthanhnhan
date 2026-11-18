@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadStateFromStorage(); 
     checkNegativeStock();
     initRetailCustomerCheckbox();
+    setupCustomerDetails();
     setupNegativeStockModal();
     setupThemeToggle(); 
     setupExportedInvoicesModal(); 
@@ -877,6 +878,26 @@ function validateAndWarnNegativeStock(onSuccessCallback, products = productDatab
     }
 }
 
+function setupCustomerDetails() {
+    const toggle = document.getElementById('customer-details-toggle');
+    const details = document.getElementById('customer-details');
+    const fields = [...details.querySelectorAll('input')];
+    const setExpanded = expanded => toggle.setAttribute('aria-expanded', String(expanded));
+    const hasDetails = () => fields.some(field => field.value.trim() !== field.defaultValue.trim());
+    const revealFilledDetails = () => {
+        if (hasDetails()) setExpanded(true);
+    };
+
+    setExpanded(hasDetails());
+    toggle.hidden = false;
+    toggle.addEventListener('click', () => setExpanded(toggle.getAttribute('aria-expanded') === 'false'));
+    details.addEventListener('input', revealFilledDetails);
+    window.addEventListener('pageshow', revealFilledDetails);
+    document.getElementById('customer-info-form').addEventListener('reset', () => {
+        queueMicrotask(() => setExpanded(hasDetails()));
+    });
+}
+
 // --- GIỎ HÀNG ---
 function renderCart() {
     const cartBody = document.getElementById('cart-body');
@@ -915,7 +936,12 @@ function renderCart() {
                          </td>`;
     });
     
-    document.getElementById('cart-total-posttax').textContent = `Tổng cộng: ${currencyFormatter.format(totalAmount)}`;
+    const formattedTotal = currencyFormatter.format(totalAmount);
+    document.getElementById('cart-total-posttax').textContent = `Tổng cộng: ${formattedTotal}`;
+    const mobileCartCount = document.getElementById('mobile-cart-count');
+    const countLabel = `(${currentCart.length} mặt hàng)`;
+    if (mobileCartCount.textContent !== countLabel) mobileCartCount.textContent = countLabel;
+    document.getElementById('mobile-cart-total').textContent = formattedTotal;
     document.getElementById('export-invoice-btn').disabled = invoiceExportPending || currentCart.length === 0;
 }
 
