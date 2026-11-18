@@ -2,6 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const timeSource = fs.readFileSync('vietnam-time.js', 'utf8');
+const invoiceTimestamp = vm.runInNewContext(timeSource + '\nVietnamTime.invoiceTimestamp');
 
 // Small DOM/file/storage adapters run the actual app functions without network/CDN dependencies.
 function harness(page = 'main.js', storage = new Map()) {
@@ -14,11 +16,14 @@ function harness(page = 'main.js', storage = new Map()) {
     const declaredIds = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
     function element() {
         const classes = new Set();
+        const handlers = {};
         return {
             value: '', checked: false, disabled: false, dataset: {}, style: {}, children: [], files: [],
             textContent: '', innerHTML: '',
             classList: { add: (...v) => v.forEach(x => classes.add(x)), remove: (...v) => v.forEach(x => classes.delete(x)), contains: v => classes.has(v), toggle(v, force) { if (force) classes.add(v); else classes.delete(v); } },
-            addEventListener() {}, setAttribute(k, v) { this[k] = v; }, focus() {}, reset() {},
+            addEventListener(type, fn) { handlers[type] = fn; },
+            dispatchEvent(event) { handlers[event.type]?.(event); },
+            setAttribute(k, v) { this[k] = v; }, focus() {}, reset() { this.dispatchEvent({ type: 'reset' }); },
             appendChild(child) { this.children.push(child); }, contains(child) { return this.children.includes(child); },
             removeChild(child) { this.children = this.children.filter(x => x !== child); },
             insertRow() { const row = element(); this.children.push(row); return row; },
@@ -36,6 +41,7 @@ function harness(page = 'main.js', storage = new Map()) {
         window: { matchMedia: () => ({ matches: false }), addEventListener() {} },
         VietnamTime: {
             start() {}, render() {},
+            invoiceTimestamp,
             now: () => new Date('2026-10-25T10:00:00Z'),
             fileDate: () => '2026-10-25',
             sync: async () => new Date('2026-10-25T10:00:00Z'),
@@ -123,7 +129,7 @@ test('manual sales without a database keep saved invoices and reports accessible
     assert.equal(h.run('exportedInvoicesLog[0].invoiceType'), 'Ngoài CSDL');
 });
 
-test('new invoices force an online check and ignore edits to the date field, including save-only mode', async () => {
+test('default invoice date comes from the fresh online check, including in save-only mode', async () => {
     const h = harness(); h.run(seed);
     let checks = 0;
     h.context.VietnamTime.sync = async options => {
@@ -131,7 +137,6 @@ test('new invoices force an online check and ignore edits to the date field, inc
         checks++;
         return new Date('2026-10-25T17:00:01Z'); // October 26 in Vietnam, October 25 in UTC.
     };
-    h.el('invoice-date').value = '1999-01-01';
     await h.run('exportInvoiceFile()');
     assert.ok(checks >= 1);
     assert.equal(h.run('dailyTransactions[0].customerInfo.date'), '2026-10-26');
@@ -140,7 +145,7 @@ test('new invoices force an online check and ignore edits to the date field, inc
     assert.ok(h.run('exportedInvoicesLog[0].fileName').endsWith('_2026-10-26.xlsx'));
 });
 
-test('real time module and invoice flow save the Vietnam day with device clock reads forbidden', async () => {
+test('invoice export combines the selected date with synced Vietnam time without using the device clock', async () => {
     const h = harness(); h.run(seed);
     h.context.Date = class extends Date {
         constructor(...args) { if (!args.length) throw new Error('Device clock read'); super(...args); }
@@ -149,14 +154,27 @@ test('real time module and invoice flow save the Vietnam day with device clock r
     h.context.performance = { now: () => 0 };
     h.context.crypto = { randomUUID: () => 'test-request' };
     h.context.AbortController = AbortController;
-    h.context.fetch = async () => ({ ok: true, json: async () => ({ timeZone: 'Asia/Ho_Chi_Minh', dateTime: '2026-10-26T00:01:00.000' }) });
-    h.run(fs.readFileSync('vietnam-time.js', 'utf8'));
+    h.context.fetch = async () => ({ ok: true, json: async () => ({ timeZone: 'Asia/Ho_Chi_Minh', dateTime: '2026-10-26T00:01:00.125' }) });
+    h.run(timeSource);
     h.el('invoice-date').value = '2000-01-01';
+    h.el('invoice-date').dispatchEvent({ type: 'input' });
+    h.el('save-invoice-only-check').checked = false;
     await h.run('exportInvoiceFile()');
     const saved = JSON.parse(h.storage.get('inventoryState'));
-    assert.equal(saved.transactions[0].customerInfo.date, '2026-10-26');
-    assert.equal(saved.exportedInvoicesLog[0].dataForExport[1][1], '26/10/2026');
-    assert.equal(saved.exportedInvoicesLog[0].timestamp, '2026-10-25T17:01:00.000Z');
+    assert.equal(saved.transactions[0].customerInfo.date, '2000-01-01');
+    assert.equal(saved.exportedInvoicesLog[0].dataForExport[1][1], '01/01/2000');
+    assert.equal(saved.exportedInvoicesLog[0].timestamp, '1999-12-31T17:01:00.125Z');
+    assert.equal(h.downloads[0].name, 'HoaDon_Customer_2000-01-01.xlsx');
+    assert.equal(h.el('invoice-date').value, '2026-10-26');
+});
+
+test('clearing the invoice date leaves the cart intact and blocks saving', async () => {
+    const h = harness(); h.run(seed);
+    h.el('invoice-date').value = '';
+    h.el('invoice-date').dispatchEvent({ type: 'input' });
+    await h.run('exportInvoiceFile()');
+    assert.equal(h.storage.size, 0);
+    assert.equal(h.run('currentCart.length'), 1);
 });
 
 test('unavailable internet time blocks both download and save-only without mutating the sale', async () => {

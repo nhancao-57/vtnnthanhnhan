@@ -28,6 +28,14 @@ const VietnamTime = (() => {
         return new Date(sample.epoch + elapsed);
     }
 
+    function invoiceTimestamp(date, verifiedAt) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+        const time = clockFormatter.format(verifiedAt);
+        const fraction = String(verifiedAt.getUTCMilliseconds()).padStart(3, '0');
+        const timestamp = new Date(`${date}T${time}.${fraction}+07:00`);
+        return Number.isFinite(timestamp.getTime()) && dateString(timestamp) === date ? timestamp : null;
+    }
+
     // Historical reports/backups can still be downloaded offline without inventing a date.
     function fileDate() {
         const date = now();
@@ -55,9 +63,9 @@ const VietnamTime = (() => {
         const label = document.getElementById('time-sync-status');
         const retry = document.getElementById('time-sync-retry');
         const dateInput = document.getElementById('invoice-date');
-        if (dateInput) {
-            dateInput.readOnly = true;
-            dateInput.value = date ? dateString(date) : '';
+        if (dateInput && dateInput.dataset.edited !== 'true') {
+            const value = date ? dateString(date) : '';
+            if (dateInput.value !== value) dateInput.value = value;
         }
         if (label) {
             const status = state === 'syncing' ? 'syncing' : date ? 'verified' : state === 'error' ? 'error' : 'waiting';
@@ -161,5 +169,5 @@ const VietnamTime = (() => {
         refresh();
     }
 
-    return { now, dateString, fileDate, sync, render, start };
+    return { now, dateString, invoiceTimestamp, fileDate, sync, render, start };
 })();

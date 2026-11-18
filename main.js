@@ -69,7 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
     themeIconMoon = document.getElementById('theme-icon-moon');
 
     // Khởi tạo
-    document.getElementById('invoice-date').value = '';
+    const invoiceDateInput = document.getElementById('invoice-date');
+    invoiceDateInput.value = '';
+    invoiceDateInput.addEventListener('input', () => { invoiceDateInput.dataset.edited = 'true'; });
+    document.getElementById('customer-info-form').addEventListener('reset', () => {
+        delete invoiceDateInput.dataset.edited;
+    });
     loadStateFromStorage(); 
     checkNegativeStock();
     initRetailCustomerCheckbox();
@@ -997,7 +1002,7 @@ function clearCart(confirmNeeded = true) {
 }
 
 // --- XUẤT FILE ---
-function getCustomerInfo(verifiedDate = VietnamTime.now()) {
+function getCustomerInfo(invoiceDate) {
     return {
         name: document.getElementById('customer-name').value,
         buyerName: document.getElementById('customer-buyer-name').value || document.getElementById('customer-name').value,
@@ -1008,7 +1013,7 @@ function getCustomerInfo(verifiedDate = VietnamTime.now()) {
         mdvcqhns: document.getElementById('customer-mdvcqhns').value,
         cccd: document.getElementById('customer-cccd').value,
         passport: document.getElementById('customer-passport').value,
-        date: verifiedDate ? VietnamTime.dateString(verifiedDate) : ''
+        date: invoiceDate
     };
 }
 
@@ -1114,10 +1119,12 @@ async function exportInvoiceFile() {
             showStatus('Phiên hoặc giỏ hàng đã thay đổi trong lúc xác minh giờ. Vui lòng kiểm tra và xuất lại.', true);
             return;
         }
-        const customerInfo = getCustomerInfo(verifiedAt);
-        customerInfo.date = VietnamTime.dateString(verifiedAt);
-        document.getElementById('invoice-date').value = customerInfo.date;
-        if (!customerInfo.name || !customerInfo.date) return showStatus('Vui lòng nhập Tên Khách Hàng và Ngày Hóa Đơn!', true);
+        const dateInput = document.getElementById('invoice-date');
+        const date = dateInput.dataset.edited === 'true' ? dateInput.value : VietnamTime.dateString(verifiedAt);
+        const timestamp = VietnamTime.invoiceTimestamp(date, verifiedAt);
+        if (!timestamp) return showStatus('Vui lòng nhập Ngày Hóa Đơn hợp lệ!', true);
+        const customerInfo = getCustomerInfo(date);
+        if (!customerInfo.name.trim()) return showStatus('Vui lòng nhập Tên Khách Hàng!', true);
 
         let hasDbProduct = false;
         let hasBypassProduct = false;
@@ -1142,7 +1149,7 @@ async function exportInvoiceFile() {
         const exportLogEntry = {
             id: exportedInvoicesLog.reduce((next, entry) => Math.max(next, entry.id + 1), verifiedAt.getTime()),
             customerName: customerInfo.name, fileName,
-            timestamp: verifiedAt.toISOString(), dataForExport,
+            timestamp: timestamp.toISOString(), dataForExport,
             worksheetName: 'HoaDon', invoiceType
         };
         let inventoryUpdated = false;

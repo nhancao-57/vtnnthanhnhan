@@ -52,7 +52,6 @@ test('internet Vietnam date and clock work without reading the device clock', as
     const verified = await h.run('VietnamTime.sync({force:true})');
     assert.equal(verified.toISOString(), '2026-10-25T16:59:59.000Z');
     assert.equal(h.el('invoice-date').value, '2026-10-25');
-    assert.equal(h.el('invoice-date').readOnly, true);
     assert.equal(h.el('time-sync-status').dataset.state, 'verified');
     assert.equal(h.requests[0].options.cache, 'no-store');
     assert.equal(h.requests[0].options.credentials, 'omit');
@@ -67,8 +66,9 @@ test('Vietnam midnight rolls over using elapsed time, independently of device da
     assert.equal(h.el('current-time-display').textContent, '00:00:01');
     assert.equal(h.el('header-vietnam-time').textContent, '00:00:01');
     h.el('invoice-date').value = '1999-01-01';
-    h.run('VietnamTime.render()');
-    assert.equal(h.el('invoice-date').value, '2026-10-26');
+    h.el('invoice-date').dataset.edited = 'true';
+    await h.run('VietnamTime.sync({force:true})');
+    assert.equal(h.el('invoice-date').value, '1999-01-01');
 });
 
 test('forced checks bypass recent verification; concurrent requests share the current network check', async () => {
